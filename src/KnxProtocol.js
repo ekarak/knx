@@ -30,7 +30,7 @@ KnxProtocol.define('IPv4Endpoint', {
        });
      },
   write: function (value) {
-    if (value === null) throw "cannot write null value"
+    if (!value) throw "cannot write null value"
     else {
       if (!(typeof value === 'string' && value.match(/\d*\.\d*\.\d*\.\d*:\d*/))) {
         throw "Invalid IPv4 endpoint, please set a string as  'ip.add.re.ss:port'";
@@ -73,7 +73,7 @@ KnxProtocol.define('CRI', {
     });
   },
   write: function (value) {
-    if (value === null) throw "cannot write null value"
+    if (!value) console.trace("CRI: cannot write null value")
     else {
       this
         .Int8(0x04) // length
@@ -97,7 +97,7 @@ KnxProtocol.define('ConnState', {
     });
   },
   write: function (value) {
-    if (value === null) throw "cannot write null value"
+    if (!value) console.trace("cannot write null value")
     else {
       this
         .Int8(value.channel_id)
@@ -129,7 +129,7 @@ KnxProtocol.define('TunnState', {
     });
   },
   write: function (value) {
-    if (value === null) throw "cannot write null value"
+    if (!value) console.trace("TunnState: cannot write null value")
     else {
       if (KnxProtocol.debug) console.log('writing TunnState: %j', value);
       this
@@ -182,7 +182,7 @@ KnxProtocol.define('HPAI', {
     });
   },
   write: function (value) {
-    if (value === null) throw "cannot write null value"
+    if (!value) console.trace("HPAI: cannot write null value")
     else {
       this
         .Int8(0x08) // length: 8 bytes
@@ -375,7 +375,7 @@ KnxProtocol.define('CEMI', {
     });
   },
   write: function (value) {
-    if (value === null)      throw "cannot write null value";
+    if (!value)      throw "cannot write null value";
     if (value.apdu === null) throw "no APDU supplied";
     if (value.ctrl === null) throw "no Control Field supplied";
     var ctrlField1 =
@@ -467,7 +467,7 @@ KnxProtocol.define('KNXNetHeader', {
   },
   write: function (value) {
     //console.log("writing KnxHeader:", value);
-    if (value === null) throw "cannot write null value"
+    if (!value) throw "cannot write null value"
     value.total_length = 6;
     this
       .Int8(6)    // header length (6 bytes constant)

@@ -54,11 +54,12 @@ KnxConstants.MESSAGECODES = {
 };
 
 KnxConstants.APCICODES =
-  ("A_GroupValue_Read A_GroupValue_Response A_GroupValue_Write "+
-  "A_PhysicalAddress_Write A_PhysicalAddress_Read A_PhysicalAddress_Response "+
-  "A_ADC_Read A_ADC_Response A_Memory_Read A_Memory_Response A_Memory_Write "+
-  "A_UserMemory A_DeviceDescriptor_Read A_DeviceDescriptor_Response A_Restart "+
-  "A_OTHER").split();
+  ["A_GroupValue_Read", "A_GroupValue_Response", "A_GroupValue_Write",
+  "A_PhysicalAddress_Write",  "A_PhysicalAddress_Read", "A_PhysicalAddress_Response",
+  "A_ADC_Read", "A_ADC_Response",
+  "A_Memory_Read", "A_Memory_Response", "A_Memory_Write",
+  "A_UserMemory", "A_DeviceDescriptor_Read", "A_DeviceDescriptor_Response",
+  "A_Restart", "A_OTHER"]
 
 
   /* TODO helper function to print enum keys */

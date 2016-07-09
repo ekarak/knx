@@ -5,17 +5,22 @@ var os = require('os');
 var util = require('util');
 var dgram = require('dgram');
 var EventEmitter = require('events').EventEmitter;
+var KnxNetStateMachine = require('./KnxNetStateMachine');
+const KnxNetProtocol = require('./KnxProtocol.js');
 
 var CONNECT_TIMEOUT = 5000;
 
 // an array of all available IPv4 addresses
-var localAddresses = [];
+var candidateInterfaces = [];
 var interfaces = os.networkInterfaces();
 for (var k in interfaces) {
+    //console.log('k: %j', k);
     for (var k2 in interfaces[k]) {
         var intf = interfaces[k][k2];
-        if (intf.family === 'IPv4' && !intf.internal) {
-            localAddresses.push(intf.address);
+        //console.log('k2: %j, intf: %j', k, intf);
+        if (intf.family == 'IPv4' && !intf.internal) {
+          console.log("===candidate interface: %j===", intf);
+            candidateInterfaces.push(intf);
         }
     }
 }
@@ -25,23 +30,23 @@ for (var k in interfaces) {
 */
 function Connection(options) {
     Connection.super_.call(this);
+    // set up the state machine
 		// set the local IP endpoint
 		this.localAddress = null;
-		if (localAddresses.length == 0) {
-      // no local IpV4 interfaces? where are we? which year?
+		if (candidateInterfaces.length == 0) {
+      // no local IpV4 interfaces?
 			throw "No valid IPv4 interfaces detected";
-		} else if (localAddresses.length == 1) {
-			console.log("Using %s as local IP for KNX traffic", localAddresses[0]);
-			this.localAddress = localAddresses[0];
+		} else if (candidateInterfaces.length == 1) {
+			console.log("Using %s as local IP for KNX traffic", candidateInterfaces[0].address);
+			this.localAddress = candidateInterfaces[0].address;
 		} else {
-			for (var k2 in interfaces[intf]) {
-					var intf = interfaces[k][k2];
-					if (intf.family === 'IPv4' && !intf.internal && intf.name === options.interface) {
-						console.log("Using %s as local IP for KNX traffic", intf.address);
-						this.localAddress = intf.address;
-					}
-			}
-			if (!this.localAddresses) {
+			candidateInterfaces.forEach( intf => {
+				if (intf.family == 'IPv4' && !intf.internal && !this.localAddress) {
+					console.log("=== Using %s as local IP for KNX traffic", intf.address);
+					this.localAddress = intf.address;
+				}
+			})
+			if (!this.localAddress) {
 				throw "You must supply a valid network interface for KNX traffic";
 			}
 		}
@@ -53,54 +58,6 @@ function Connection(options) {
 
 util.inherits(Connection, EventEmitter);
 
-/// <summary>
-///     Send a byte array value as data to specified address
-/// </summary>
-/// <param name="address">KNX Address</param>
-/// <param name="data">Byte array value or integer</param>
-
-Connection.prototype.Action = function (address, data, callback) {
-    if (this.debug)
-        console.log("[%s] Sending %s to %s.", this.constructor.name, JSON.stringify(data), JSON.stringify(address));
-    this.knxSender.Action(address, data, callback);
-    if (this.debug)
-        console.log("[%s] Sent %s to %s.", this.constructor.name, JSON.stringify(data), JSON.stringify(address));
-}
-
-// TODO: It would be good to make a type for address, to make sure not any random string can be passed in
-/// <summary>
-///     Send a request to KNX asking for specified address current status
-/// </summary>
-/// <param name="address"></param>
-Connection.prototype.RequestStatus = function (address, callback) {
-    if (this.debug)
-        console.log("[%s] Sending request status to %s.", this.constructor.name, JSON.stringify(address));
-    this.knxSender.RequestStatus(address, callback);
-    if (this.debug)
-        console.log("[%s] Sent request status to %s.", this.constructor.name, JSON.stringify(address));
-}
-
-/// <summary>
-///     Convert a value received from KNX using datapoint translator, e.g.,
-///     get a temperature value in Celsius
-/// </summary>
-/// <param name="type">Datapoint type, e.g.: 9.001</param>
-/// <param name="data">Data to convert</param>
-/// <returns></returns>
-Connection.prototype.FromDataPoint = function (type, /*buffer*/data) {
-    return DataPointTranslator.Instance.FromDataPoint(type, data);
-}
-
-/// <summary>
-///     Convert a value to send to KNX using datapoint translator, e.g.,
-///     get a temperature value in Celsius in a byte representation
-/// </summary>
-/// <param name="type">Datapoint type, e.g.: 9.001</param>
-/// <param name="value">Value to convert</param>
-/// <returns></returns>
-Connection.prototype.ToDataPoint = function (type, value) {
-    return DataPointTranslator.Instance.ToDataPoint(type, value);
-}
 
 Connection.prototype.GenerateSequenceNumber = function () {
     return this._sequenceNumber++;
@@ -119,65 +76,16 @@ Connection.prototype.ResetSequenceNumber = function () {
 /// </summary>
 Connection.prototype.Connect = function (callback) {
     var self = this;
-		if (this.debug) console.log("connecting...");
+    this.udpClient = dgram.createSocket("udp4");
+    this.BindSocket();
+    //
+    this.udpClient.on("message", function (msg, rinfo) {
+      console.log("received message: %j from %j:%d", msg, rinfo.address, rinfo.port);
+      // TODO: dispatch incoming message
+    });
 
-    function clearReconnectTimeout() {
-        if (self.reConnectTimeout) {
-            clearTimeout(self.reConnectTimeout);
-            delete self.reConnectTimeout;
-        }
-    }
-
-    function clearConnectTimeout() {
-        if (self.connectTimeout) {
-            clearTimeout(self.connectTimeout);
-            delete self.connectTimeout;
-        }
-    }
-
-    if (this.connected && this.udpClient) {
-        if (typeof callback === 'function') callback();
-        return true;
-    }
-
-    this.connectTimeout = setTimeout(function () {
-        self.removeListener('connected', clearConnectTimeout);
-        self.Disconnect(function () {
-            if (self.debug)
-                console.log('Error connecting: timeout');
-            if (typeof callback === 'function') callback({
-							msg: 'Error connecting: timeout', reason: 'CONNECTTIMEOUT'
-						});
-            clearReconnectTimeout();
-            this.reConnectTimeout = setTimeout(function () {
-                if (self.debug)
-                    console.log('reconnecting');
-                self.Connect(callback);
-            }, 3 * CONNECT_TIMEOUT);
-        });
-    }, CONNECT_TIMEOUT);
-    this.once('connected', clearConnectTimeout);
-    if (callback) {
-        this.removeListener('connected', callback);
-        this.once('connected', callback);
-    }
-    // try {
-        if (this.udpClient != null) {
-            try {
-                this.udpClient.close();
-                //this.udpClient.Client.Dispose();
-            }
-            catch (e) {
-                // ignore
-            }
-        }
-        this.udpClient = dgram.createSocket("udp4");
-    //} catch (e) {
-      //  throw new ConnectionErrorException(e);
-    //}
-
-		this.InitialiseSenderReceiver();
-		if (self.debug) console.log("initialised sender and receiver...");
+    if (this.debug) console.log("connecting...");
+    KnxNetStateMachine.connect(this);
 
     new Promise(function (fulfill, reject) {
 			if (self.debug) console.log("Starting receiver...");
@@ -256,23 +164,32 @@ Connection.prototype.TerminateStateRequest = function () {
     clearTimeout(this._stateRequestTimer);
 }
 
-Connection.prototype.ConnectRequest = function (callback) {
-	if (this.debug) console.log("ConnectRequest: init");
-  var datagram = this.prepareDatagram(KnxConstants.SERVICE_TYPE.CONNECT_REQUEST);
+Connection.prototype.AddHPAI = function (datagram) {
   // add the tunneling request local endpoint
   datagram.hpai = {
     protocol_type:1, // UDP
     tunnel_endpoint: this.localAddress + ":" + this.udpClient.address().port
   };
+}
+Connection.prototype.AddTunn = function (datagram) {
   // add the remote IP router's endpoint
   datagram.tunn = {
     protocol_type:1, // UDP
     tunnel_endpoint: this.remoteEndpoint.addr + ':' + this.remoteEndpoint.port
   }
+}
+Connection.prototype.AddCRI = function (datagram) {
   // add the CRI
   datagram.cri = {
     connection_type:4, knx_layer:2, unused:0
   }
+}
+Connection.prototype.ConnectRequest = function (callback) {
+	if (this.debug) console.log("ConnectRequest: init");
+  var datagram = this.prepareDatagram(KnxConstants.SERVICE_TYPE.CONNECT_REQUEST);
+  this.AddHPAI(datagram);
+  this.AddTunn(datagram);
+  this.AddCRI(datagram);
   try {
     this.knxSender.SendDataSingle(datagram, callback);
   }
@@ -301,7 +218,7 @@ Connection.prototype.DisconnectRequest = function (callback) {
       return false;
   }
   var datagram = prepareDatagram(KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST);
-  try {
+  try {var elf = this;
     this.knxSender.SendData(datagram, callback);
   }
   catch (e) {
@@ -326,8 +243,13 @@ Connection.prototype.prepareDatagram = function (svcType) {
   return datagram;
 }
 
+Connection.prototype.Send = function(datagram) {
+  console.log("WARNING: not sending datagram, you need to override Connection.Send() function");
+}
+
 Connection.prototype.Write = function() {
-    var datagram = prepareDatagram(KnxConstants.SERVICE_TYPE.TUNNELLING_REQUEST);
+    var datagram = this.prepareDatagram(KnxConstants.SERVICE_TYPE.TUNNELLING_REQUEST);
+    console.log("%j", datagram);
 }
 
 module.exports = Connection;

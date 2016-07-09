@@ -18,9 +18,10 @@
     "house automation"
   ],
   "dependencies": {
-    "binary-protocol": "0.0.0",
     "binary-parser": "1.1.5",
+    "binary-protocol": "0.0.0",
     "ipv4.js": "0.0.2",
+    "machina": "^2.0.0-1",
     "promise": "^7.0.4"
   }
 }
