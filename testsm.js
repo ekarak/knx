@@ -1,11 +1,16 @@
 var knxjs = require('.');
 
 
-console.log('test1');
-var connection = new knxjs.IpTunnelingConnection({ipAddr:'10.12.23.53'});
+console.log('Initializing new tunneling connection');
+var connection = new knxjs.IpTunnelingConnection({ipAddr:'192.168.8.4'});
 connection.debug = true;
 connection.Connect(function() {
-  console.log('connected.');
+  console.log('Connected. - Now sending a command');
+  //connection.Write('1/2/0', true);
+  console.log('           - Registering event handler');
+  connection.on('event', function (evt, src, dest, value) {
+    console.log("KNX EVENT: %j, src: %j, dest: %j, value: %j", evt, src, dest, value);
+  })
 });
 
 setTimeout(function () {

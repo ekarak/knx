@@ -15,10 +15,6 @@ var Promise = require('promise');
 function IpTunnelingConnection(options) {
   IpTunnelingConnection.super_.call(this, options);
 //  console.log('connection: %j', this);
-  this._stateRequestTimer = null; //Timer
-  this._sequenceNumber = null; //byte
-  this.ChannelId = 0x00;
-  this.writer = KnxNetProtocol.createWriter();
 }
 
 util.inherits(IpTunnelingConnection, Connection);
@@ -27,8 +23,8 @@ IpTunnelingConnection.prototype.BindSocket = function( cb ) {
   if (this.debug) console.log('IpTunnelingConnection.prototype.BindSocket');
   var conn = this;
   this.udpClient.bind(this.remoteEndpoint.port, function() {
-    console.log('adding multicast membership for %s', conn.remoteEndpoint.addr);
-    that.udpClient.addMembership(conn.remoteEndpoint.addr);
+    console.log('udpClient bound to %j', conn.udpClient.address());
+    cb && cb(conn);
   });
 }
 
@@ -41,7 +37,7 @@ IpTunnelingConnection.prototype.Send = function(buf, callback) {
     buf, 0, buf.length,
     this.remoteEndpoint.port, this.remoteEndpoint.addr,
     function (err) {
-        if (self.connection.debug)
+        if (self.debug)
             console.log('udp sent, err[' + (err ? err.toString() : 'no_err') + ']');
         if (typeof callback === 'function') callback(err);
   });

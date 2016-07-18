@@ -1,3 +1,4 @@
+var util = require('util');
 var ipv4 = require('ipv4.js');
 var Parser = require('binary-parser').Parser;
 var BinaryProtocol = require('binary-protocol');
@@ -415,9 +416,9 @@ KnxProtocol.define('KNXNetHeader', {
     .Int16BE('service_type')
     .Int16BE('total_length')
     .tap(function (hdr) {
-      if (this.buffer.length - this.offset < hdr.header_length)
-        throw "Incomplete KNXNet header";
-      if (KnxProtocol.debug) console.log("service type: %s", KnxConstants.keyText('SERVICE_TYPE', hdr.service_type));
+      console.log("read: service type: %s", KnxConstants.keyText('SERVICE_TYPE', hdr.service_type));
+      // FIXME: if (this.buffer.length - this.offset < hdr.header_length)
+      //  throw util.format("Incomplete KNXNet header: %d - %d < %d", this.buffer.length, this.offset, hdr.header_length);
       switch (hdr.service_type) {
 //        case SERVICE_TYPE.SEARCH_REQUEST:
         case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST: {
@@ -435,10 +436,14 @@ KnxProtocol.define('KNXNetHeader', {
           break;
         }
         case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST: {
+          this
+            .ConnState('connstate')
+            .HPAI('hpai')
+            .CRI('cri');
           break;
         }
         case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_RESPONSE: {
-          this.ConnState('conn_state');
+          this.ConnState('connstate');
           break;
         }
         case KnxConstants.SERVICE_TYPE.DESCRIPTION_RESPONSE: {
@@ -495,9 +500,11 @@ KnxProtocol.define('KNXNetHeader', {
         break;
       }
       case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST: {
-        value.total_length += knxlen('HPAI') + knxlen('CRI');
+        value.total_length += knxlen('ConnState') + knxlen('HPAI') ;
         this
           .Int16BE(value.total_length) //
+          .ConnState(value.connstate)
+          .HPAI(value.hpai)
           // TODO
         break;
       }

@@ -1,14 +1,20 @@
 var machina = require('machina');
+const util = require('util');
 var KnxConstants = require('./KnxConstants.js');
-var KnxNetStateMachine = new machina.BehavioralFsm( {
+var KnxNetStateMachine = new machina.BehavioralFsm({
+
 
   // the initialize method is called right after the FSM
   // instance is constructed, giving you a place for any
   // setup behavior, etc. It receives the same arguments
   // (options) as the constructor function.
   initialize: function( options ) {
-    console.log('initialize: %j', options);
+    console.log('initialize state machine: %j', options);
       this.options = options;
+  },
+
+  debug: function (conn, msg) {
+    console.log('* SM (%s): %s', this.compositeState(conn), msg);
   },
 
   namespace: "knxnet",
@@ -28,104 +34,110 @@ var KnxNetStateMachine = new machina.BehavioralFsm( {
       // take arguments, too (even though this one doesn't)
       // The "*" handler is special (more on that in a bit)
       "*": function( conn ) {
-          this.deferUntilTransition( conn );
+          //this.deferUntilTransition( conn );
           // the `transition` method takes a target state (as a string)
           // and transitions to it. You should NEVER directly assign the
           // state property on an FSM. Also - while it's certainly OK to
           // call `transition` externally, you usually end up with the
           // cleanest approach if you endeavor to transition *internally*
           // and just pass input to the FSM.
-        this.transition( conn, "connecting" );
+        // this.transition( conn, "connecting" );
       },
     },
     connecting: {
-        // _onEnter is a special handler that is invoked
-        // immediately as the FSM transitions into the new state
-        _onEnter: function( conn ) {
-          // set a connection timer for 3 seconds
-          var sm = this;
-            this.timer = setTimeout( function() {
-                this.handle( "connect-timeout" );
-            }.bind( this ), 3000 );
-            //
-            var datagram = conn.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST );
-            console.log('datagram: %j', datagram);
-            var buf  = conn.writer.KNXNetHeader(datagram).buffer;
-            console.log('buf: %j', buf);
-            conn.Send(buf, function() {
-              console.log('sent CONNECT_REQUEST');
-              sm.emit( "sent", { datagram: datagram } );
-            });
-        },
-        // If all you need to do is transition to a new state
-        // inside an input handler, you can provide the string
-        // name of the state in place of the input handler function.
-        "connect-timeout": "uninitialized",
-        CONNECT_RESPONSE: function( conn ) {
-          clearTimeout( this.timer );
-          console.log('sm: connect response - clearing timeout');
-          this.emit( "connection", { status: "ESTABLISHED" } );
-          this.transition('idle');
-        },
-
-        // _onExit is a special handler that is invoked just before
-        // the FSM leaves the current state and transitions to another
-        _onExit: function() {
-            console.log("leaving "+this);
-        }
+      // _onEnter is a special handler that is invoked
+      // immediately as the FSM transitions into the new state
+      _onEnter: function( conn ) {
+        // set a connection timer for 3 seconds
+        var sm = this;
+        sm.connecttimer = setTimeout( function() {
+          sm.debug(conn, 'connection timed out');
+          this.handle( state, "connect-timeout" );
+        }.bind( this ), 3000 );
+        //
+        conn.Request(KnxConstants.SERVICE_TYPE.CONNECT_REQUEST, function() {
+          sm.debug(conn, 'sent CONNECT_REQUEST');
+        });
+      },
+      // If all you need to do is transition to a new state
+      // inside an input handler, you can provide the string
+      // name of the state in place of the input handler function.
+      "connect-timeout": "uninitialized",
+      // _onExit is a special handler that is invoked just before
+      // the FSM leaves the current state and transitions to another
+      _onExit: function( conn ) {
+        this.debug(conn, "leaving connecting");
+      },
+      CONNECT_RESPONSE: function( conn ) {
+        var sm = this;
+        // store channel ID
+        conn.channel_id = conn.lastRcvdDatagram.connstate.channel_id;
+        this.debug(conn, util.format('connect response, channelId: %j', conn.lastRcvdDatagram.connstate.channel_id))
+        conn.Request(KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST, function() {
+          sm.debug(conn, 'sent CONNECTIONSTATE_REQUEST');
+        })
+      },
+      CONNECTIONSTATE_RESPONSE: function (conn) {
+        console.log('sm: connection state response - clearing timeout');
+        clearTimeout( this.connecttimer );
+        this.emit( "connected" );
+        this.transition( conn, 'idle');
+      },
     },
+    //
     idle: {
       _onEnter: function( conn ) {
-          this.idletimer = setTimeout( function() {
-              this.handle( "requestingConnState" );
-          }.bind( this ), 5000 );
+        this.debug(conn, "setting idle timer");
+        this.idletimer = setTimeout( function() {
+          this.debug( conn, "idletimer fired");
+          this.transition( conn, "requestingConnState" );
+        }.bind( this ), 30000 );
           // machina FSMs are event emitters. Here we're
           // emitting a custom event and data, etc.
           this.emit( "state", { status: "IDLE" } );
       },
+      TUNNELLING_REQUEST: function ( conn ) {
+        this.debug(conn, "got TUNNELING_REQUEST");
+      },
       _onExit: function( conn ) {
           clearTimeout( this.idletimer );
       },
-      // received tunneling request from the IP router while idle
-      TUNNELLING_REQUEST: function ( conn ) {
-
-      }
-
     },
     // requesting connection state from the KNX IP router
     requestingConnState: {
-        _onEnter: function( conn ) {
-          // sendvar knxjs = require('.'); CONNECTIONSTATE_REQUEST
-          this.connstatetimer = setTimeout( function() {
-              this.handle( "CONNECTIONSTATE_timeout" );
-          }.bind( this ), 5000 );
-          this.emit( "state", { status: "CONNECTIONSTATE_REQUEST" } );
-        },
-        CONNECTIONSTATE_RESPONSE: function( conn ) {
-            clearTimeout( this.connstatetimer );
-            this.transition('idle');
-        },
-        CONNECTIONSTATE_timeout: function( conn ) {
-          console.log('error: connection state request timeout: '+this);
-          this.transition('uninitialized');
-        }
+      _onEnter: function( conn ) {
+        var sm = this;
+        this.debug(conn, 'requesting Connection State');
+        conn.Request(KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST, function() {
+          sm.debug(conn, 'sent CONNECTIONSTATE_REQUEST');
+        })
+        this.connstatetimer = setTimeout( function() {
+          sm.debug( conn, 'timed out waiting for connection state')
+          sm.handle( conn, "CONNECTIONSTATE_timeout" );
+        }.bind( this ), 1000 );
+        this.emit( "state", { status: "CONNECTIONSTATE_REQUEST" } );
+      },
+      CONNECTIONSTATE_RESPONSE: function (conn) {
+        console.log('connection state response - clearing timeout');
+        clearTimeout( this.connstatetimer );
+        this.emit( "connected" );
+        this.transition( conn, 'idle');
+      },
     },
     // making a tunneling request to the KNX IP router
     makingTunnRequest: {
-        _onEnter: function( conn ) {
-            this.tunnreqtimer = setTimeout( function() {
-                this.handle( "timeout" );
-            }.bind( this ), 1000 );
-
-        },
-        _onExit: function() {
-            clearTimeout(this.tunnreqtimer);
-        }
+      _onEnter: function( conn ) {
+        this.tunnreqtimer = setTimeout( function() {
+          this.handle( conn, "timeout" );
+        }.bind( this ), 1000 );
+      },
+      TUNNELLING_ACK: function (conn) {
+        this.debug('tunneling_ack');
+      },
+      _onExit: function() {
+        clearTimeout(this.tunnreqtimer);
+      }
     },
-
-  },
-  connect: function( conn ) {
-      this.handle( conn, "connecting" );
   }
 });
 

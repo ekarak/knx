@@ -30,9 +30,10 @@ util.inherits(IpRoutingConnection, KnxConnection);
 ///     Bind the multicast socket
 /// </summary>
 IpRoutingConnection.prototype.BindSocket = function ( cb ) {
+  var self = this;
 	this.udpClient.bind(this.RemoteEndpoint.port, function() {
-		console.log('adding multicast membership for %s', that.RemoteEndpoint.host);
-		that.udpClient.addMembership(that.RemoteEndpoint.host);
+		console.log('adding multicast membership for %s', self.remoteEndpoint.host);
+		self.udpClient.addMembership(self.remoteEndpoint.host);
 	});
 }
 
