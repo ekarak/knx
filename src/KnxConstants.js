@@ -1,3 +1,6 @@
+// SOURCES:
+// http://knxnetipdissect.sourceforge.net/doc.html
+// http://dz.prosyst.com/pdoc/mBS_SH_SDK_7.3.0/modules/knx/api/com/prosyst/mbs/services/knx/ip/Constants.html
 KnxConstants = {};
 
 KnxConstants.SERVICE_TYPE = {
@@ -22,7 +25,10 @@ KnxConstants.SERVICE_TYPE = {
 //
 KnxConstants.CONNECTION_TYPE = {
   DEVICE_MGMT_CONNECTION: 0x03,
-  TUNNEL_CONNECTION: 0x04
+  TUNNEL_CONNECTION: 0x04,
+  REMOTE_LOGGING_CONNECTION: 0x06,
+  REMOTE_CONFIGURATION_CONNECTION: 0x07,
+  OBJECT_SERVER_CONNECTION: 0x08
 };
 //
 KnxConstants.PROTOCOL_TYPE = {
@@ -38,8 +44,18 @@ KnxConstants.KNX_LAYER = {
 
 KnxConstants.FRAMETYPE = {
    EXTENDED: 0x00,
-   STANDARD: 0x01,
+   STANDARD: 0x01
 };
+
+KnxConstants.RESPONSECODE = {
+  E_NO_ERROR: 0x00, // E_NO_ERROR - The connection was established succesfully
+  E_CONNECTION_ID: 0x21, // - The KNXnet/IP server device could not find an active data connection with the given ID
+  E_CONNECTION_TYPE: 0x22, // - The requested connection type is not supported by the KNXnet/IP server device
+  E_CONNECTION_OPTION: 0x23, // - The requested connection options is not supported by the KNXnet/IP server device
+  E_NO_MORE_CONNECTIONS: 0x24, //  - The KNXnet/IP server could not accept the new data connection (Maximum reached)
+  E_DATA_CONNECTION: 0x26,// - The KNXnet/IP server device detected an erro concerning the Dat connection with the given ID
+  E_KNX_CONNECTION: 0x27  // - The KNXnet/IP server device detected an error concerning the KNX Bus with the given ID
+}
 
 KnxConstants.MESSAGECODES = {
   "L_Raw.req":       0x10,

@@ -52,36 +52,41 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
         var sm = this;
         sm.connecttimer = setTimeout( function() {
           sm.debug(conn, 'connection timed out');
-          this.handle( state, "connect-timeout" );
+          this.handle( conn, "connect-timeout" );
         }.bind( this ), 3000 );
         //
-        conn.Request(KnxConstants.SERVICE_TYPE.CONNECT_REQUEST, function() {
-          sm.debug(conn, 'sent CONNECT_REQUEST');
+        conn.Request(KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST, function() {
+          sm.debug(conn, 'sent CONNECTIONSTATE_REQUEST');
         });
       },
       // If all you need to do is transition to a new state
       // inside an input handler, you can provide the string
       // name of the state in place of the input handler function.
-      "connect-timeout": "uninitialized",
+      "connect-timeout": function (conn) {
+        this.debug(conn, "connection timed out");
+        this.transition(conn, "uninitialized")
+      },
       // _onExit is a special handler that is invoked just before
       // the FSM leaves the current state and transitions to another
       _onExit: function( conn ) {
         this.debug(conn, "leaving connecting");
       },
-      CONNECT_RESPONSE: function( conn ) {
-        var sm = this;
-        // store channel ID
-        conn.channel_id = conn.lastRcvdDatagram.connstate.channel_id;
-        this.debug(conn, util.format('connect response, channelId: %j', conn.lastRcvdDatagram.connstate.channel_id))
-        conn.Request(KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST, function() {
-          sm.debug(conn, 'sent CONNECTIONSTATE_REQUEST');
-        })
-      },
       CONNECTIONSTATE_RESPONSE: function (conn) {
-        console.log('sm: connection state response - clearing timeout');
+        var sm = this;
+        // store channel ID into the Connection object
+        conn.channel_id = conn.lastRcvdDatagram.connstate.channel_id;
+        var str = KnxConstants.keyText('RESPONSECODE', conn.lastRcvdDatagram.connstate.status);
+        this.debug(conn, 'got connection state response, connstate: '+str);
         clearTimeout( this.connecttimer );
         this.emit( "connected" );
         this.transition( conn, 'idle');
+        // ready to connect, send CONNECTION_REQUEST
+        /*conn.Request(KnxConstants.SERVICE_TYPE.CONNECT_REQUEST, function() {
+          sm.debug(conn, 'sent CONNECT_REQUEST');
+        })*/
+      },
+      CONNECT_RESPONSE: function( conn ) {
+        this.debug(conn, 'connection response - clearing timeout');
       },
     },
     //
@@ -98,6 +103,10 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
       },
       TUNNELLING_REQUEST: function ( conn ) {
         this.debug(conn, "got TUNNELING_REQUEST");
+        this.emit("event", conn.lastRcvdDatagram);
+      },
+      ROUTING_INDICATION: function (conn) {
+        this.debug(conn, 'routing indication');
       },
       _onExit: function( conn ) {
           clearTimeout( this.idletimer );
@@ -118,9 +127,8 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
         this.emit( "state", { status: "CONNECTIONSTATE_REQUEST" } );
       },
       CONNECTIONSTATE_RESPONSE: function (conn) {
-        console.log('connection state response - clearing timeout');
+        this.debug(conn, 'got connection state response - clearing timeout');
         clearTimeout( this.connstatetimer );
-        this.emit( "connected" );
         this.transition( conn, 'idle');
       },
     },

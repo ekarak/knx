@@ -87,8 +87,8 @@ Connection.prototype.Connect = function (callback) {
     conn.udpClient.on("message", function(msg, rinfo, callback) {
       console.log("received message: %j from %j:%d", msg, rinfo.address, rinfo.port);
       var reader = KnxNetProtocol.createReader(msg);
-      reader.KNXNetHeader('packet'+this.incomingPacketCounter);
-      conn.lastRcvdDatagram = reader.next()['packet'+this.incomingPacketCounter];
+      reader.KNXNetHeader('packet');
+      conn.lastRcvdDatagram = reader.next()['packet'];
       console.log("decoded packet: %j", conn.lastRcvdDatagram);
       // get the incoming packet's service type...
       var st = KnxConstants.keyText('SERVICE_TYPE', conn.lastRcvdDatagram.service_type);
@@ -117,12 +117,13 @@ Connection.prototype.AddHPAI = function (datagram) {
   // add the tunneling request local endpoint
   datagram.hpai = {
     protocol_type:1, // UDP
-    tunnel_endpoint: this.localAddress + ":" + this.udpClient.address().port
+    tunnel_endpoint: "0.0.0.0:0"
+    //tunnel_endpoint: this.localAddress + ":" + this.udpClient.address().port
   };
 }
-Connection.prototype.AddTunn = function (datagram) {
+Connection.prototype.AddTunnState = function (datagram) {
   // add the remote IP router's endpoint
-  datagram.tunn = {
+  datagram.tunnstate = {
     protocol_type:1, // UDP
     tunnel_endpoint: this.remoteEndpoint.addr + ':' + this.remoteEndpoint.port
   }
@@ -130,16 +131,26 @@ Connection.prototype.AddTunn = function (datagram) {
 Connection.prototype.AddCRI = function (datagram) {
   // add the CRI
   datagram.cri = {
-    connection_type:4, knx_layer:2, unused:0
+    connection_type: KnxConstants.CONNECTION_TYPE.TUNNEL_CONNECTION,
+    knx_layer:       KnxConstants.KNX_LAYER.LINK_LAYER,
+    unused:          0
   }
 }
-Connection.prototype.AddConnHAPI = function (datagram) {
+Connection.prototype.AddConnState = function (datagram) {
   datagram.connstate = {
     channel_id: this.channel_id,
-    seqnum: this._sequenceNumber
+    seqnum:     this.GenerateSequenceNumber()
   }
 }
-
+Connection.prototype.AddCEMI = function(datagram) {
+  datagram.cemi = {
+    msgcode: 0x11, //L_Data.req
+    ctrl: 0x00,
+    src_addr: 0x0000,
+    dest_addr: 0x000F, // FIXME
+    tpdu: 0x00
+  }
+}
 Connection.prototype.Request = function (type, callback) {
   var datagram = this.prepareDatagram( type );
   var st = KnxConstants.keyText('SERVICE_TYPE', type);
@@ -166,19 +177,24 @@ Connection.prototype.prepareDatagram = function (svcType) {
   this.AddHPAI(datagram);
   switch(svcType){
     case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST: {
-      this.AddTunn(datagram);
+      this.AddConnState(datagram);
+      this.AddTunnState(datagram);
       this.AddCRI(datagram);
     }
     case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST: {
-      this.AddConnHAPI(datagram);
-      this.AddTunn(datagram);
+      this.AddConnState(datagram);
+      this.AddTunnState(datagram);
       this.AddCRI(datagram);
+    }
+    case KnxConstants.SERVICE_TYPE.TUNNELLING_REQUEST: {
+      this.AddTunnState(datagram);
+      this.AddCEMI(datagram);
     }
   }
 
-  if (this.connection && this.connection.ChannelId) {
+  if (this.channel_id) {
     datagram.connstate = {
-      "channel_id": this.connection.ChannelId,
+      "channel_id": this.connection.channel_id,
       "seqnum":     this.connection.GenerateSequenceNumber()
     };
   }
@@ -187,6 +203,12 @@ Connection.prototype.prepareDatagram = function (svcType) {
 
 Connection.prototype.Send = function(datagram) {
   console.log("WARNING: not sending datagram, you need to override Connection.Send() function");
+}
+Connection.prototype.Read = function(grpaddr) {
+  this.Request(KnxConstants.SERVICE_TYPE.TUNNELLING_REQUEST, function() {
+    console.log('sent TUNNELING_REQUEST');
+  });
+
 }
 
 module.exports = Connection;

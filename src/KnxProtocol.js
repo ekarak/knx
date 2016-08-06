@@ -89,9 +89,9 @@ KnxProtocol.lengths['CRI'] = 4;
 // connection state response/request
 KnxProtocol.define('ConnState', {
   read: function (propertyName) {
-    this.pushStack({  channel_id: null, seqnum: null })
+    this.pushStack({  channel_id: null, status: null })
     .Int8('channel_id')
-    .Int8('seqnum')
+    .Int8('status')
     .popStack(propertyName, function (data) {
       if (KnxProtocol.debug) console.log('read ConnState: %j', data);
       return data;
@@ -102,7 +102,7 @@ KnxProtocol.define('ConnState', {
     else {
       this
         .Int8(value.channel_id)
-        .Int8(value.seqnum);
+        .Int8(value.status);
     }
   }
 });
@@ -438,8 +438,7 @@ KnxProtocol.define('KNXNetHeader', {
         case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST: {
           this
             .ConnState('connstate')
-            .HPAI('hpai')
-            .CRI('cri');
+            .HPAI('hpai');
           break;
         }
         case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_RESPONSE: {
@@ -458,7 +457,8 @@ KnxProtocol.define('KNXNetHeader', {
           break;
         }
         case KnxConstants.SERVICE_TYPE.TUNNELLING_ACK: {
-
+          this
+            .TunnState('connstate');
         }
         default: {
           console.log("KNXNetHeader: unhandled serviceType = %s", KnxConstants.keyText('SERVICE_TYPE', hdr.service_type));
@@ -525,8 +525,15 @@ KnxProtocol.define('KNXNetHeader', {
         value.total_length += (knxlen('TunnState') + knxlen('CEMI', value.cemi));
         this
           .Int16BE(value.total_length) //
-          .TunnState(value.connstate)
+          .TunnState(value.tunnstate)
           .CEMI(value.cemi);
+        break;
+      }
+      case KnxConstants.SERVICE_TYPE.TUNNELLING_ACK: {
+        value.total_length += (knxlen('TunnState') + knxlen('CEMI', value.cemi));
+        this
+          .Int16BE(value.total_length) //
+          .TunnState(value.tunnstate);
         break;
       }
       default: {

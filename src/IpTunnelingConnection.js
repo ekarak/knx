@@ -22,7 +22,7 @@ util.inherits(IpTunnelingConnection, Connection);
 IpTunnelingConnection.prototype.BindSocket = function( cb ) {
   if (this.debug) console.log('IpTunnelingConnection.prototype.BindSocket');
   var conn = this;
-  this.udpClient.bind(this.remoteEndpoint.port, function() {
+  this.udpClient.bind(function() {
     console.log('udpClient bound to %j', conn.udpClient.address());
     cb && cb(conn);
   });
