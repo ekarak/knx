@@ -47,14 +47,19 @@ KnxConstants.FRAMETYPE = {
    STANDARD: 0x01
 };
 
+//https://github.com/calimero-project/calimero-core/blob/master/src/tuwien/auto/calimero/knxnetip/servicetype/ErrorCodes.java
 KnxConstants.RESPONSECODE = {
-  E_NO_ERROR: 0x00, // E_NO_ERROR - The connection was established succesfully
+  NO_ERROR: 0x00, // E_NO_ERROR - The connection was established succesfully
+  E_HOST_PROTOCOL_TYPE: 0x01,
+  E_VERSION_NOT_SUPPORTED: 0x02,
+  E_SEQUENCE_NUMBER: 0x04,
   E_CONNECTION_ID: 0x21, // - The KNXnet/IP server device could not find an active data connection with the given ID
   E_CONNECTION_TYPE: 0x22, // - The requested connection type is not supported by the KNXnet/IP server device
   E_CONNECTION_OPTION: 0x23, // - The requested connection options is not supported by the KNXnet/IP server device
   E_NO_MORE_CONNECTIONS: 0x24, //  - The KNXnet/IP server could not accept the new data connection (Maximum reached)
   E_DATA_CONNECTION: 0x26,// - The KNXnet/IP server device detected an erro concerning the Dat connection with the given ID
-  E_KNX_CONNECTION: 0x27  // - The KNXnet/IP server device detected an error concerning the KNX Bus with the given ID
+  E_KNX_CONNECTION: 0x27,  // - The KNXnet/IP server device detected an error concerning the KNX Bus with the given ID
+  E_TUNNELLING_LAYER: 0x29,
 }
 
 KnxConstants.MESSAGECODES = {

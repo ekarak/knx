@@ -31,9 +31,9 @@ util.inherits(IpRoutingConnection, KnxConnection);
 /// </summary>
 IpRoutingConnection.prototype.BindSocket = function ( cb ) {
   var conn = this;
-	this.udpClient.bind(function() {
+	this.control.bind(function() {
 		console.log('adding multicast membership for %s', conn.remoteEndpoint.addr);
-		conn.udpClient.addMembership(conn.remoteEndpoint.addr);
+		conn.control.addMembership(conn.remoteEndpoint.addr);
     cb && cb(conn);
 	});
 }
@@ -43,7 +43,7 @@ IpRoutingConnection.prototype.Send = function(datagram, callback) {
   if (this.debug) {
     console.log('IpRouting.Send (%d bytes) ==> %j', buf.length, buf);
   }
-  this.udpClient.send(
+  this.control.send(
     buf, 0, buf.length,
     this.remoteEndpoint.port, this.remoteEndpoint.addr,
     function (err) {
@@ -53,5 +53,19 @@ IpRoutingConnection.prototype.Send = function(datagram, callback) {
   });
 }
 
+IpRoutingConnection.prototype.AddHPAI = function (datagram) {
+  // FIXME
+  console.log('HERE: %s %s', this.localAddresses, this.tunnel);
+  // add the control udp local endpoint
+  datagram.hpai = {
+    protocol_type:1, // UDP
+    tunnel_endpoint: this.localAddress + ":" + this.control.address().port
+  };
+  // add the tunneling udp local endpoint
+  datagram.tunn = {
+    protocol_type:1, // UDP
+    tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
+  };
+}
 
 module.exports = IpRoutingConnection;

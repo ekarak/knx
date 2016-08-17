@@ -50,13 +50,10 @@ function Connection(options) {
 				throw "You must supply a valid network interface for KNX traffic";
 			}
 		}
-		this.udpClient = null;
     this.connected = false;
     this.ThreeLevelGroupAddressing = true;
     this.remoteEndpoint = { addr: options.ipAddr, port: options.ipPort || 3671 };
     this.incomingPacketCounter = 0 ;
-    this._sequenceNumber = null; //byte
-    this.ChannelId = 0x00;
 }
 
 util.inherits(Connection, EventEmitter);
@@ -71,36 +68,22 @@ Connection.prototype.RevertSingleSequenceNumber = function () {
 }
 
 Connection.prototype.ResetSequenceNumber = function () {
-    this._sequenceNumber = 0x00;
+    this._sequenceNumber = 0;
 }
 
 // <summary>
 ///     Start the connection
 /// </summary>
-
 Connection.prototype.Connect = function (callback) {
   var conn = this;
-  this.udpClient = dgram.createSocket("udp4");
-  // call connection-specific binding method
-  this.BindSocket( function() {
-    // bind incoming UDP packet handler
-    conn.udpClient.on("message", function(msg, rinfo, callback) {
-      console.log("received message: %j from %j:%d", msg, rinfo.address, rinfo.port);
-      var reader = KnxNetProtocol.createReader(msg);
-      reader.KNXNetHeader('packet');
-      conn.lastRcvdDatagram = reader.next()['packet'];
-      console.log("decoded packet: %j", conn.lastRcvdDatagram);
-      // get the incoming packet's service type...
-      var st = KnxConstants.keyText('SERVICE_TYPE', conn.lastRcvdDatagram.service_type);
-      // ... to drive the state machinej
-      console.log('* %s => %j', st, KnxNetStateMachine.compositeState(conn))
-      //if (typeof KnxNetStateMachine[st] == 'function') {
-        console.log('dispatching %s to state machine', st);
-        KnxNetStateMachine.handle(conn, st);
-      //}
-    });
-    KnxNetStateMachine.on('connected', callback);
-    KnxNetStateMachine.transition(conn, 'connecting');
+  // create a control socket for CONNECT, CONNECTIONSTATE and DISCONNECT
+  conn.control = conn.BindSocket( function() {
+    // create a tunnel socket for TUNNELING_REQUEST and friends
+    conn.tunnel = conn.BindSocket( function() {
+      // start connection sequence
+      KnxNetStateMachine.transition(conn, 'connecting');
+      KnxNetStateMachine.on('connected', callback);
+    })
   });
 }
 
@@ -113,21 +96,23 @@ Connection.prototype.Disconnect = function (callback) {
     throw "unimplemented"
 }
 
-Connection.prototype.AddHPAI = function (datagram) {
-  // add the tunneling request local endpoint
-  datagram.hpai = {
-    protocol_type:1, // UDP
-    tunnel_endpoint: "0.0.0.0:0"
-    //tunnel_endpoint: this.localAddress + ":" + this.udpClient.address().port
-  };
+Connection.prototype.AddConnState = function (datagram) {
+  datagram.connstate = {
+    channel_id: this.channel_id,
+    seqnum:     this.GenerateSequenceNumber()
+  }
 }
+
 Connection.prototype.AddTunnState = function (datagram) {
   // add the remote IP router's endpoint
   datagram.tunnstate = {
+    channel_id: this.channel_id,
+    seqnum:     this.GenerateSequenceNumber(),
     protocol_type:1, // UDP
     tunnel_endpoint: this.remoteEndpoint.addr + ':' + this.remoteEndpoint.port
   }
 }
+
 Connection.prototype.AddCRI = function (datagram) {
   // add the CRI
   datagram.cri = {
@@ -136,34 +121,49 @@ Connection.prototype.AddCRI = function (datagram) {
     unused:          0
   }
 }
-Connection.prototype.AddConnState = function (datagram) {
-  datagram.connstate = {
-    channel_id: this.channel_id,
-    seqnum:     this.GenerateSequenceNumber()
-  }
-}
+
 Connection.prototype.AddCEMI = function(datagram) {
   datagram.cemi = {
     msgcode: 0x11, //L_Data.req
-    ctrl: 0x00,
-    src_addr: 0x0000,
-    dest_addr: 0x000F, // FIXME
-    tpdu: 0x00
+    ctrl: {
+      frameType   : 1, // 0=extended 1=standard
+      reserved    : 0,
+      repeat      : 1,
+      broadcast   : 0,
+      priority    : 1, // 0-system 1-normal 2-urgent 3-low
+      acknowledge : 1, // FIXME: only for L_Data.req
+      confirm     : 0, // FIXME: only for L_Data.con 0-ok 1-error
+      // 2nd byte
+      destAddrType: 1, // FIXME: 0-physical 1-groupaddr
+      hopCount    : 7,
+      extendedFrame: 0
+    },
+    src_addr: "15.15.15", // FIXME: add local physical address property
+    dest_addr: "0/0/15", // FIXME
+    tpdu: 0x00,
+    apdu: new Buffer([0,0]) // FIXME
   }
 }
 Connection.prototype.Request = function (type, callback) {
   var datagram = this.prepareDatagram( type );
   var st = KnxConstants.keyText('SERVICE_TYPE', type);
-	if (this.debug) console.log("Sending %s %j", st, datagram);
+  // select which UDP channel we should use
+  var channel = [
+    KnxConstants.SERVICE_TYPE.CONNECT_REQUEST,
+    KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST,
+    KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST]
+    .indexOf(type) > -1 ?  this.control : this.tunnel;
+	if (this.debug) console.log("Sending %s %j via port %d", st, datagram, channel.address().port);
   try {
     this.writer = KnxNetProtocol.createWriter();
     var packet = this.writer.KNXNetHeader(datagram);
-    this.Send(packet.buffer, callback);
+    KnxNetStateMachine.handle(this, st);
+    this.Send(channel, packet.buffer, callback);
   }
   catch (e) {
-    console.log(e);
-    if (typeof callback === 'function') callback();
+    console.log(e, e.stack);
   }
+  if (typeof callback === 'function') callback();
 }
 
 // prepare a datagram for the given service type
@@ -190,13 +190,6 @@ Connection.prototype.prepareDatagram = function (svcType) {
       this.AddTunnState(datagram);
       this.AddCEMI(datagram);
     }
-  }
-
-  if (this.channel_id) {
-    datagram.connstate = {
-      "channel_id": this.connection.channel_id,
-      "seqnum":     this.connection.GenerateSequenceNumber()
-    };
   }
   return datagram;
 }

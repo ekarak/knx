@@ -55,8 +55,8 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
           this.handle( conn, "connect-timeout" );
         }.bind( this ), 3000 );
         //
-        conn.Request(KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST, function() {
-          sm.debug(conn, 'sent CONNECTIONSTATE_REQUEST');
+        conn.Request(KnxConstants.SERVICE_TYPE.CONNECT_REQUEST, function() {
+          sm.debug(conn, 'sent CONNECT_REQUEST');
         });
       },
       // If all you need to do is transition to a new state
@@ -71,22 +71,24 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
       _onExit: function( conn ) {
         this.debug(conn, "leaving connecting");
       },
-      CONNECTIONSTATE_RESPONSE: function (conn) {
+      CONNECT_RESPONSE: function (conn) {
         var sm = this;
         // store channel ID into the Connection object
         conn.channel_id = conn.lastRcvdDatagram.connstate.channel_id;
-        var str = KnxConstants.keyText('RESPONSECODE', conn.lastRcvdDatagram.connstate.status);
-        this.debug(conn, 'got connection state response, connstate: '+str);
-        clearTimeout( this.connecttimer );
-        this.emit( "connected" );
-        this.transition( conn, 'idle');
-        // ready to connect, send CONNECTION_REQUEST
-        /*conn.Request(KnxConstants.SERVICE_TYPE.CONNECT_REQUEST, function() {
-          sm.debug(conn, 'sent CONNECT_REQUEST');
-        })*/
+        this.debug(conn, util.format('got connect response: %j', conn.lastRcvdDatagram));
+        //
+        conn.Request(KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST, function() {
+          sm.debug(conn, 'sent CONNECTIONSTATE_REQUEST');
+        })
       },
-      CONNECT_RESPONSE: function( conn ) {
-        this.debug(conn, 'connection response - clearing timeout');
+      CONNECTIONSTATE_RESPONSE: function (conn) {
+        var sm = this;
+        var str = KnxConstants.keyText('RESPONSECODE', conn.lastRcvdDatagram.connstate.status);
+        this.debug(conn, 'CONNECTED! got connection state response, connstate: '+str);
+        clearTimeout( this.connecttimer );
+        // ready to go!
+        this.transition( conn, 'idle');
+        this.emit('connected');
       },
     },
     //
@@ -102,11 +104,14 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
           this.emit( "state", { status: "IDLE" } );
       },
       TUNNELLING_REQUEST: function ( conn ) {
-        this.debug(conn, "got TUNNELING_REQUEST");
-        this.emit("event", conn.lastRcvdDatagram);
-      },
-      ROUTING_INDICATION: function (conn) {
-        this.debug(conn, 'routing indication');
+        var sm = this;
+        //this.transition( conn, 'sendingTunnelingRequest' );
+        clearTimeout(this.idletimer);
+        console.log('setting up tunnreq timeout');
+        this.tunnelingRequestTimer = setTimeout( function() {
+          sm.debug( conn, 'timed out waiting for TUNNELING_ACK')
+          sm.handle( conn, "timeout" );
+        }.bind( this ), 1000 );
       },
       _onExit: function( conn ) {
           clearTimeout( this.idletimer );
@@ -132,20 +137,14 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
         this.transition( conn, 'idle');
       },
     },
-    // making a tunneling request to the KNX IP router
-    makingTunnRequest: {
-      _onEnter: function( conn ) {
-        this.tunnreqtimer = setTimeout( function() {
-          this.handle( conn, "timeout" );
-        }.bind( this ), 1000 );
+    sendingTunnelingRequest:  {
+      _onEnter: function ( conn ) {
+        //clearTimeout(this.idletimer);
       },
-      TUNNELLING_ACK: function (conn) {
-        this.debug('tunneling_ack');
-      },
-      _onExit: function() {
-        clearTimeout(this.tunnreqtimer);
+      TUNNELING_ACK: function (conn) {
+        clearTimeout(this.tunnelingRequestTimer);
       }
-    },
+    }
   }
 });
 

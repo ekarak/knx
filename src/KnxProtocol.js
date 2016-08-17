@@ -15,7 +15,9 @@ function knxlen(objectName, context) {
   var lf = KnxProtocol.lengths[objectName];
   if (typeof lf === 'function') {
     if (!context) throw "Length functions require a context";
-    return lf(context);
+    var val = lf(context);
+    if (!val) throw "No value returned by length function";
+    return val
   }
   else
     return lf;
@@ -360,6 +362,7 @@ KnxProtocol.define('CEMI', {
       if (KnxProtocol.debug) console.log("ctrl fields: %j", hdr.ctrl);
       // TODO: convert addresses to string
       switch(hdr.msgcode) {
+        case KnxConstants.MESSAGECODES["L_Data.req"]: // requesting a data frame
         case KnxConstants.MESSAGECODES["L_Data.ind"]: // received a data frame
         case KnxConstants.MESSAGECODES["L_Data.con"]: // received a data frame
           this.raw('apdu', hdr.apdu_length);
@@ -377,6 +380,7 @@ KnxProtocol.define('CEMI', {
   },
   write: function (value) {
     if (!value)      throw "cannot write null value";
+    //console.log('CEMI.write: \n\t%j', value);
     if (value.apdu === null) throw "no APDU supplied";
     if (value.ctrl === null) throw "no Control Field supplied";
     var ctrlField1 =
@@ -404,7 +408,8 @@ KnxProtocol.define('CEMI', {
   }
 });
 KnxProtocol.lengths['CEMI'] = function(value) {
-  return 10 + value.apdu_length;
+  //console.log('knxlen of cemi: %j == %d', value, 10 + value.apdu.length);
+  return 10 + value.apdu.length;
 }
 
 KnxProtocol.define('KNXNetHeader', {
@@ -416,7 +421,6 @@ KnxProtocol.define('KNXNetHeader', {
     .Int16BE('service_type')
     .Int16BE('total_length')
     .tap(function (hdr) {
-      console.log("read: service type: %s", KnxConstants.keyText('SERVICE_TYPE', hdr.service_type));
       // FIXME: if (this.buffer.length - this.offset < hdr.header_length)
       //  throw util.format("Incomplete KNXNet header: %d - %d < %d", this.buffer.length, this.offset, hdr.header_length);
       switch (hdr.service_type) {
@@ -452,16 +456,17 @@ KnxProtocol.define('KNXNetHeader', {
         // most common case:
         case KnxConstants.SERVICE_TYPE.TUNNELLING_REQUEST: {
           this
-            .TunnState('connstate')
+            .TunnState('tunnstate')
             .CEMI('cemi');
           break;
         }
         case KnxConstants.SERVICE_TYPE.TUNNELLING_ACK: {
           this
             .TunnState('connstate');
+          break;
         }
         default: {
-          console.log("KNXNetHeader: unhandled serviceType = %s", KnxConstants.keyText('SERVICE_TYPE', hdr.service_type));
+          console.log("read KNXNetHeader: unhandled serviceType = %s", KnxConstants.keyText('SERVICE_TYPE', hdr.service_type));
         }
       }
     })
@@ -524,7 +529,7 @@ KnxProtocol.define('KNXNetHeader', {
       case KnxConstants.SERVICE_TYPE.TUNNELLING_REQUEST: {
         value.total_length += (knxlen('TunnState') + knxlen('CEMI', value.cemi));
         this
-          .Int16BE(value.total_length) //
+          .Int16BE(value.total_length)
           .TunnState(value.tunnstate)
           .CEMI(value.cemi);
         break;
@@ -538,8 +543,8 @@ KnxProtocol.define('KNXNetHeader', {
       }
       default: {
         throw String.format(
-          "KNXNetHeader: unhandled serviceType = %s",
-          KnxConstants.keyText('SERVICE_TYPE', hdr.service_type));
+          "write KNXNetHeader: unhandled serviceType = %s",
+          KnxConstants.keyText('SERVICE_TYPE', value || value.service_type));
       }
 
     }
