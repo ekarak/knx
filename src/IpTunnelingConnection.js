@@ -26,18 +26,22 @@ IpTunnelingConnection.prototype.BindSocket = function( cb ) {
   var udpSocket = dgram.createSocket("udp4");
   // bind incoming UDP packet handler
   udpSocket.on("message", function(msg, rinfo, callback) {
-    if (this.debug) console.log("received message: %j from %j:%d", msg, rinfo.address, rinfo.port);
+    // get the incoming packet's service type ...
     var reader = KnxNetProtocol.createReader(msg);
-    reader.KNXNetHeader('packet');
-    conn.lastRcvdDatagram = reader.next()['packet'];
-    if (this.debug) console.log("decoded packet: %j", conn.lastRcvdDatagram);
-    // get the incoming packet's service type...
-    var st = KnxConstants.keyText('SERVICE_TYPE', conn.lastRcvdDatagram.service_type);
-    // ... to drive the state machinej
-    console.log('* %s => %j', st, KnxNetStateMachine.compositeState(conn))
+    reader.KNXNetHeader('tmp');
+    var dg = reader.next()['tmp'];
+    var svctype = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
+    // append the CEMI service type if this is a tunneling request...
+    var cemitype = (dg.service_type == 1056) ? KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode) : "";
+    if (conn.debug) console.log(
+      "received %s(/%s) message: %j from %j:%d, decoded packet: %j",
+      svctype, cemitype, msg, rinfo.address, rinfo.port, dg
+    );
+    // ... to drive the state machine
+    var signal = util.format('recv_%s', svctype);
+    console.log('* %s => %j', signal, KnxNetStateMachine.compositeState(conn))
     //if (typeof KnxNetStateMachine[st] == 'function') {
-      console.log('dispatching %s to state machine', st);
-      KnxNetStateMachine.handle(conn, st);
+      KnxNetStateMachine.handle(conn, signal, dg);
     //}
   });
   udpSocket.bind(function() {
@@ -51,12 +55,12 @@ IpTunnelingConnection.prototype.BindSocket = function( cb ) {
 IpTunnelingConnection.prototype.Send = function(channel, buf, callback) {
   var self = this;
   if (self.debug) {
+    console.log('IpTunneling.Send (%d bytes) ==> %j', buf.length, buf);
     var reader = KnxNetProtocol.createReader(buf);
     reader.KNXNetHeader('packet');
     var decoded = reader.next()['packet'];
     //
-    console.log('IpTunneling.Send (%d bytes) ==> %j\n\t%s',
-      buf.length, buf, JSON.stringify(decoded, null, 4));
+    console.log('IpTunneling.Send ==> %s', JSON.stringify(decoded, null, 4));
   }
   channel.send(
     buf, 0, buf.length,

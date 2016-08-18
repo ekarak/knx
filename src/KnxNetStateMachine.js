@@ -71,20 +71,22 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
       _onExit: function( conn ) {
         this.debug(conn, "leaving connecting");
       },
-      CONNECT_RESPONSE: function (conn) {
+      recv_CONNECT_RESPONSE: function (conn, datagram) {
         var sm = this;
+        this.debug(conn, util.format('got connect response'));
         // store channel ID into the Connection object
-        conn.channel_id = conn.lastRcvdDatagram.connstate.channel_id;
-        this.debug(conn, util.format('got connect response: %j', conn.lastRcvdDatagram));
+        conn.channel_id = datagram.connstate.channel_id;
         //
         conn.Request(KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST, function() {
           sm.debug(conn, 'sent CONNECTIONSTATE_REQUEST');
         })
       },
-      CONNECTIONSTATE_RESPONSE: function (conn) {
+      recv_CONNECTIONSTATE_RESPONSE: function (conn, datagram) {
         var sm = this;
-        var str = KnxConstants.keyText('RESPONSECODE', conn.lastRcvdDatagram.connstate.status);
-        this.debug(conn, 'CONNECTED! got connection state response, connstate: '+str);
+        var str = KnxConstants.keyText('RESPONSECODE', datagram.connstate.status);
+        this.debug(conn, util.format(
+          'CONNECTED! got connection state response, connstate: %s, channel ID: %d',
+          str, datagram.connstate.channel_id));
         clearTimeout( this.connecttimer );
         // ready to go!
         this.transition( conn, 'idle');
@@ -96,22 +98,28 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
       _onEnter: function( conn ) {
         this.debug(conn, "setting idle timer");
         this.idletimer = setTimeout( function() {
-          this.debug( conn, "idletimer fired");
           this.transition( conn, "requestingConnState" );
         }.bind( this ), 30000 );
           // machina FSMs are event emitters. Here we're
           // emitting a custom event and data, etc.
           this.emit( "state", { status: "IDLE" } );
       },
-      TUNNELLING_REQUEST: function ( conn ) {
-        var sm = this;
-        //this.transition( conn, 'sendingTunnelingRequest' );
-        clearTimeout(this.idletimer);
-        console.log('setting up tunnreq timeout');
-        this.tunnelingRequestTimer = setTimeout( function() {
-          sm.debug( conn, 'timed out waiting for TUNNELING_ACK')
-          sm.handle( conn, "timeout" );
-        }.bind( this ), 1000 );
+      sent_TUNNELLING_REQUEST: function ( conn ) {
+        this.transition( conn, 'sendingTunnelingRequest' );
+      },
+      recv_TUNNELLING_REQUEST: function( conn, datagram ) {
+        this.debug( conn, util.format('received TUNNELING REQUEST (%d bytes)', datagram.total_length) );
+        var event;
+        switch(datagram.cemi.msgcode) {
+          case KnxConstants.MESSAGECODES["L_Data.req"]: // requesting a data frame
+          case KnxConstants.MESSAGECODES["L_Data.ind"]: // received a data frame
+          case KnxConstants.MESSAGECODES["L_Data.con"]: // TODO
+        }
+        this.emit("event",
+          event,
+          datagram.cemi.src_addr,
+          datagram.cemi.dest_addr,
+          datagram.cemi.apdu);
       },
       _onExit: function( conn ) {
           clearTimeout( this.idletimer );
@@ -131,7 +139,7 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
         }.bind( this ), 1000 );
         this.emit( "state", { status: "CONNECTIONSTATE_REQUEST" } );
       },
-      CONNECTIONSTATE_RESPONSE: function (conn) {
+      recv_CONNECTIONSTATE_RESPONSE: function (conn) {
         this.debug(conn, 'got connection state response - clearing timeout');
         clearTimeout( this.connstatetimer );
         this.transition( conn, 'idle');
@@ -139,10 +147,19 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
     },
     sendingTunnelingRequest:  {
       _onEnter: function ( conn ) {
-        //clearTimeout(this.idletimer);
+        var sm = this;
+        sm.debug(conn, 'setting up tunnreq timeout');
+        this.tunnelingRequestTimer = setTimeout( function() {
+          sm.handle( conn, "timeout" );
+        }.bind( this ), 1000 );
       },
-      TUNNELING_ACK: function (conn) {
+      recv_TUNNELING_ACK: function (conn) {
         clearTimeout(this.tunnelingRequestTimer);
+        this.debug( conn, 'clearing timeout, TUNNELING_ACK received')
+      },
+      timeout: function (conn) {
+        this.debug( conn, 'timed out waiting for TUNNELING_ACK');
+        this.transition( conn, 'connecting');
       }
     }
   }

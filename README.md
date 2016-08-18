@@ -44,8 +44,7 @@ var connection = new IpTunnelingConnection( {ipAddr: '192.168.2.222', ipPort: 36
 ### Bind to connection events
 
 ```js
-// write event: device with physical address 'src', writes 'value' to
-// group address 'dest'
+// device with 'src' physical address wrote 'value' to 'dest' group address
 connection.on('write', function (src, dest, value) { ... });
 // read event: device with physical address 'src', is asking on the KNX
 // bus the current value of group address 'dest'

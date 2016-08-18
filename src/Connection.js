@@ -96,6 +96,7 @@ Connection.prototype.Disconnect = function (callback) {
     throw "unimplemented"
 }
 
+
 Connection.prototype.AddConnState = function (datagram) {
   datagram.connstate = {
     channel_id: this.channel_id,
@@ -106,9 +107,9 @@ Connection.prototype.AddConnState = function (datagram) {
 Connection.prototype.AddTunnState = function (datagram) {
   // add the remote IP router's endpoint
   datagram.tunnstate = {
-    channel_id: this.channel_id,
-    seqnum:     this.GenerateSequenceNumber(),
-    protocol_type:1, // UDP
+    channel_id:      this.channel_id,
+    seqnum:          this.GenerateSequenceNumber(),
+    protocol_type:   1, // UDP
     tunnel_endpoint: this.remoteEndpoint.addr + ':' + this.remoteEndpoint.port
   }
 }
@@ -123,13 +124,15 @@ Connection.prototype.AddCRI = function (datagram) {
 }
 
 Connection.prototype.AddCEMI = function(datagram) {
+  var apcicode = KnxConstants.APCICODES.indexOf('A_GroupValue_Write');
+  console.log('apci code == %d', apcicode)
   datagram.cemi = {
-    msgcode: 0x11, //L_Data.req
+    msgcode: 0x11, // FIXME: L_Data.req
     ctrl: {
       frameType   : 1, // 0=extended 1=standard
       reserved    : 0,
       repeat      : 1,
-      broadcast   : 0,
+      broadcast   : 1,
       priority    : 1, // 0-system 1-normal 2-urgent 3-low
       acknowledge : 1, // FIXME: only for L_Data.req
       confirm     : 0, // FIXME: only for L_Data.con 0-ok 1-error
@@ -139,15 +142,19 @@ Connection.prototype.AddCEMI = function(datagram) {
       extendedFrame: 0
     },
     src_addr: "15.15.15", // FIXME: add local physical address property
-    dest_addr: "0/0/15", // FIXME
-    tpdu: 0x00,
-    apdu: new Buffer([0,0]) // FIXME
+    dest_addr: "1/0/50", // FIXME
+    // apdu: new Buffer([0,1]) // FIXME
+    apdu: {
+      apci: apcicode,
+      tpci: 0,
+      data: 1
+    }
   }
 }
 Connection.prototype.Request = function (type, callback) {
   var datagram = this.prepareDatagram( type );
   var st = KnxConstants.keyText('SERVICE_TYPE', type);
-  // select which UDP channel we should use
+  // select which UDP channel we should use (control/tunnel)
   var channel = [
     KnxConstants.SERVICE_TYPE.CONNECT_REQUEST,
     KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST,

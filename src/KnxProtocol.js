@@ -16,7 +16,7 @@ function knxlen(objectName, context) {
   if (typeof lf === 'function') {
     if (!context) throw "Length functions require a context";
     var val = lf(context);
-    if (!val) throw "No value returned by length function";
+    if (!val) throw "No value returned by length function for "+objectName;
     return val
   }
   else
@@ -174,9 +174,9 @@ KnxProtocol.define('HPAI', {
         console.log('read HPAI: %j', hdr);
         console.log("     HPAI: proto = %s", KnxConstants.keyText('PROTOCOL_TYPE', hdr.protocol_type));
       }
-      switch (hdr.service_type) {
+      switch (hdr.protocol_type) {
         case KnxConstants.PROTOCOL_TYPE.IPV4_TCP:
-          throw "TCP is unsupported";
+          throw "TCP is not supported";
         default:
       }
     })
@@ -258,7 +258,6 @@ KnxProtocol.lengths['HPAI'] = 8;
 // | Code   | Length |        |        |                |                | Length |                |
 // +--------+--------+--------+--------+----------------+----------------+--------+----------------+
 //   1 byte   1 byte   1 byte   1 byte      2 bytes          2 bytes       1 byte      2 bytes
-//
 /*
 Control Field 1
           Bit  |
@@ -346,32 +345,96 @@ var ctrlStruct = new Parser()
   .bit3('hopCount')
   .bit4('extendedFrame');
 
+// most common APDU: 2 bytes, tcpi = 6 bits, apci = 4 bits, remaining 6 bits = data
+var apduStruct = new Parser()
+  .bit6('tpci')
+  .bit4('apci')
+  .bit6('data')
+
+// less common APDU: tpci = 6 bits, apci= 10 bits, data follows
+var apduStructLong = new Parser()
+  .bit6('tpci')
+  .bit10('apci')
+
+KnxProtocol.define('APDU', {
+  read: function (propertyName) {
+    this.pushStack({ apdu_length: null, apdu_raw: null, tpci: null, apci: null, data: null })
+    .Int8('apdu_length')
+    .tap(function (hdr) {
+      console.log('--- parsing extra %d apdu bytes', hdr.apdu_length+1);
+      this.raw('apdu_raw', hdr.apdu_length+1);
+    })
+    .tap(function (hdr) {
+      // Parse the APDU. tcpi/apci bits split across byte boundary.
+      // Typical example of protocol designed by committee.
+      console.log('%j', hdr)
+      var apdu;
+      if (hdr.apdu_length == 1) {
+        apdu = apduStruct.parse(hdr.apdu_raw);
+      } else {
+        apdu = apduStructLong.parse(hdr.apdu_raw);
+        apdu.data = hdr.apdu_raw.slice(2);
+      }
+      hdr.tpci = apdu.tpci;
+      hdr.apci = apdu.apci;
+      hdr.data = apdu.data;
+    })
+    .popStack(propertyName, function (data) {
+      return data;
+    });
+  },
+  write: function (value) {
+    if (!value)      throw "cannot write null APDU value";
+    var total_length = knxlen('APDU', value);
+    if (total_length < 3) throw "APDU is too short"
+    console.log('APDU.write: \t%j (total %d bytes)', value, total_length);
+    this.Int8(total_length - 2);
+    if (total_length == 3) {
+      // commonest case:
+      // apdu_length(1 byte) + tpci: 6 bits + apci: 4 bits, data: 6 bits (2 bytes)
+      var word =
+        value.tpci * 0x400 +
+        value.apci * 0x40 +
+        value.data;
+      console.log('data==%d', value.data)
+      this.UInt16BE(word);
+    } else {
+      // tpci:6 bits + apci:10 bits
+      var word =
+        value.tpci * 0x400 +
+        value.apci ;
+      this.UInt16BE(word);
+      this.raw(value.data || new Buffer(), apdu_length);
+    }
+  }
+});
+KnxProtocol.lengths['APDU'] = function(value) {
+console.log(value);
+  if (value.apdu_length) {
+    return 1 + value.apdu_length;
+  } else if (value instanceof Buffer) {
+    return 1 + value.length;
+  } else {
+    return 3; // hard assumption
+  }
+}
+
 KnxProtocol.define('CEMI', {
- read: function (propertyName) {
-    this.pushStack({ msgcode: 0, addinfo_length: -1, ctrl: null, src_addr: null, dest_addr: null, apdu_length: null, tpdu: null, apdu: null })
+  read: function (propertyName) {
+    this.pushStack({ msgcode: 0, addinfo_length: -1, ctrl: null, src_addr: null, dest_addr: null, apdu: null })
     .Int8('msgcode')
     .Int8('addinfo_length')
     .raw('ctrl', 2)
     .raw('src_addr', 2)
     .raw('dest_addr', 2)
-    .Int8('apdu_length')
-    .Int8('tpdu')
+    .APDU('apdu')
     .tap(function (hdr) {
+      console.log('--- APDU as seen from CEMI==%j', hdr.apdu);
       // parse 16bit control field
       hdr.ctrl = ctrlStruct.parse(hdr.ctrl);
-      if (KnxProtocol.debug) console.log("ctrl fields: %j", hdr.ctrl);
-      // TODO: convert addresses to string
-      switch(hdr.msgcode) {
-        case KnxConstants.MESSAGECODES["L_Data.req"]: // requesting a data frame
-        case KnxConstants.MESSAGECODES["L_Data.ind"]: // received a data frame
-        case KnxConstants.MESSAGECODES["L_Data.con"]: // received a data frame
-          this.raw('apdu', hdr.apdu_length);
-          hdr.src_addr  = KnxAddress.toString(hdr.src_addr, KnxAddress.TYPE.PHYSICAL);
-          hdr.dest_addr = KnxAddress.toString(hdr.dest_addr, hdr.ctrl.destAddrType);
-          break;
-        default:
-          throw "Unhandled message code: "+KnxConstants.keyText('MESSAGECODES', hdr.msgcode);
-      }
+      // KNX source addresses are always physical
+      hdr.src_addr  = KnxAddress.toString(hdr.src_addr, KnxAddress.TYPE.PHYSICAL);
+      hdr.dest_addr = KnxAddress.toString(hdr.dest_addr, hdr.ctrl.destAddrType);
       return hdr;
     })
     .popStack(propertyName, function (data) {
@@ -402,14 +465,13 @@ KnxProtocol.define('CEMI', {
       .UInt8(ctrlField2)
       .raw(KnxAddress.parse(value.src_addr, KnxAddress.TYPE.PHYSICAL), 2)
       .raw(KnxAddress.parse(value.dest_addr, value.ctrl.destAddrType), 2)
-      .Int8(value.apdu_length)
-      .Int8(value.tpdu)
-      .raw(value.apdu, value.apdu.length);
+      .APDU(value.apdu);
   }
 });
 KnxProtocol.lengths['CEMI'] = function(value) {
-  //console.log('knxlen of cemi: %j == %d', value, 10 + value.apdu.length);
-  return 10 + value.apdu.length;
+  var apdu_length = knxlen('APDU', value.apdu);
+  console.log('knxlen of cemi: %j == %d', value, 8 + apdu_length);
+  return 8 + apdu_length;
 }
 
 KnxProtocol.define('KNXNetHeader', {
@@ -482,7 +544,7 @@ KnxProtocol.define('KNXNetHeader', {
     this
       .Int8(6)    // header length (6 bytes constant)
       .Int8(0x10) // protocol version 1.0
-      .Int16BE(value.service_type) // service_type
+      .Int16BE(value.service_type);
     switch (value.service_type) {
       //case SERVICE_TYPE.SEARCH_REQUEST:
       case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST: {
