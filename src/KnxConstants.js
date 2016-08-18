@@ -1,3 +1,8 @@
+/**
+* knx.js - a pure Javascript library for KNX
+* (C) 2016 Elias Karakoulakis
+*/
+
 // SOURCES:
 // http://knxnetipdissect.sourceforge.net/doc.html
 // http://dz.prosyst.com/pdoc/mBS_SH_SDK_7.3.0/modules/knx/api/com/prosyst/mbs/services/knx/ip/Constants.html

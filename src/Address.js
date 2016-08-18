@@ -1,3 +1,8 @@
+/**
+* knx.js - a pure Javascript library for KNX
+* (C) 2016 Elias Karakoulakis
+*/
+
 var Parser = require('binary-parser').Parser;
 
 //           +-----------------------------------------------+

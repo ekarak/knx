@@ -1,8 +1,8 @@
 /**
- * KNX Routing support (IP Multicast)
- * Created by ekarak on 01.05.2016.
- */
-var CONNECT_TIMEOUT = 5000;
+* knx.js - a pure Javascript library for KNX
+* (C) 2016 Elias Karakoulakis
+*/
+
 var KnxConnection = require('./Connection');
 
 var util = require('util');

@@ -1,3 +1,8 @@
+/**
+* knx.js - a pure Javascript library for KNX
+* (C) 2016 Elias Karakoulakis
+*/
+
 var machina = require('machina');
 const util = require('util');
 var KnxConstants = require('./KnxConstants.js');
@@ -149,7 +154,7 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
         }.bind( this ), 1000 );
         this.emit( "state", { status: "CONNECTIONSTATE_REQUEST" } );
       },
-      recv_CONNECTIONSTATE_RESPONSE: function (conn) {
+      recv_CONNECTIONSTATE_RESPONSE: function ( conn, datagram ) {
         this.debug(conn, 'got connection state response - clearing timeout');
         this.transition( conn, 'idle');
       },
@@ -166,7 +171,7 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
           sm.handle( conn, "timeout" );
         }.bind( this ), 1000 );
       },
-      recv_TUNNELING_ACK: function (conn, datagram) {
+      recv_TUNNELING_ACK: function ( conn, datagram ) {
         this.debug( conn, 'TUNNELING_ACK received')
         this.transition ( conn, 'ackingTunnelingRequest', datagram )
       },
@@ -182,7 +187,7 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
         sm.lastSentDatagram = datagram;
         sm.debug(conn, 'setting up tunnreq timeout');
       },
-      recv_TUNNELING_REQUEST: function (conn, datagram) {
+      recv_TUNNELING_REQUEST: function ( conn, datagram ) {
         var sm = this;
         // TODO: compare datagrams sm.lastSentDatagram == dg ??
         conn.Request(KnxConstants.SERVICE_TYPE.TUNNELING_ACK, function() {
@@ -195,7 +200,7 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
     },
     // INBOUND tunneling request (event from KNX bus)
     receivedTunnelingRequest: {
-      recv_TUNNELING_REQUEST: function (conn, datagram) {
+      recv_TUNNELING_REQUEST: function ( conn, datagram ) {
         var sm = this;
         this.debug( conn, util.format('received INBOUND tunelling request (%d bytes)', datagram.total_length) );
         this.emit("event",

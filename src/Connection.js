@@ -1,6 +1,7 @@
 /**
- *
- */
+* knx.js - a pure Javascript library for KNX
+* (C) 2016 Elias Karakoulakis
+*/
 var os = require('os');
 var util = require('util');
 var dgram = require('dgram');

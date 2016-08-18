@@ -1,3 +1,7 @@
+/**
+* knx.js - a pure Javascript library for KNX
+* (C) 2016 Elias Karakoulakis
+*/
 var util = require('util');
 var ipv4 = require('ipv4.js');
 var Parser = require('binary-parser').Parser;

@@ -1,5 +1,8 @@
 /**
- */
+* knx.js - a pure Javascript library for KNX
+* (C) 2016 Elias Karakoulakis
+*/
+
 const Connection = require('./Connection');
 const KnxNetProtocol = require('./KnxProtocol');
 const KnxNetStateMachine = require('./KnxNetStateMachine');
