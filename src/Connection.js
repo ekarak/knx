@@ -193,7 +193,7 @@ Connection.prototype.prepareDatagram = function (svcType) {
       this.AddTunnState(datagram);
       this.AddCRI(datagram);
     }
-    case KnxConstants.SERVICE_TYPE.TUNNELLING_REQUEST: {
+    case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST: {
       this.AddTunnState(datagram);
       this.AddCEMI(datagram);
     }
@@ -205,7 +205,7 @@ Connection.prototype.Send = function(datagram) {
   console.log("WARNING: not sending datagram, you need to override Connection.Send() function");
 }
 Connection.prototype.Read = function(grpaddr) {
-  this.Request(KnxConstants.SERVICE_TYPE.TUNNELLING_REQUEST, function() {
+  this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function() {
     console.log('sent TUNNELING_REQUEST');
   });
 

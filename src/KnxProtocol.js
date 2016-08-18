@@ -152,11 +152,11 @@ KnxProtocol.lengths['TunnState'] = 4;
 //   creq[12-13] =  /* IPv4 local port number for CONNECTION, CONNECTIONSTAT and DISCONNECT requests */
 // ==> 8 bytes
 
-/* Tunnelling HPAI */
+/* Tunneling HPAI */
 //   creq[14]    =  /* Host Protocol Address Information (HPAI) Lenght */
 //   creq[15]    =  /* IPv4 protocol UDP = 0x01, TCP = 0x02; */
 //   creq[16-19] =  /* IPv4 address  */
-//   creq[20-21] =  /* IPv4 local port number for TUNNELLING requests */
+//   creq[20-21] =  /* IPv4 local port number for TUNNELING requests */
 // ==> 8 bytes
 KnxProtocol.define('HPAI', {
   read: function (propertyName) {
@@ -361,7 +361,7 @@ KnxProtocol.define('APDU', {
     this.pushStack({ apdu_length: null, apdu_raw: null, tpci: null, apci: null, data: null })
     .Int8('apdu_length')
     .tap(function (hdr) {
-      console.log('--- parsing extra %d apdu bytes', hdr.apdu_length+1);
+      //console.log('--- parsing extra %d apdu bytes', hdr.apdu_length+1);
       this.raw('apdu_raw', hdr.apdu_length+1);
     })
     .tap(function (hdr) {
@@ -429,7 +429,7 @@ KnxProtocol.define('CEMI', {
     .raw('dest_addr', 2)
     .APDU('apdu')
     .tap(function (hdr) {
-      console.log('--- APDU as seen from CEMI==%j', hdr.apdu);
+      //console.log('--- APDU as seen from CEMI==%j', hdr.apdu);
       // parse 16bit control field
       hdr.ctrl = ctrlStruct.parse(hdr.ctrl);
       // KNX source addresses are always physical
@@ -516,13 +516,13 @@ KnxProtocol.define('KNXNetHeader', {
           break;
         }
         // most common case:
-        case KnxConstants.SERVICE_TYPE.TUNNELLING_REQUEST: {
+        case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST: {
           this
             .TunnState('tunnstate')
             .CEMI('cemi');
           break;
         }
-        case KnxConstants.SERVICE_TYPE.TUNNELLING_ACK: {
+        case KnxConstants.SERVICE_TYPE.TUNNELING_ACK: {
           this
             .TunnState('connstate');
           break;
@@ -588,7 +588,7 @@ KnxProtocol.define('KNXNetHeader', {
         break;
       }
       // most common case:
-      case KnxConstants.SERVICE_TYPE.TUNNELLING_REQUEST: {
+      case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST: {
         value.total_length += (knxlen('TunnState') + knxlen('CEMI', value.cemi));
         this
           .Int16BE(value.total_length)
@@ -596,7 +596,7 @@ KnxProtocol.define('KNXNetHeader', {
           .CEMI(value.cemi);
         break;
       }
-      case KnxConstants.SERVICE_TYPE.TUNNELLING_ACK: {
+      case KnxConstants.SERVICE_TYPE.TUNNELING_ACK: {
         value.total_length += (knxlen('TunnState') + knxlen('CEMI', value.cemi));
         this
           .Int16BE(value.total_length) //

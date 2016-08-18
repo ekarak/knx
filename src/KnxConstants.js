@@ -16,8 +16,8 @@ KnxConstants.SERVICE_TYPE = {
     DISCONNECT_RESPONSE:  0x020a,
     DEVICE_CONFIGURATION_REQUEST: 0x0310,
     DEVICE_CONFIGURATION_ACK:     0x0311,
-    TUNNELLING_REQUEST: 0x0420,
-    TUNNELLING_ACK:     0x0421,
+    TUNNELING_REQUEST: 0x0420,
+    TUNNELING_ACK:     0x0421,
     ROUTING_INDICATION:   0x0530,
     ROUTING_LOST_MESSAGE: 0x0531,
     UNKNOWN: -1
@@ -59,7 +59,7 @@ KnxConstants.RESPONSECODE = {
   E_NO_MORE_CONNECTIONS: 0x24, //  - The KNXnet/IP server could not accept the new data connection (Maximum reached)
   E_DATA_CONNECTION: 0x26,// - The KNXnet/IP server device detected an erro concerning the Dat connection with the given ID
   E_KNX_CONNECTION: 0x27,  // - The KNXnet/IP server device detected an error concerning the KNX Bus with the given ID
-  E_TUNNELLING_LAYER: 0x29,
+  E_TUNNELING_LAYER: 0x29,
 }
 
 KnxConstants.MESSAGECODES = {

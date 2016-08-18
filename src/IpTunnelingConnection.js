@@ -33,10 +33,7 @@ IpTunnelingConnection.prototype.BindSocket = function( cb ) {
     var svctype = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
     // append the CEMI service type if this is a tunneling request...
     var cemitype = (dg.service_type == 1056) ? KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode) : "";
-    if (conn.debug) console.log(
-      "received %s(/%s) message: %j from %j:%d, decoded packet: %j",
-      svctype, cemitype, msg, rinfo.address, rinfo.port, dg
-    );
+    //if (conn.debug) console.log("received %s(/%s) message: %j from %j:%d, datagram: %j", svctype, cemitype, msg, rinfo.address, rinfo.port, dg );
     // ... to drive the state machine
     var signal = util.format('recv_%s', svctype);
     console.log('* %s => %j', signal, KnxNetStateMachine.compositeState(conn))
@@ -53,23 +50,27 @@ IpTunnelingConnection.prototype.BindSocket = function( cb ) {
 
 /* FIXME: cuurently sends only through the control connection */
 IpTunnelingConnection.prototype.Send = function(channel, buf, callback) {
-  var self = this;
-  if (self.debug) {
+  var conn = this;
+  var reader = KnxNetProtocol.createReader(buf);
+  reader.KNXNetHeader('packet');
+  var dg = reader.next()['packet'];
+  var svctype = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
+  if (conn.debug) {
     console.log('IpTunneling.Send (%d bytes) ==> %j', buf.length, buf);
-    var reader = KnxNetProtocol.createReader(buf);
-    reader.KNXNetHeader('packet');
-    var decoded = reader.next()['packet'];
-    //
-    console.log('IpTunneling.Send ==> %s', JSON.stringify(decoded, null, 4));
+    //console.log('IpTunneling.Send ==> %s', JSON.stringify(dg, null, 4));
   }
   channel.send(
     buf, 0, buf.length,
     this.remoteEndpoint.port, this.remoteEndpoint.addr,
     function (err) {
-        if (self.debug)
+        if (conn.debug)
             console.log('udp sent, err[' + (err ? err.toString() : 'no_err') + ']');
         if (typeof callback === 'function') callback(err);
-  });
+    });
+  // ... then drive the state machine
+  var signal = util.format('sent_%s', svctype);
+  console.log('* %s => %j', signal, KnxNetStateMachine.compositeState(conn));
+  KnxNetStateMachine.handle( conn, signal, dg );
 }
 
 IpTunnelingConnection.prototype.AddHPAI = function (datagram) {
