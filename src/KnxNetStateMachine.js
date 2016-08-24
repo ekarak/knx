@@ -57,7 +57,7 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
           this.handle( conn, "connect-timeout" );
         }.bind( this ), 3000 );
         //
-        conn.Request(KnxConstants.SERVICE_TYPE.CONNECT_REQUEST, function() {
+        conn.Request(KnxConstants.SERVICE_TYPE.CONNECT_REQUEST, null, function() {
           sm.debug(conn, 'sent CONNECT_REQUEST');
         });
       },
@@ -79,7 +79,7 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
         // store channel ID into the Connection object
         conn.channel_id = datagram.connstate.channel_id;
         //
-        conn.Request(KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST, function() {
+        conn.Request(KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST, null, function() {
           sm.debug(conn, 'sent CONNECTIONSTATE_REQUEST');
         })
       },
@@ -103,7 +103,7 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
           this.handle( conn, "disconnect-timeout" );
         }.bind( this ), 3000 );
         //
-        conn.Request(KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST, function() {
+        conn.Request(KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST, null, function() {
           sm.debug(conn, 'sent DISCONNECT_REQUEST');
         });
       },
@@ -134,7 +134,7 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
       },
       // receive an INBOUND tunneling request
       recv_TUNNELING_REQUEST: function( conn, datagram ) {
-        this.transition( conn, 'receivedTunnelingRequest' );
+        this.transition( conn, 'receivedTunnelingRequest', datagram );
       },
       _onExit: function( conn ) {
         clearTimeout( this.idletimer );
@@ -145,9 +145,11 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
       _onEnter: function( conn ) {
         var sm = this;
         this.debug(conn, 'requesting Connection State');
-        conn.Request(KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST, function() {
+        var dg = conn.prepareDatagram(KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST);
+        conn.Request(dg, null, function() {
           sm.debug(conn, 'sent CONNECTIONSTATE_REQUEST');
-        })
+        });
+        //
         this.connstatetimer = setTimeout( function() {
           sm.debug( conn, 'timed out waiting for connection state')
           sm.handle( conn, "CONNECTIONSTATE_timeout" );
@@ -166,16 +168,17 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
     sendingTunnelingRequest:  {
       _onEnter: function ( conn, datagram ) {
         var sm = this;
-        sm.debug(conn, 'setting up tunnreq timeout');
+        sm.debug(conn, 'setting up tunnreq timeout for %j', datagram);
         this.tunnelingRequestTimer = setTimeout( function() {
-          sm.handle( conn, "timeout" );
+          sm.handle( conn, "timeout", datagram );
         }.bind( this ), 1000 );
       },
       recv_TUNNELING_ACK: function ( conn, datagram ) {
         this.debug( conn, 'TUNNELING_ACK received')
+        // TODO: compare
         this.transition ( conn, 'ackingTunnelingRequest', datagram )
       },
-      timeout: function (conn) {
+      timeout: function (conn, datagram) {
         this.debug( conn, 'timed out waiting for outgoing TUNNELING_ACK');
         this.transition( conn, 'connecting');
       },
@@ -190,11 +193,12 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
       recv_TUNNELING_REQUEST: function ( conn, datagram ) {
         var sm = this;
         // TODO: compare datagrams sm.lastSentDatagram == dg ??
-        conn.Request(KnxConstants.SERVICE_TYPE.TUNNELING_ACK, function() {
-          sm.transition( conn, 'idle' );
+        conn.Request(KnxConstants.SERVICE_TYPE.TUNNELING_ACK,
+          datagram, function() { // completion callback
+            sm.transition( conn, 'idle' );
         })
       },
-      _onExit: function( conn ) {
+      _onExit: function( conn, datagram ) {
         clearTimeout( this.tunnelingRequestTimer );
       },
     },
@@ -202,15 +206,23 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
     receivedTunnelingRequest: {
       recv_TUNNELING_REQUEST: function ( conn, datagram ) {
         var sm = this;
-        this.debug( conn, util.format('received INBOUND tunelling request (%d bytes)', datagram.total_length) );
+        var evtName = KnxConstants.keyText(KnxConstants.APCICODES, datagram.cemi.apdu.apci);
+        this.debug( conn, util.format(
+          'received INBOUND tunelling request (%d bytes) - %s',
+          datagram.total_length, evtName));
+        this.emit(KnxConstants.keyText(KnxConstants.APCICODES, datagram.cemi.apdu.apci),
+          datagram.cemi.src_addr,
+          datagram.cemi.dest_addr,
+          datagram.cemi.apdu.data // TODO: interpret data according to any defined datapoints
+        );
         this.emit("event",
           KnxConstants.keyText(KnxConstants.APCICODES, datagram.cemi.apdu.apci),
           datagram.cemi.src_addr,
           datagram.cemi.dest_addr,
           datagram.cemi.apdu.data
         );
-        // check IF THIS IS NEEDED (maybe look at apdu control fields)
-        conn.Request(KnxConstants.SERVICE_TYPE.TUNNELING_ACK, function() {
+        // check IF THIS IS NEEDED (maybe look at apdu control field for ack)
+        conn.Request(KnxConstants.SERVICE_TYPE.TUNNELING_ACK, datagram, function() {
           sm.transition( conn, 'idle' );
         });
       }

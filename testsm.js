@@ -11,7 +11,7 @@ connection.Connect(function() {
     console.log("KNX EVENT: %j, src: %j, dest: %j, value: %j", evt, src, dest, value);
   })
   console.log('             Now sending a Read request');
-  connection.Read('0/0/15');
+  connection.Write('1/0/50', 1);
 
 });
 

@@ -4,6 +4,7 @@
 */
 
 // SOURCES:
+// http://www.eb-systeme.de/?page_id=479
 // http://knxnetipdissect.sourceforge.net/doc.html
 // http://dz.prosyst.com/pdoc/mBS_SH_SDK_7.3.0/modules/knx/api/com/prosyst/mbs/services/knx/ip/Constants.html
 KnxConstants = {};
@@ -80,12 +81,12 @@ KnxConstants.MESSAGECODES = {
 };
 
 KnxConstants.APCICODES =
-  ["A_GroupValue_Read", "A_GroupValue_Response", "A_GroupValue_Write",
-  "A_PhysicalAddress_Write",  "A_PhysicalAddress_Read", "A_PhysicalAddress_Response",
-  "A_ADC_Read", "A_ADC_Response",
-  "A_Memory_Read", "A_Memory_Response", "A_Memory_Write",
-  "A_UserMemory", "A_DeviceDescriptor_Read", "A_DeviceDescriptor_Response",
-  "A_Restart", "A_OTHER"]
+  ["GroupValue_Read", "GroupValue_Response", "GroupValue_Write",
+  "PhysicalAddress_Write",  "PhysicalAddress_Read", "PhysicalAddress_Response",
+  "ADC_Read", "ADC_Response",
+  "Memory_Read", "Memory_Response", "Memory_Write",
+  "UserMemory", "DeviceDescriptor_Read", "DeviceDescriptor_Response",
+  "Restart", "OTHER"]
 
 
   /* TODO helper function to print enum keys */

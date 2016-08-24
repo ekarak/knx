@@ -97,7 +97,6 @@ Connection.prototype.Disconnect = function (callback) {
     throw "unimplemented"
 }
 
-
 Connection.prototype.AddConnState = function (datagram) {
   datagram.connstate = {
     channel_id: this.channel_id,
@@ -125,8 +124,6 @@ Connection.prototype.AddCRI = function (datagram) {
 }
 
 Connection.prototype.AddCEMI = function(datagram) {
-  var apcicode = KnxConstants.APCICODES.indexOf('A_GroupValue_Write');
-  console.log('apci code == %d', apcicode)
   datagram.cemi = {
     msgcode: 0x11, // FIXME: L_Data.req
     ctrl: {
@@ -143,17 +140,35 @@ Connection.prototype.AddCEMI = function(datagram) {
       extendedFrame: 0
     },
     src_addr: "15.15.15", // FIXME: add local physical address property
-    dest_addr: "1/0/50", // FIXME
-    // apdu: new Buffer([0,1]) // FIXME
+    dest_addr: "0/0/0", //
     apdu: {
-      apci: apcicode,
+      // default operation is GroupValue_Write
+      apci: KnxConstants.APCICODES.indexOf('GroupValue_Write'),
       tpci: 0,
       data: 1
     }
   }
 }
-Connection.prototype.Request = function (type, callback) {
-  var datagram = this.prepareDatagram( type );
+
+/*
+* send a request to KNX of
+* type: service type
+* datagram_template:
+*    if a datagram is passed, use this as
+*    if a function is passed, use this to DECORATE
+*    if NULL, then construct a new empty datagram. Look at AddXXX methods
+*/
+Connection.prototype.Request = function (type, datagram_template, callback) {
+  var self = this;
+  var datagram;
+  console.log(typeof datagram_template);
+  if (datagram_template != null) {
+    datagram = (typeof datagram_template == 'function') ?
+      datagram_template(this.prepareDatagram( type )) :
+      datagram_template;
+  } else {
+    datagram = this.prepareDatagram( type );
+  }
   var st = KnxConstants.keyText('SERVICE_TYPE', type);
   // select which UDP channel we should use (control/tunnel)
   var channel = [
@@ -161,12 +176,14 @@ Connection.prototype.Request = function (type, callback) {
     KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST,
     KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST]
     .indexOf(type) > -1 ?  this.control : this.tunnel;
-	if (this.debug) console.log("Sending %s %j via port %d", st, datagram, channel.address().port);
+	if (this.debug) console.log("*** Sending %s %j via port %d", st, datagram, channel.address().port);
   try {
     this.writer = KnxNetProtocol.createWriter();
     var packet = this.writer.KNXNetHeader(datagram);
-    KnxNetStateMachine.handle(this, st);
-    this.Send(channel, packet.buffer, callback);
+    this.Send(channel, packet.buffer, function() {
+      KnxNetStateMachine.handle(self, 'sent_'+st, datagram);
+      callback && callback();
+    });
   }
   catch (e) {
     console.log(e, e.stack);
@@ -205,11 +222,20 @@ Connection.prototype.prepareDatagram = function (svcType) {
 Connection.prototype.Send = function(datagram) {
   console.log("WARNING: not sending datagram, you need to override Connection.Send() function");
 }
-Connection.prototype.Read = function(grpaddr) {
-  this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function() {
-    console.log('sent TUNNELING_REQUEST');
+Connection.prototype.Write = function(grpaddr, value, dpt) {
+  this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
+    datagram.cemi.dest_addr = grpaddr;
+    datagram.cemi.apdu.data = value; // FIXME: use datapoints to format APDU
+    return datagram;
   });
-
+}
+Connection.prototype.Read = function(grpaddr) {
+  this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
+    // this is a READ request
+    datagram.cemi.apdu.apci = KnxConstants.APCICODES.indexOf("GroupValue_Read");
+    datagram.cemi.dest_addr = grpaddr;
+    return datagram;
+  });
 }
 
 module.exports = Connection;

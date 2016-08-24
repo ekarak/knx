@@ -44,18 +44,27 @@ var connection = new IpTunnelingConnection( {ipAddr: '192.168.2.222', ipPort: 36
 ### Bind to connection events
 
 ```js
-// device with 'src' physical address wrote 'value' to 'dest' group address
-connection.on('write', function (src, dest, value) { ... });
+// device with 'src' physical address wrote to 'dest' group address
+connection.on('GroupValue_Write', function (src, dest, value) { ... });
 // read event: device with physical address 'src', is asking on the KNX
 // bus the current value of group address 'dest'
-connection.on('read', function (src, dest) { ... });
+connection.on('GroupValue_Read', function (src, dest) { ... });
 // response event: device with physical address 'src', is responding to a
 // read request that the current value of group address 'dest' is 'value'
-connection.on('response', function (src, dest, value) { ... });
-// there's also the generic catch-all event which passes 'write/read/response'
-// as its 1st argument
+connection.on('GroupValue_Response', function (src, dest, value) { ... });
+// there's also the generic catch-all event which passes the event type
+// as its 1st argument, along with all the other info
 connection.on('event', function (evt, src, dest, value) { ... });)
+// here's the full list of events emitted:
+/*
+["GroupValue_Read", "GroupValue_Response", "GroupValue_Write",
+"PhysicalAddress_Write",  "PhysicalAddress_Read", "PhysicalAddress_Response",
+"ADC_Read", "ADC_Response", "Memory_Read", "Memory_Response", "Memory_Write",
+"UserMemory", "DeviceDescriptor_Read", "DeviceDescriptor_Response",
+"Restart", "OTHER"]
+*/
 ```
+
 
 ### Send some raw telegrams
 

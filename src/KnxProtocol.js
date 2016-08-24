@@ -37,7 +37,7 @@ KnxProtocol.define('IPv4Endpoint', {
        });
      },
   write: function (value) {
-    if (!value) throw "cannot write null value"
+    if (!value) throw "cannot write null value for IPv4Endpoint"
     else {
       if (!(typeof value === 'string' && value.match(/\d*\.\d*\.\d*\.\d*:\d*/))) {
         throw "Invalid IPv4 endpoint, please set a string as  'ip.add.re.ss:port'";
@@ -80,7 +80,7 @@ KnxProtocol.define('CRI', {
     });
   },
   write: function (value) {
-    if (!value) console.trace("CRI: cannot write null value")
+    if (!value) console.trace("CRI: cannot write null value for CRI")
     else {
       this
         .Int8(0x04) // length
@@ -104,7 +104,7 @@ KnxProtocol.define('ConnState', {
     });
   },
   write: function (value) {
-    if (!value) console.trace("cannot write null value")
+    if (!value) console.trace("cannot write null value for ConnState")
     else {
       this
         .Int8(value.channel_id)
@@ -136,7 +136,7 @@ KnxProtocol.define('TunnState', {
     });
   },
   write: function (value) {
-    if (!value) console.trace("TunnState: cannot write null value")
+    if (!value) console.trace("TunnState: cannot write null value for TunnState")
     else {
       if (KnxProtocol.debug) console.log('writing TunnState: %j', value);
       this
@@ -189,7 +189,7 @@ KnxProtocol.define('HPAI', {
     });
   },
   write: function (value) {
-    if (!value) console.trace("HPAI: cannot write null value")
+    if (!value) console.trace("HPAI: cannot write null value for HPAI")
     else {
       this
         .Int8(0x08) // length: 8 bytes
@@ -371,7 +371,7 @@ KnxProtocol.define('APDU', {
     .tap(function (hdr) {
       // Parse the APDU. tcpi/apci bits split across byte boundary.
       // Typical example of protocol designed by committee.
-      console.log('%j', hdr)
+      //console.log('%j', hdr)
       var apdu;
       if (hdr.apdu_length == 1) {
         apdu = apduStruct.parse(hdr.apdu_raw);
@@ -390,8 +390,8 @@ KnxProtocol.define('APDU', {
   write: function (value) {
     if (!value)      throw "cannot write null APDU value";
     var total_length = knxlen('APDU', value);
-    if (total_length < 3) throw "APDU is too short"
     console.log('APDU.write: \t%j (total %d bytes)', value, total_length);
+    if (total_length < 3) throw util.format("APDU is too short (%d bytes)", total_length);
     this.Int8(total_length - 2);
     if (total_length == 3) {
       // commonest case:
@@ -400,7 +400,7 @@ KnxProtocol.define('APDU', {
         value.tpci * 0x400 +
         value.apci * 0x40 +
         value.data;
-      console.log('data==%d', value.data)
+      //console.log('data==%d', value.data)
       this.UInt16BE(word);
     } else {
       // tpci:6 bits + apci:10 bits
@@ -408,15 +408,13 @@ KnxProtocol.define('APDU', {
         value.tpci * 0x400 +
         value.apci ;
       this.UInt16BE(word);
-      this.raw(value.data || new Buffer(), apdu_length);
+      this.raw(value.data || new Buffer(), total_length-3);
     }
   }
 });
 KnxProtocol.lengths['APDU'] = function(value) {
-console.log(value);
-  if (value.apdu_length) {
-    return 1 + value.apdu_length;
-  } else if (value instanceof Buffer) {
+//console.log(value);
+  if (value instanceof Buffer) {
     return 1 + value.length;
   } else {
     return 3; // hard assumption
@@ -446,7 +444,7 @@ KnxProtocol.define('CEMI', {
     });
   },
   write: function (value) {
-    if (!value)      throw "cannot write null value";
+    if (!value)      throw "cannot write null CEMI value";
     //console.log('CEMI.write: \n\t%j', value);
     if (value.apdu === null) throw "no APDU supplied";
     if (value.ctrl === null) throw "no Control Field supplied";
@@ -543,7 +541,7 @@ KnxProtocol.define('KNXNetHeader', {
   },
   write: function (value) {
     //console.log("writing KnxHeader:", value);
-    if (!value) throw "cannot write null value"
+    if (!value) throw "cannot write null KNXNetHeader value"
     value.total_length = 6;
     this
       .Int8(6)    // header length (6 bytes constant)

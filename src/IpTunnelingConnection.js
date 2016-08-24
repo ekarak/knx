@@ -36,7 +36,7 @@ IpTunnelingConnection.prototype.BindSocket = function( cb ) {
     var svctype = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
     // append the CEMI service type if this is a tunneling request...
     var cemitype = (dg.service_type == 1056) ? KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode) : "";
-    //if (conn.debug) console.log("received %s(/%s) message: %j from %j:%d, datagram: %j", svctype, cemitype, msg, rinfo.address, rinfo.port, dg );
+    if (conn.debug) console.log("*** Received %s(/%s) message: %j from %j:%d, datagram: %j", svctype, cemitype, msg, rinfo.address, rinfo.port, dg );
     // ... to drive the state machine
     var signal = util.format('recv_%s', svctype);
     console.log('* %s => %j', signal, KnxNetStateMachine.compositeState(conn))
