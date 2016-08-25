@@ -18,7 +18,11 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
   },
 
   debug: function (conn, msg) {
-    console.log('* SM (%s): %s', this.compositeState(conn), msg);
+    console.log('%s (state=%s): %s',
+      new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''),
+      this.compositeState(conn),
+      msg
+    );
   },
 
   namespace: "knxnet",
@@ -54,19 +58,12 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
         var sm = this;
         sm.connecttimer = setTimeout( function() {
           sm.debug(conn, 'connection timed out');
-          this.handle( conn, "connect-timeout" );
+          sm.transition( conn, "uninitialized" );
         }.bind( this ), 3000 );
         //
         conn.Request(KnxConstants.SERVICE_TYPE.CONNECT_REQUEST, null, function() {
           sm.debug(conn, 'sent CONNECT_REQUEST');
         });
-      },
-      // If all you need to do is transition to a new state
-      // inside an input handler, you can provide the string
-      // name of the state in place of the input handler function.
-      "connect-timeout": function (conn) {
-        this.debug(conn, "connection timed out");
-        this.transition(conn, "uninitialized")
       },
       // _onExit is a special handler that is invoked just before
       // the FSM leaves the current state and transitions to another
@@ -122,19 +119,19 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
     // while idle we can either...
     idle: {
       _onEnter: function( conn ) {
-        this.debug(conn, "setting idle timer");
         this.idletimer = setTimeout( function() {
+          // time out on inactivity...
           this.transition( conn, "requestingConnState" );
         }.bind( this ), 30000 );
         this.emit( "state", { status: "IDLE" } );
       },
-      // send an OUTGOING tunelling request, OR
+      // send an OUTGOING tunelling request...
       sent_TUNNELING_REQUEST: function ( conn , datagram ) {
         this.transition( conn, 'sendingTunnelingRequest', datagram );
       },
-      // receive an INBOUND tunneling request
+      // OR receive an INBOUND tunneling request
       recv_TUNNELING_REQUEST: function( conn, datagram ) {
-        this.transition( conn, 'receivedTunnelingRequest', datagram );
+        this.transition( conn, 'receivingTunnelingRequest', datagram );
       },
       _onExit: function( conn ) {
         clearTimeout( this.idletimer );
@@ -202,25 +199,26 @@ var KnxNetStateMachine = new machina.BehavioralFsm({
         clearTimeout( this.tunnelingRequestTimer );
       },
     },
-    // INBOUND tunneling request (event from KNX bus)
-    receivedTunnelingRequest: {
-      recv_TUNNELING_REQUEST: function ( conn, datagram ) {
+    receivingTunnelingRequest: {
+      _onEnter: function (conn, datagram) {
         var sm = this;
-        var evtName = KnxConstants.keyText(KnxConstants.APCICODES, datagram.cemi.apdu.apci);
-        this.debug( conn, util.format(
-          'received INBOUND tunelling request (%d bytes) - %s',
-          datagram.total_length, evtName));
-        this.emit(KnxConstants.keyText(KnxConstants.APCICODES, datagram.cemi.apdu.apci),
-          datagram.cemi.src_addr,
-          datagram.cemi.dest_addr,
-          datagram.cemi.apdu.data // TODO: interpret data according to any defined datapoints
-        );
-        this.emit("event",
-          KnxConstants.keyText(KnxConstants.APCICODES, datagram.cemi.apdu.apci),
-          datagram.cemi.src_addr,
-          datagram.cemi.dest_addr,
-          datagram.cemi.apdu.data
-        );
+        var evtName = KnxConstants.APCICODES[datagram.cemi.apdu.apci];
+        if(datagram.cemi.msgcode == KnxConstants.MESSAGECODES["L_Data.ind"]) {
+          this.debug( conn, util.format(
+            'received L_Data.ind tunelling request (%d bytes) - %s',
+            datagram.total_length, evtName));
+          this.emit(evtName,
+            datagram.cemi.src_addr,
+            datagram.cemi.dest_addr,
+            datagram.cemi.apdu.data // TODO: interpret data according to any defined datapoints
+          );
+          this.emit("event",
+            evtName,
+            datagram.cemi.src_addr,
+            datagram.cemi.dest_addr,
+            datagram.cemi.apdu.data
+          );
+        }
         // check IF THIS IS NEEDED (maybe look at apdu control field for ack)
         conn.Request(KnxConstants.SERVICE_TYPE.TUNNELING_ACK, datagram, function() {
           sm.transition( conn, 'idle' );

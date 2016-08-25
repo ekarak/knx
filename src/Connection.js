@@ -99,8 +99,8 @@ Connection.prototype.Disconnect = function (callback) {
 
 Connection.prototype.AddConnState = function (datagram) {
   datagram.connstate = {
-    channel_id: this.channel_id,
-    seqnum:     this.GenerateSequenceNumber()
+    channel_id:      this.channel_id,
+    seqnum:          this.GenerateSequenceNumber()
   }
 }
 
@@ -161,11 +161,13 @@ Connection.prototype.AddCEMI = function(datagram) {
 Connection.prototype.Request = function (type, datagram_template, callback) {
   var self = this;
   var datagram;
-  console.log(typeof datagram_template);
+
   if (datagram_template != null) {
     datagram = (typeof datagram_template == 'function') ?
       datagram_template(this.prepareDatagram( type )) :
       datagram_template;
+    // make sure that we override the datagram service type!
+    datagram.service_type = type;
   } else {
     datagram = this.prepareDatagram( type );
   }
@@ -176,7 +178,7 @@ Connection.prototype.Request = function (type, datagram_template, callback) {
     KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST,
     KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST]
     .indexOf(type) > -1 ?  this.control : this.tunnel;
-	if (this.debug) console.log("*** Sending %s %j via port %d", st, datagram, channel.address().port);
+	//if (this.debug) console.log("*** Sending %s %j via port %d", st, datagram, channel.address().port);
   try {
     this.writer = KnxNetProtocol.createWriter();
     var packet = this.writer.KNXNetHeader(datagram);

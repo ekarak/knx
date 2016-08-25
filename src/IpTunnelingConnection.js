@@ -35,7 +35,9 @@ IpTunnelingConnection.prototype.BindSocket = function( cb ) {
     var dg = reader.next()['tmp'];
     var svctype = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
     // append the CEMI service type if this is a tunneling request...
-    var cemitype = (dg.service_type == 1056) ? KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode) : "";
+    var cemitype = (dg.service_type == 1056) ?
+      KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode)
+      : "";
     if (conn.debug) console.log("*** Received %s(/%s) message: %j from %j:%d, datagram: %j", svctype, cemitype, msg, rinfo.address, rinfo.port, dg );
     // ... to drive the state machine
     var signal = util.format('recv_%s', svctype);
@@ -57,9 +59,11 @@ IpTunnelingConnection.prototype.Send = function(channel, buf, callback) {
   var reader = KnxNetProtocol.createReader(buf);
   reader.KNXNetHeader('packet');
   var dg = reader.next()['packet'];
+  // append the CEMI service type if this is a tunneling request...
+  var cemitype = (dg.service_type == 1056) ? KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode) : "";
   var svctype = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
   if (conn.debug) {
-    console.log('IpTunneling.Send (%d bytes) ==> %j', buf.length, buf);
+    console.log('IpTunneling.Send %s(/%s) (%d bytes) ==> %j', svctype, cemitype, buf.length, buf);
     //console.log('IpTunneling.Send ==> %s', JSON.stringify(dg, null, 4));
   }
   channel.send(
