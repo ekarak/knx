@@ -3,7 +3,7 @@
 * (C) 2016 Elias Karakoulakis
 */
 
-var KnxConnection = require('./Connection');
+var KnxConnection = require('./KnxConnection');
 
 var util = require('util');
 var dgram = require('dgram');

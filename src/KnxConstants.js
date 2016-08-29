@@ -98,7 +98,7 @@ KnxConstants.keyText = function(mapref, value) {
   for (var key in map) {
     if (map[key] == value) return key;
   }
-  return "(not found: "+value+")";
+  console.trace("not found: %j", value);
 }
 
 module.exports = KnxConstants;
