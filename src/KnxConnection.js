@@ -18,7 +18,7 @@ for (var k in interfaces) {
         var intf = interfaces[k][k2];
         //console.log('k2: %j, intf: %j', k, intf);
         if (intf.family == 'IPv4' && !intf.internal) {
-          console.log("===candidate interface: %j===", intf);
+          console.log("=== candidate interface: %j ===", intf);
             candidateInterfaces.push(intf);
         }
     }
@@ -59,14 +59,6 @@ const KnxConnection = machina.Fsm.extend({
     this.incomingPacketCounter = 0 ;
   },
 
-  debug: function (msg) {
-    console.log('%s (state=%s): %s',
-      new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''),
-      this.compositeState(),
-      msg
-    );
-  },
-
   namespace: "knxnet",
 
   // `initialState` tells machina what state to start the FSM in.
@@ -96,11 +88,12 @@ const KnxConnection = machina.Fsm.extend({
     },
     connecting: {
       _onEnter: function( ) {
-        // set a connection timer for 3 seconds
         var sm = this;
+        this.sequenceNumber = -1;
+        // set a connection timer for 3 seconds
         sm.connecttimer = setTimeout( function() {
           sm.debugPrint('connection timed out');
-          sm.transition( "uninitialized" );
+          sm.transition( "connecting" );
         }.bind( this ), 3000 );
         // just send off a connection request
         this.Request( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST );
@@ -178,19 +171,23 @@ const KnxConnection = machina.Fsm.extend({
       _onEnter: function( ) {
         var sm = this;
         sm.debugPrint('requesting Connection State');
-        sm.Request(KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST, null, function() {
-          sm.debugPrint('sent CONNECTIONSTATE_REQUEST');
-        });
+        sm.Request( KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST );
         //
         this.connstatetimer = setTimeout( function() {
-          sm.debugPrint('timed out waiting for connection state')
-          sm.handle(  "CONNECTIONSTATE_timeout" );
+          sm.debugPrint('timed out waiting for CONNECTIONSTATE_RESPONSE');
+          sm.transition(  'connecting');
         }.bind( this ), 1000 );
         this.emit( "state", { status: "CONNECTIONSTATE_REQUEST" } );
       },
       recv_CONNECTIONSTATE_RESPONSE: function ( datagram ) {
-        this.debugPrint('got connection state response - clearing timeout');
-        this.transition(  'idle');
+        switch (datagram.connstate.status) {
+          case 0:
+            this.transition(  'idle');
+            break;
+          default:
+            this.debugPrint(util.format(
+              '*** error (connstate.code: %d)', datagram.connstate.status));
+        }
       },
       _onExit: function() {
         clearTimeout( this.connstatetimer );
@@ -222,6 +219,7 @@ const KnxConnection = machina.Fsm.extend({
       },
       recv_TUNNELING_REQUEST: function ( datagram ) {
         var sm = this;
+        this.sequenceNumber = datagram.tunnstate.seqnum;
         // TODO: compare datagrams sm.lastSentDatagram == dg ??
         sm.Request(KnxConstants.SERVICE_TYPE.TUNNELING_ACK,
           datagram, function() { // completion callback
@@ -232,9 +230,13 @@ const KnxConnection = machina.Fsm.extend({
         clearTimeout( this.tunnelingRequestTimer );
       },
     },
+    // INBOUND tunneling request
     receivingTunnelingRequest: {
       _onEnter: function (datagram) {
         var sm = this;
+        // store incoming sequence number
+        this.sequenceNumber = datagram.tunnstate.seqnum;
+        console.log('^^^^ seq == %d', this.sequenceNumber);
         var evtName = KnxConstants.APCICODES[datagram.cemi.apdu.apci];
         if(datagram.cemi.msgcode == KnxConstants.MESSAGECODES["L_Data.ind"]) {
           sm.debugPrint(util.format(
@@ -261,18 +263,6 @@ const KnxConnection = machina.Fsm.extend({
   }
 });
 
-KnxConnection.prototype.GenerateSequenceNumber = function () {
-    return this._sequenceNumber++;
-}
-
-KnxConnection.prototype.RevertSingleSequenceNumber = function () {
-    this._sequenceNumber--;
-}
-
-KnxConnection.prototype.ResetSequenceNumber = function () {
-    this._sequenceNumber = 0;
-}
-
 // bind incoming UDP packet handler
 KnxConnection.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
   // get the incoming packet's service type ...
@@ -285,8 +275,8 @@ KnxConnection.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
     KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode)
     : "";
   this.debugPrint(util.format(
-    "Received %s(/%s) message: %j from %j:%d",
-    svctype, cemitype, msg, rinfo.address, rinfo.port
+    "Received %s(/%s) message: %j from %j:%d == %j",
+    svctype, cemitype, msg, rinfo.address, rinfo.port, dg
   ));
   // ... to drive the state machine
   var signal = util.format('recv_%s', svctype);
@@ -332,7 +322,7 @@ KnxConnection.prototype.Disconnect = function (callback) {
 KnxConnection.prototype.AddConnState = function (datagram) {
   datagram.connstate = {
     channel_id:      this.channel_id,
-    seqnum:          this.GenerateSequenceNumber()
+    state:           0
   }
 }
 
@@ -340,7 +330,7 @@ KnxConnection.prototype.AddTunnState = function (datagram) {
   // add the remote IP router's endpoint
   datagram.tunnstate = {
     channel_id:      this.channel_id,
-    seqnum:          this.GenerateSequenceNumber(),
+    seqnum:          this.sequenceNumber,
     protocol_type:   1, // UDP
     tunnel_endpoint: this.remoteEndpoint.addr + ':' + this.remoteEndpoint.port
   }
@@ -435,22 +425,22 @@ KnxConnection.prototype.prepareDatagram = function (svcType) {
     "service_type": svcType,
     "total_length": null, // filled in automatically
   }
+  //
   this.AddHPAI(datagram);
-  switch(svcType){
-    case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST: {
+  //
+  switch(svcType) {
+    case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST:
+    case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST:
       this.AddConnState(datagram);
-      this.AddTunnState(datagram);
       this.AddCRI(datagram);
-    }
-    case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST: {
-      this.AddConnState(datagram);
-      this.AddTunnState(datagram);
-      this.AddCRI(datagram);
-    }
-    case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST: {
+      break;
+    case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
+      this.sequenceNumber++;
       this.AddTunnState(datagram);
       this.AddCEMI(datagram);
-    }
+      break;
+    default:
+      console.trace('Do not know how to deal with svc type %d', svcType);
   }
   return datagram;
 }
