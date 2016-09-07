@@ -2,8 +2,8 @@ var knxjs = require('.');
 
 console.log('Initializing new tunneling connection');
 
-var connection = knxjs.IpTunnelingConnection({ipAddr:'192.168.8.4'});
-//var connection = new knxjs.IpRoutingConnection();
+//var connection = knxjs.IpTunnelingConnection({ipAddr:'192.168.8.4'});
+var connection = knxjs.IpRoutingConnection();
 connection.debug = true;
 connection.Connect(function() {
   console.log('----------------------------------');

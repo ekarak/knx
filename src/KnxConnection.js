@@ -61,39 +61,24 @@ const KnxConnection = machina.Fsm.extend({
 
   namespace: "knxnet",
 
-  // `initialState` tells machina what state to start the FSM in.
-  // The default value is "uninitialized". Not providing
-  // this value will throw an exception in v1.0+
   initialState: "uninitialized",
 
-  // The states object's top level properties are the
-  // states in which the FSM can exist. Each state object
-  // contains input handlers for the different inputs
-  // handled while in that state.
   states: {
     uninitialized: {
-      // Input handlers are usually functions. They can
-      // take arguments, too (even though this one doesn't)
-      // The "*" handler is special (more on that in a bit)
       "*": function() {
           //this.deferUntilTransition( conn );
-          // the `transition` method takes a target state (as a string)
-          // and transitions to it. You should NEVER directly assign the
-          // state property on an FSM. Also - while it's certainly OK to
-          // call `transition` externally, you usually end up with the
-          // cleanest approach if you endeavor to transition *internally*
-          // and just pass input to the FSM.
-        // this.transition(  "connecting" );
+        this.transition(  "connecting" );
       },
     },
     connecting: {
       _onEnter: function( ) {
         var sm = this;
+        sm.debugPrint('connecting...');
         this.sequenceNumber = -1;
         // set a connection timer for 3 seconds
         sm.connecttimer = setTimeout( function() {
           sm.debugPrint('connection timed out');
-          sm.transition( "connecting" );
+          sm.transition( "uninitialized" );
         }.bind( this ), 3000 );
         // just send off a connection request
         this.Request( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST );
@@ -118,6 +103,7 @@ const KnxConnection = machina.Fsm.extend({
           'CONNECTED! got connection state response, connstate: %s, channel ID: %d',
           str, datagram.connstate.channel_id));
         // ready to go!
+        this.conntime = Date.now();
         this.transition( 'idle');
         this.emit('connected');
       },
@@ -125,11 +111,13 @@ const KnxConnection = machina.Fsm.extend({
     disconnecting: {
       _onEnter: function() {
         var sm = this;
+        var aliveFor = this.conntime ? Date.now() - this.conntime : 0;
+        this.debugPrint(util.format('connection alive for %d seconds', aliveFor/1000));
         sm.disconnecttimer = setTimeout( function() {
           this.handle(  "disconnect-timeout" );
         }.bind( this ), 3000 );
         //
-        sm.Request(KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST, null, function() {
+        sm.Request( KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST, null, function() {
           sm.debugPrint('sent DISCONNECT_REQUEST');
         });
       },
@@ -151,7 +139,7 @@ const KnxConnection = machina.Fsm.extend({
         this.idletimer = setTimeout( function() {
           // time out on inactivity...
           this.transition(  "requestingConnState" );
-        }.bind( this ), 30000 );
+        }.bind( this ), 10000 );
         this.emit( "state", { status: "IDLE" } );
       },
       // send an OUTGOING tunelling request...
@@ -161,6 +149,9 @@ const KnxConnection = machina.Fsm.extend({
       // OR receive an INBOUND tunneling request
       recv_TUNNELING_REQUEST: function( datagram ) {
         this.transition(  'receivingTunnelingRequest', datagram );
+      },
+      recv_DISCONNECT_REQUEST: function( datagram ) {
+        this.transition( 'connecting' );
       },
       _onExit: function() {
         clearTimeout( this.idletimer );
@@ -182,11 +173,12 @@ const KnxConnection = machina.Fsm.extend({
       recv_CONNECTIONSTATE_RESPONSE: function ( datagram ) {
         switch (datagram.connstate.status) {
           case 0:
-            this.transition(  'idle');
+            this.transition( 'idle');
             break;
           default:
             this.debugPrint(util.format(
               '*** error (connstate.code: %d)', datagram.connstate.status));
+            this.transition('connecting');
         }
       },
       _onExit: function() {
@@ -284,41 +276,6 @@ KnxConnection.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
 };
 
 
-// <summary>
-///     Start the connection
-/// </summary>
-KnxConnection.prototype.Connect = function (callback) {
-  var sm = this;
-  // create a control socket for CONNECT, CONNECTIONSTATE and DISCONNECT
-  sm.control = sm.BindSocket( function(socket) {
-    socket.on("message", function(msg, rinfo, callback)  {
-      sm.debugPrint('Inbound message in CONTROL channel');
-      sm.onUdpSocketMessage(msg, rinfo, callback);
-    });
-    // create a tunnel socket for TUNNELING_REQUEST and friends
-    sm.tunnel = sm.BindSocket( function(socket) {
-      socket.on("message", function(msg, rinfo, callback)  {
-        sm.debugPrint('Inbound message in TUNNEL channel');
-        sm.onUdpSocketMessage(msg, rinfo, callback);
-      });
-      // start connection sequence
-      sm.transition( 'connecting');
-      sm.on('connected', callback);
-    })
-  });
-}
-
-
-
-/// <summary>
-///     Stop the connection
-/// </summary>
-KnxConnection.prototype.Disconnect = function (callback) {
-    var self = this;
-		if (self.debug) console.log("Disconnect...");
-    throw "unimplemented"
-}
-
 KnxConnection.prototype.AddConnState = function (datagram) {
   datagram.connstate = {
     channel_id:      this.channel_id,
@@ -400,9 +357,6 @@ KnxConnection.prototype.Request = function (type, datagram_template, callback) {
     KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST,
     KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST]
     .indexOf(type) > -1 ?  this.control : this.tunnel;
-  this.debugPrint(util.format(
-    "Sending %s %j via port %d", st, datagram, channel.address().port
-  ));
   try {
     this.writer = KnxNetProtocol.createWriter();
     var packet = this.writer.KNXNetHeader(datagram);
@@ -431,6 +385,7 @@ KnxConnection.prototype.prepareDatagram = function (svcType) {
   switch(svcType) {
     case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST:
     case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST:
+    case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST:
       this.AddConnState(datagram);
       this.AddCRI(datagram);
       break;
@@ -454,8 +409,8 @@ KnxConnection.prototype.Send = function(channel, buf, callback) {
   var cemitype = (dg.service_type == 1056) ? KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode) : "";
   var svctype = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
   this.debugPrint(util.format(
-    'IpTunneling.Send %s(/%s) (%d bytes) ==> %j',
-    svctype, cemitype, buf.length, buf
+    'Send %s(/%s) %j (%d bytes) from port %d ==> %j',
+    svctype, cemitype, buf, buf.length, channel.address().port, dg
   ));
   channel.send(
     buf, 0, buf.length,

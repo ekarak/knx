@@ -9,7 +9,6 @@ const KnxNetProtocol = require('./KnxProtocol');
 var os = require('os');
 var util = require('util');
 var dgram = require('dgram');
-var Promise = require('promise');
 
 /// <summary>
 ///     Initializes a new KNX tunneling connection with provided values. Make sure the local system allows
@@ -20,10 +19,10 @@ function IpTunnelingConnection(options) {
   var instance = new KnxConnection(options);
 
   instance.BindSocket = function( cb ) {
-    if (this.debug) console.log('IpTunnelingConnection.prototype.BindSocket');
+    instance.debugPrint('IpTunnelingConnection.prototype.BindSocket');
     var udpSocket = dgram.createSocket("udp4");
     udpSocket.bind(function() {
-      console.log('socket bound to %j', udpSocket.address());
+      instance.debugPrint(util.format('tunneling socket bound to %j', udpSocket.address()));
       cb && cb(udpSocket);
     });
     return udpSocket;
@@ -41,7 +40,33 @@ function IpTunnelingConnection(options) {
       tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
     };
   }
+
+  // <summry>
+  ///     Start the connection
+  /// </summary>
+  instance.Connect = function (callback) {
+    var sm = this;
+    // create a control socket for CONNECT, CONNECTIONSTATE and DISCONNECT
+    sm.control = sm.BindSocket( function(socket) {
+      socket.on("message", function(msg, rinfo, callback)  {
+        sm.debugPrint('Inbound message in CONTROL channel');
+        sm.onUdpSocketMessage(msg, rinfo, callback);
+      });
+      // create a tunnel socket for TUNNELING_REQUEST and friends
+      sm.tunnel = sm.BindSocket( function(socket) {
+        socket.on("message", function(msg, rinfo, callback)  {
+          sm.debugPrint('Inbound message in TUNNEL channel');
+          sm.onUdpSocketMessage(msg, rinfo, callback);
+        });
+        // start connection sequence
+        sm.transition( 'connecting');
+        sm.on('connected', callback);
+      })
+    });
+  }
+
   return instance;
 }
+
 
 module.exports = IpTunnelingConnection;

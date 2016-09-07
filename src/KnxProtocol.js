@@ -504,13 +504,15 @@ KnxProtocol.define('KNXNetHeader', {
             .CRI('cri');
           break;
         }
-        case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST: {
+        case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST:
+        case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST: {
           this
             .ConnState('connstate')
             .HPAI('hpai');
           break;
         }
-        case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_RESPONSE: {
+        case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_RESPONSE:
+        case KnxConstants.SERVICE_TYPE.DISCONNECT_RESPONSE: {
           this.ConnState('connstate');
           break;
         }
@@ -530,7 +532,6 @@ KnxProtocol.define('KNXNetHeader', {
             .TunnState('connstate');
           break;
         }
-        // case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST:
         default: {
           console.trace("read KNXNetHeader: unhandled serviceType = %s", KnxConstants.keyText('SERVICE_TYPE', hdr.service_type));
         }
@@ -551,7 +552,8 @@ KnxProtocol.define('KNXNetHeader', {
       .Int16BE(value.service_type);
     switch (value.service_type) {
       //case SERVICE_TYPE.SEARCH_REQUEST:
-      case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST: {
+      case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST:
+      case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST: {
         value.total_length += 2*knxlen('HPAI')+ knxlen('CRI');
         this
           .Int16BE(value.total_length) //
@@ -605,7 +607,7 @@ KnxProtocol.define('KNXNetHeader', {
       default: {
         throw util.format(
           "write KNXNetHeader: unhandled serviceType = %s (%j)",
-          KnxConstants.keyText('SERVICE_TYPE', value || value.service_type), value);
+          KnxConstants.keyText('SERVICE_TYPE', value), value);
       }
 
     }
