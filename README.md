@@ -1,7 +1,10 @@
-# KNXnet/IP for Node.JS
+## KNXnet/IP for Node.JS
 A feature-complete KNXnet/IP stack in pure Javascript, capable of talking multicast (routing) and unicast (tunneling). Adding KNX to your Node.JS applications is now finally easy as pie.
 - You won't need to install a specialised eibd daemon with its arcane dependencies  and most importantly,
 - If you got an IP router and a network that supports IP multicast (such as wired ethernet), you can start talking to KNX within seconds!
+
+*Warning*: This library is under heavy development. Features still missing: datapoints, devices, bindings...
+
 
 
 ## Installation

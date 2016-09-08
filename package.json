@@ -1,11 +1,11 @@
 {
   "name": "knx",
   "description": "KNXnet/IP protocol implementation for Node",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "repository": {
     "type": "git",
-    "url": "https://github.com/ekarak/knx.js.git"
+    "url": "https://ekarak@bitbucket.org/ekarak/knx.js.git"
   },
   "license": "MIT",
   "author": {
@@ -21,7 +21,6 @@
     "binary-parser": "1.1.5",
     "binary-protocol": "0.0.0",
     "ipv4.js": "0.0.2",
-    "machina": "^2.0.0-1",
-    "promise": "^7.0.4"
+    "machina": "^2.0.0-1"
   }
 }
