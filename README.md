@@ -1,7 +1,8 @@
 # KNXnet/IP for Node.JS
-A pure Javascript KNXnet/IP stack capable of talking multicast (routing) and unicast (tunneling). Adding KNX to your Node.JS applications is now finally easy as pie.
+A feature-complete KNXnet/IP stack in pure Javascript, capable of talking multicast (routing) and unicast (tunneling). Adding KNX to your Node.JS applications is now finally easy as pie.
 - You won't need to install a specialised eibd daemon with its arcane dependencies  and most importantly,
 - If you got an IP router and a network that supports IP multicast (such as wired ethernet), you can start talking to KNX within seconds!
+
 
 ## Installation
 Make sure your machine has Node.JS (version 4.x or greater) and do:
@@ -15,7 +16,7 @@ var knx = require('knx');
 ```
 
 
-### Connect to your KNX IP router
+### Connect to your KNX IP router via multicast
 
 ```js
 // create a multicast connection, no mandatory arguments
@@ -71,7 +72,7 @@ connection.on('event', function (evt, src, dest, value) { ... });)
 ```js
 // sending an arbitrary write request to a binary group address
 connection.Write("1/0/0", true);
-// you also can be explicit about the datapoint type, eg. DPT9.001 is temperature
+// you also can be explicit about the datapoint type, eg. DPT9.001 is temperature Celcius
 connection.Write("2/1/0", 22.5, "DPT9.001")
 //
 ```

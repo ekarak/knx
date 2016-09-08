@@ -228,7 +228,7 @@ const KnxConnection = machina.Fsm.extend({
         var sm = this;
         // store incoming sequence number
         this.sequenceNumber = datagram.tunnstate.seqnum;
-        console.log('^^^^ seq == %d', this.sequenceNumber);
+        //console.log('^^^^ seq == %d', this.sequenceNumber);
         var evtName = KnxConstants.APCICODES[datagram.cemi.apdu.apci];
         if(datagram.cemi.msgcode == KnxConstants.MESSAGECODES["L_Data.ind"]) {
           sm.debugPrint(util.format(
@@ -274,7 +274,6 @@ KnxConnection.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
   var signal = util.format('recv_%s', svctype);
   this.handle(signal, dg);
 };
-
 
 KnxConnection.prototype.AddConnState = function (datagram) {
   datagram.connstate = {

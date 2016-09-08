@@ -26,10 +26,9 @@ function IpRoutingConnection(options) {
 
   instance.BindSocket = function( cb ) {
     var conn = this;
-    instance.debugPrint(util.format('IpRoutingConnection.prototype.BindSocket'));
     var udpSocket = dgram.createSocket("udp4");
     udpSocket.bind(function() {
-  		instance.debugPrint(util.format('adding multicast membership for %s', conn.remoteEndpoint.addr));
+      instance.debugPrint(util.format('IpRoutingConnection.prototype.BindSocket %j. adding multicast membership for %s', udpSocket.address(), conn.remoteEndpoint.addr));
   		conn.control.addMembership(conn.remoteEndpoint.addr);
       cb && cb(udpSocket);
   	});
@@ -37,8 +36,6 @@ function IpRoutingConnection(options) {
   }
 
   instance.AddHPAI = function (datagram) {
-    // FIXME
-    console.log('ROUTING: %s %s', this.localAddresses, this.tunnel);
     // add the control udp local endpoint
     datagram.hpai = {
       protocol_type:1, // UDP
@@ -67,7 +64,7 @@ function IpRoutingConnection(options) {
       sm.on('connected', callback);
     });
   }
-  
+
   return instance;
 }
 
