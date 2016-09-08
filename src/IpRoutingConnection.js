@@ -3,11 +3,10 @@
 * (C) 2016 Elias Karakoulakis
 */
 
-var KnxConnection = require('./Connection');
+var KnxConnection = require('./KnxConnection');
 
 var util = require('util');
 var dgram = require('dgram');
-var Promise = require('promise');
 
 /**
 <summary>
@@ -18,54 +17,58 @@ var Promise = require('promise');
  <param name="mcastIpPort">Multicast IP port (optional - defaults to 3671)</param>
 **/
 function IpRoutingConnection(options) {
+
   if (!options) options = {};
   if (!options.ipAddr) options.ipAddr = '224.0.23.12';
   if (!options.ipPort) options.ipPort = 3671;
-  IpRoutingConnection.super_.call(this, options);
-}
-util.inherits(IpRoutingConnection, KnxConnection);
 
+  var instance = new KnxConnection(options);
 
-/// <summary>
-///     Bind the multicast socket
-/// </summary>
-IpRoutingConnection.prototype.BindSocket = function ( cb ) {
-  var conn = this;
-	this.control.bind(function() {
-		console.log('adding multicast membership for %s', conn.remoteEndpoint.addr);
-		conn.control.addMembership(conn.remoteEndpoint.addr);
-    cb && cb(conn);
-	});
-}
-
-IpRoutingConnection.prototype.Send = function(datagram, callback) {
-  var self = this;
-  if (this.debug) {
-    console.log('IpRouting.Send (%d bytes) ==> %j', buf.length, buf);
+  instance.BindSocket = function( cb ) {
+    var conn = this;
+    var udpSocket = dgram.createSocket("udp4");
+    udpSocket.bind(function() {
+      instance.debugPrint(util.format('IpRoutingConnection.prototype.BindSocket %j. adding multicast membership for %s', udpSocket.address(), conn.remoteEndpoint.addr));
+  		conn.control.addMembership(conn.remoteEndpoint.addr);
+      cb && cb(udpSocket);
+  	});
+    return udpSocket;
   }
-  this.control.send(
-    buf, 0, buf.length,
-    this.remoteEndpoint.port, this.remoteEndpoint.addr,
-    function (err) {
-        if (self.debug)
-            console.log('udp sent, err[' + (err ? err.toString() : 'no_err') + ']');
-        if (typeof callback === 'function') callback(err);
-  });
+
+  instance.AddHPAI = function (datagram) {
+    // add the control udp local endpoint
+    datagram.hpai = {
+      protocol_type:1, // UDP
+      tunnel_endpoint: this.localAddress + ":" + this.control.address().port
+    };
+    // add the tunneling udp local endpoint
+    datagram.tunn = {
+      protocol_type:1, // UDP
+      tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
+    };
+  }
+
+  // <summary>
+  ///     Start the connection
+  /// </summary>
+  instance.Connect = function (callback) {
+    var sm = this;
+
+    sm.control = sm.tunnel = sm.BindSocket( function(socket) {
+      socket.on("message", function(msg, rinfo, callback)  {
+        sm.debugPrint(util.format('Inbound message from multicast group %j', rinfo));
+        sm.onUdpSocketMessage(msg, rinfo, callback);
+      });
+      // start connection sequence
+      sm.transition( 'connecting');
+      sm.on('connected', callback);
+    });
+  }
+
+  return instance;
 }
 
-IpRoutingConnection.prototype.AddHPAI = function (datagram) {
-  // FIXME
-  console.log('HERE: %s %s', this.localAddresses, this.tunnel);
-  // add the control udp local endpoint
-  datagram.hpai = {
-    protocol_type:1, // UDP
-    tunnel_endpoint: this.localAddress + ":" + this.control.address().port
-  };
-  // add the tunneling udp local endpoint
-  datagram.tunn = {
-    protocol_type:1, // UDP
-    tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
-  };
-}
+
+
 
 module.exports = IpRoutingConnection;
