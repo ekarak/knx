@@ -18,7 +18,7 @@ for (var k in interfaces) {
         var intf = interfaces[k][k2];
         //console.log('k2: %j, intf: %j', k, intf);
         if (intf.family == 'IPv4' && !intf.internal) {
-          console.log("=== candidate interface: %j ===", intf);
+          console.log("=== candidate interface: %s (%j) ===", k, intf);
             candidateInterfaces.push(intf);
         }
     }
@@ -41,7 +41,7 @@ const KnxConnection = machina.Fsm.extend({
     } else if (candidateInterfaces.length == 1) {
       this.localAddress = candidateInterfaces[0].address;
     } else {
-      candidateInterfaces.forEach( intf => {
+      candidateInterfaces.forEach( function(intf) {
         if (intf.family == 'IPv4' && !intf.internal && !this.localAddress) {
           this.localAddress = intf.address;
         }
@@ -66,6 +66,7 @@ const KnxConnection = machina.Fsm.extend({
   states: {
     uninitialized: {
       "*": function() {
+
           //this.deferUntilTransition( conn );
         this.transition(  "connecting" );
       },
@@ -74,11 +75,17 @@ const KnxConnection = machina.Fsm.extend({
       _onEnter: function( ) {
         var sm = this;
         sm.debugPrint('connecting...');
-        this.sequenceNumber = -1;
-        // set a connection timer for 3 seconds
-        sm.connecttimer = setTimeout( function() {
-          sm.debugPrint('connection timed out');
-          sm.transition( "uninitialized" );
+        sm.connectionAttempt = 0;
+        // set a connection timer for 3 seconds, 3 retries
+        sm.connecttimer = setInterval( function() {
+          if (sm.connectionAttempt < 3) {
+            sm.connectionAttempt++;
+            sm.debugPrint('connection timed out - retrying...');
+            sm.Request( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST );
+          } else {
+            sm.debugPrint('connection timed out - max retries reached...');
+            sm.transition( "uninitialized" );
+          }
         }.bind( this ), 3000 );
         // just send off a connection request
         this.Request( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST );
@@ -86,10 +93,11 @@ const KnxConnection = machina.Fsm.extend({
       // _onExit is a special handler that is invoked just before
       // the FSM leaves the current state and transitions to another
       _onExit: function( ) {
-        clearTimeout( this.connecttimer );
+        clearInterval( this.connecttimer );
       },
       recv_CONNECT_RESPONSE: function (datagram) {
         var sm = this;
+        this.sequenceNumber = -1;
         sm.debugPrint(util.format('got connect response'));
         // store channel ID into the Connection object
         this.channel_id = datagram.connstate.channel_id;
@@ -359,7 +367,7 @@ KnxConnection.prototype.Request = function (type, datagram_template, callback) {
   try {
     this.writer = KnxNetProtocol.createWriter();
     var packet = this.writer.KNXNetHeader(datagram);
-    this.Send(channel, packet.buffer, function() {
+    this.send(channel, packet.buffer, function() {
       self.handle(self, 'sent_'+st, datagram);
       callback && callback();
     });
@@ -399,7 +407,7 @@ KnxConnection.prototype.prepareDatagram = function (svcType) {
   return datagram;
 }
 
-KnxConnection.prototype.Send = function(channel, buf, callback) {
+KnxConnection.prototype.send = function(channel, buf, callback) {
   var conn = this;
   var reader = KnxNetProtocol.createReader(buf);
   reader.KNXNetHeader('packet');
@@ -425,7 +433,7 @@ KnxConnection.prototype.Send = function(channel, buf, callback) {
   this.handle( signal, dg );
 }
 
-KnxConnection.prototype.Write = function(grpaddr, value, dpt) {
+KnxConnection.prototype.write = function(grpaddr, value, dpt) {
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
     datagram.cemi.dest_addr = grpaddr;
     datagram.cemi.apdu.data = value; // FIXME: use datapoints to format APDU
@@ -433,7 +441,7 @@ KnxConnection.prototype.Write = function(grpaddr, value, dpt) {
   });
 }
 
-KnxConnection.prototype.Read = function(grpaddr) {
+KnxConnection.prototype.read = function(grpaddr) {
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
     // this is a READ request
     datagram.cemi.apdu.apci = KnxConstants.APCICODES.indexOf("GroupValue_Read");

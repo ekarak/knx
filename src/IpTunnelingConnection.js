@@ -19,7 +19,7 @@ function IpTunnelingConnection(options) {
   var instance = new KnxConnection(options);
 
   instance.BindSocket = function( cb ) {
-    instance.debugPrint('IpTunnelingConnection.prototype.BindSocket');
+    instance.debugPrint('IpTunnelingConnection.BindSocket');
     var udpSocket = dgram.createSocket("udp4");
     udpSocket.bind(function() {
       instance.debugPrint(util.format('tunneling socket bound to %j', udpSocket.address()));

@@ -1,8 +1,8 @@
-var knxjs = require('.');
+var knx = require('.');
 var util = require('util');
 
-//var connection = knxjs.IpTunnelingConnection({ipAddr:'192.168.8.4'});
-var connection = knxjs.IpRoutingConnection();
+//var connection = knx.IpTunnelingConnection({ipAddr:'192.168.8.4'});
+var connection = knx.IpRoutingConnection();
 
 connection.debug = true;
 connection.Connect(function() {
@@ -13,5 +13,15 @@ connection.Connect(function() {
     console.log("%s **** KNX EVENT: %j, src: %j, dest: %j, value: %j", ts, evt, src, dest, value);
   })
   console.log('             Now sending a Read request');
-  connection.Read('1/1/1');
+  var dp = new knx.Datapoint({ga: '1/1/1'});
+  dp.bind(connection);
+  dp.write(0);
+  dp.read((src, dest, value) => {
+    console.log("**** RESPONSE %j reports that %j has current value: %j", src, dest, value);
+  });
+  //
+  console.log('%j', knx.Devices);
+  var light = new knx.Devices.BinarySwitch({ga: '1/1/1', status_ga: '1/1/101'}, connection);
+  light.bind(connection);
+  light.switchOn();
 });

@@ -3,7 +3,8 @@
 * (C) 2016 Elias Karakoulakis
 */
 
-var util = require('util');
+const util = require('util');
+const DPT = require('./Datapoint');
 const KnxProtocol = require('./KnxProtocol');
 const KnxConstants = require('./KnxConstants');
 
@@ -37,12 +38,39 @@ Unlimited string 8859_1            .                       DPT 24	    DPT 24
 List 3-byte value                  3 Byte                  DPT 232	    DPT 232	RGB[0,0,0]...[255,255,255]
 */
 
-function Datapoint() {
+function Datapoint(options, conn) {
+  if (options == null || options.ga == null) {
+    throw "must supply at least { groupaddr, dpt }!";
+  }
+  this.dpt = options.dpt || "DPT1";
+  this.options = options;
+  if (conn) this.bind(conn);
 }
 
-Datapoint.prototype.BindGroupAddress = function (ga) {
-  if (!ga) throw "must supply a valid group address to bind to"
-  throw
+Datapoint.prototype.bind = function (conn) {
+  var self = this;
+  if (!conn) throw "must supply a valid KNX connection to bind to"
+  this.conn = conn;
+  conn.on('event', function (evt, src, dest, value) {
+    if (dest == self.options.ga) {
+      switch (evt) {
+        case "GroupValue_Response":
+          if (typeof self.readcb == 'function') self.readcb(src, dest, value);
+      }
+    }
+  });
+}
+
+Datapoint.prototype.write = function (value) {
+  if (!this.conn) throw "must supply a valid KNX connection to bind to"
+  // TODO: interpret value as per own DPT
+  this.conn.write(this.options.ga, value);
+}
+
+Datapoint.prototype.read = function (callback) {
+  if (!this.conn) throw "must supply a valid KNX connection to bind to"
+  this.readcb = callback;
+  this.conn.read(this.options.ga);
 }
 
 module.exports = Datapoint;

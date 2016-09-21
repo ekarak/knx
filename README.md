@@ -22,13 +22,13 @@ var knx = require('knx');
 ### Connect to your KNX IP router via multicast
 
 ```js
-// create a multicast connection, no mandatory arguments
-var connection = new knx.IpRoutingConnection();
-// optionally specify the multicast address
-var connection = new knx.IpRoutingConnection( {ipAddr: '224.0.23.12', ipPort: 3671} );
+// create a multicast connection, no mandatory arguments.
+var connection = knx.IpRoutingConnection();
+// optionally specify the multicast address if its not the standard
+var connection = knx.IpRoutingConnection( {ipAddr: '224.0.23.12', ipPort: 3671} );
 // you'll need to specify the multicast interface if you have more than one interface
 // this is common in laptops that have both a wired AND a wireless interface
-var connection = new knx.IpRoutingConnection( {interface: 'eth0'} );
+var connection = knx.IpRoutingConnection( {interface: 'eth0'} );
 ```
 
 ### Connect to your KNX IP interface via tunneling
@@ -40,9 +40,9 @@ Use this in case multicast doesn't work for you, this for example could be cause
 
 ```js
 // create a tunneling (UDP/unicast) connection to a KNX IP router
-var connection = new IpTunnelingConnection( {ipAddr: '192.168.2.222'} );
+var connection = knx.IpTunnelingConnection( {ipAddr: '192.168.2.222'} );
 // -- OR -- you can optionally specify the port number and the local interface:
-var connection = new IpTunnelingConnection( {ipAddr: '192.168.2.222', ipPort: 3671, interface: 'eth0'} );
+var connection = knx.IpTunnelingConnection( {ipAddr: '192.168.2.222', ipPort: 3671, interface: 'eth0'} );
 ```
 
 ### Bind to connection events
@@ -74,23 +74,42 @@ connection.on('event', function (evt, src, dest, value) { ... });)
 
 ```js
 // sending an arbitrary write request to a binary group address
-connection.Write("1/0/0", true);
+connection.write("1/0/0", true);
 // you also can be explicit about the datapoint type, eg. DPT9.001 is temperature Celcius
-connection.Write("2/1/0", 22.5, "DPT9.001")
+connection.write("2/1/0", 22.5, "DPT9.001");
+// send a Read request to get the current state of 1/0/1 group address
+// dont forget to register a GroupValue_Response handler!
+connection.read("1/0/1");
+// or, the opposite: send a Response telegram to an incoming GroupValue_Read request
+connection.response("2/1/0", 22.5, "DPT9.001");)
 //
 ```
 
 ### Declare datapoints based on their DPT
 
 ```js
-var binary_control = new knx.Datapoint({groupaddr: '1/0/1', dpt: 'DPT1.001'});
-var dimmer_control = new knx.Datapoint({groupaddr: '1/2/33', dpt: 'DPT3.007'});
+// declare a simple binary control
+var binary_control = new knx.Datapoint({ga: '1/0/1', dpt: 'DPT1.001'});
+// bind it to the active connection
+binary_control.bind(connection);
+// write a new value to the bus
+binary_control.write(true); // or false!
+// send a read request, and fire the callback upon response
+binary_control.read( function (response) {
+    console.log("KNX response: %j", response);
+  };
+// or declare a dimmer control
+var dimmer_control = new knx.Datapoint({ga: '1/2/33', dpt: 'DPT3.007'});
 ```
 
 ### Declare your devices
+
 ```js
-var entry_light = new knx.Switch({groupaddr: '1/2/33', statusaddr: '1/2/133'});
+var entry_light = new knx.Switch({ga: '1/2/33', status_ga: '1/2/133'});
+entry_light.switchOn(); // or switchOff();
+console.log("The entry light is %j", entry_light.status);
 ```
+
 This effectively creates a pair of datapoints typically associated with a binary
 switch, one for controlling it and another for getting a status feedback (eg via
 manual operation)

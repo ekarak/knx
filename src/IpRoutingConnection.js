@@ -28,7 +28,9 @@ function IpRoutingConnection(options) {
     var conn = this;
     var udpSocket = dgram.createSocket("udp4");
     udpSocket.bind(function() {
-      instance.debugPrint(util.format('IpRoutingConnection.prototype.BindSocket %j. adding multicast membership for %s', udpSocket.address(), conn.remoteEndpoint.addr));
+      instance.debugPrint(util.format(
+        'IpRoutingConnection.BindSocket %j, add membership for %s',
+        udpSocket.address(), conn.remoteEndpoint.addr));
   		conn.control.addMembership(conn.remoteEndpoint.addr);
       cb && cb(udpSocket);
   	});
