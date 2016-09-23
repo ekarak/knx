@@ -529,7 +529,7 @@ KnxProtocol.define('KNXNetHeader', {
         }
         case KnxConstants.SERVICE_TYPE.TUNNELING_ACK: {
           this
-            .TunnState('connstate');
+            .TunnState('connstate'); // FIXME: typo?
           break;
         }
         default: {

@@ -9,12 +9,8 @@ var util = require('util');
 var dgram = require('dgram');
 
 /**
-<summary>
   Initializes a new KNX routing connection with provided values. Make
  sure the local system allows UDP messages to the multicast group.
- </summary>
- <param name="mcastIpAddr">Multicast IP address (optional - default to 224.0.23.12)</param>
- <param name="mcastIpPort">Multicast IP port (optional - defaults to 3671)</param>
 **/
 function IpRoutingConnection(options) {
 
@@ -69,8 +65,5 @@ function IpRoutingConnection(options) {
 
   return instance;
 }
-
-
-
 
 module.exports = IpRoutingConnection;

@@ -64,6 +64,7 @@ const KnxConnection = machina.Fsm.extend({
   initialState: "uninitialized",
 
   states: {
+
     uninitialized: {
       "*": function() {
 
@@ -71,6 +72,7 @@ const KnxConnection = machina.Fsm.extend({
         this.transition(  "connecting" );
       },
     },
+
     connecting: {
       _onEnter: function( ) {
         var sm = this;
@@ -81,30 +83,30 @@ const KnxConnection = machina.Fsm.extend({
           if (sm.connectionAttempt < 3) {
             sm.connectionAttempt++;
             sm.debugPrint('connection timed out - retrying...');
-            sm.Request( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST );
+            sm.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
           } else {
             sm.debugPrint('connection timed out - max retries reached...');
             sm.transition( "uninitialized" );
           }
         }.bind( this ), 3000 );
-        // just send off a connection request
-        this.Request( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST );
+        // send connect request directly
+        sm.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
       },
       // _onExit is a special handler that is invoked just before
       // the FSM leaves the current state and transitions to another
       _onExit: function( ) {
         clearInterval( this.connecttimer );
       },
-      recv_CONNECT_RESPONSE: function (datagram) {
+      inbound_CONNECT_RESPONSE: function (datagram) {
         var sm = this;
         this.sequenceNumber = -1;
         sm.debugPrint(util.format('got connect response'));
         // store channel ID into the Connection object
         this.channel_id = datagram.connstate.channel_id;
-        //
-        this.Request( KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST );
+        // send connectionstate request directly
+        sm.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST ));
       },
-      recv_CONNECTIONSTATE_RESPONSE: function (datagram) {
+      inbound_CONNECTIONSTATE_RESPONSE: function (datagram) {
         var sm = this;
         var str = KnxConstants.keyText('RESPONSECODE', datagram.connstate.status);
         sm.debugPrint(util.format(
@@ -116,6 +118,7 @@ const KnxConnection = machina.Fsm.extend({
         this.emit('connected');
       },
     },
+
     disconnecting: {
       _onEnter: function() {
         var sm = this;
@@ -125,7 +128,7 @@ const KnxConnection = machina.Fsm.extend({
           this.handle(  "disconnect-timeout" );
         }.bind( this ), 3000 );
         //
-        sm.Request( KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST, null, function() {
+        sm.send( sm.prepareDatagram ( KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST), function() {
           sm.debugPrint('sent DISCONNECT_REQUEST');
         });
       },
@@ -136,12 +139,13 @@ const KnxConnection = machina.Fsm.extend({
       _onExit: function() {
         clearTimeout( this. disconnecttimer)
       },
-      recv_DISCONNECT_RESPONSE: function (datagram) {
+      inbound_DISCONNECT_RESPONSE: function (datagram) {
         this.debugPrint(util.format('got disconnect response'));
         this.transition(  'uninitialized');
       },
     },
-    // while idle we can either...
+
+      // while idle we can either...
     idle: {
       _onEnter: function() {
         this.idletimer = setTimeout( function() {
@@ -150,27 +154,29 @@ const KnxConnection = machina.Fsm.extend({
         }.bind( this ), 10000 );
         this.emit( "state", { status: "IDLE" } );
       },
-      // send an OUTGOING tunelling request...
-      sent_TUNNELING_REQUEST: function ( datagram ) {
+      // queue an OUTGOING tunelling request...
+      outbound_TUNNELING_REQUEST: function ( datagram ) {
+        this.debugPrint('OUTBOUND tunneling request');
         this.transition(  'sendingTunnelingRequest', datagram );
       },
       // OR receive an INBOUND tunneling request
-      recv_TUNNELING_REQUEST: function( datagram ) {
+      inbound_TUNNELING_REQUEST: function( datagram ) {
         this.transition(  'receivingTunnelingRequest', datagram );
       },
-      recv_DISCONNECT_REQUEST: function( datagram ) {
+      inbound_DISCONNECT_REQUEST: function( datagram ) {
         this.transition( 'connecting' );
       },
       _onExit: function() {
         clearTimeout( this.idletimer );
       },
     },
+
     // if idle for too long, request connection state from the KNX IP router
     requestingConnState: {
       _onEnter: function( ) {
         var sm = this;
         sm.debugPrint('requesting Connection State');
-        sm.Request( KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST );
+        sm.send (sm.prepareDatagram (KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST));
         //
         this.connstatetimer = setTimeout( function() {
           sm.debugPrint('timed out waiting for CONNECTIONSTATE_RESPONSE');
@@ -178,7 +184,7 @@ const KnxConnection = machina.Fsm.extend({
         }.bind( this ), 1000 );
         this.emit( "state", { status: "CONNECTIONSTATE_REQUEST" } );
       },
-      recv_CONNECTIONSTATE_RESPONSE: function ( datagram ) {
+      inbound_CONNECTIONSTATE_RESPONSE: function ( datagram ) {
         switch (datagram.connstate.status) {
           case 0:
             this.transition( 'idle');
@@ -193,7 +199,10 @@ const KnxConnection = machina.Fsm.extend({
         clearTimeout( this.connstatetimer );
       },
     },
-    // 1) send TUNNELING_REQUEST, 2) recv ACK, ...
+
+    /*
+    * 1) OUTBOUND TUNNELING_REQUEST
+    */
     sendingTunnelingRequest:  {
       _onEnter: function ( datagram ) {
         var sm = this;
@@ -201,36 +210,38 @@ const KnxConnection = machina.Fsm.extend({
         this.tunnelingRequestTimer = setTimeout( function() {
           sm.handle(  "timeout", datagram );
         }.bind( this ), 1000 );
+        // send the telegram on the wire
+        this.send( datagram );
       },
-      recv_TUNNELING_ACK: function ( datagram ) {
-        // TODO: compare
-        this.transition (  'ackingTunnelingRequest', datagram )
+      inbound_TUNNELING_ACK: function ( datagram ) {
+        this.lastSentDatagram = datagram;
+      },
+      inbound_TUNNELING_REQUEST: function ( datagram ) {
+        var sm = this;
+        this.sequenceNumber = datagram.tunnstate.seqnum;
+        // TODO: compare datagrams sm.lastSentDatagram == datagram ??
+        sm.send( sm.prepareDatagram(
+          KnxConstants.SERVICE_TYPE.TUNNELING_ACK,
+          datagram), function() { // completion callback
+            sm.transition( 'idle' );
+        })
       },
       timeout: function (datagram) {
         this.debugPrint('timed out waiting for outgoing TUNNELING_ACK');
         this.transition(  'connecting');
       },
-    },
-    // ... 3) recv TUNREQ echo from KNXnet/IP router, 4) ack echo
-    ackingTunnelingRequest:  {
-      _onEnter: function ( datagram ) {
-        var sm = this;
-        sm.lastSentDatagram = datagram;
-      },
-      recv_TUNNELING_REQUEST: function ( datagram ) {
-        var sm = this;
-        this.sequenceNumber = datagram.tunnstate.seqnum;
-        // TODO: compare datagrams sm.lastSentDatagram == dg ??
-        sm.Request(KnxConstants.SERVICE_TYPE.TUNNELING_ACK,
-          datagram, function() { // completion callback
-            sm.transition( 'idle' );
-        })
+      "*": function ( data ) {
+        this.debugPrint(util.format('*** deferring Until Transition %j', data));
+        this.deferUntilTransition();
       },
       _onExit: function( datagram ) {
         clearTimeout( this.tunnelingRequestTimer );
-      },
+      }
     },
-    // INBOUND tunneling request
+
+    /*
+    * 2) INBOUND tunneling request
+    */
     receivingTunnelingRequest: {
       _onEnter: function (datagram) {
         var sm = this;
@@ -255,7 +266,7 @@ const KnxConnection = machina.Fsm.extend({
           );
         }
         // check IF THIS IS NEEDED (maybe look at apdu control field for ack)
-        this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_ACK, datagram, function() {
+        sm.send( sm.prepareDatagram (KnxConstants.SERVICE_TYPE.TUNNELING_ACK, datagram), function() {
           sm.transition(  'idle' );
         });
       }
@@ -279,7 +290,7 @@ KnxConnection.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
     svctype, cemitype, msg, rinfo.address, rinfo.port, dg
   ));
   // ... to drive the state machine
-  var signal = util.format('recv_%s', svctype);
+  var signal = util.format('inbound_%s', svctype);
   this.handle(signal, dg);
 };
 
@@ -295,7 +306,6 @@ KnxConnection.prototype.AddTunnState = function (datagram) {
   datagram.tunnstate = {
     channel_id:      this.channel_id,
     seqnum:          this.sequenceNumber,
-    protocol_type:   1, // UDP
     tunnel_endpoint: this.remoteEndpoint.addr + ':' + this.remoteEndpoint.port
   }
 }
@@ -337,7 +347,8 @@ KnxConnection.prototype.AddCEMI = function(datagram) {
 }
 
 /*
-* send a request to KNX of
+* submit an outbound request to the state machine
+*
 * type: service type
 * datagram_template:
 *    if a datagram is passed, use this as
@@ -347,7 +358,6 @@ KnxConnection.prototype.AddCEMI = function(datagram) {
 KnxConnection.prototype.Request = function (type, datagram_template, callback) {
   var self = this;
   var datagram;
-
   if (datagram_template != null) {
     datagram = (typeof datagram_template == 'function') ?
       datagram_template(this.prepareDatagram( type )) :
@@ -358,23 +368,8 @@ KnxConnection.prototype.Request = function (type, datagram_template, callback) {
   // make sure that we override the datagram service type!
   datagram.service_type = type;
   var st = KnxConstants.keyText('SERVICE_TYPE', type);
-  // select which UDP channel we should use (control/tunnel)
-  var channel = [
-    KnxConstants.SERVICE_TYPE.CONNECT_REQUEST,
-    KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST,
-    KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST]
-    .indexOf(type) > -1 ?  this.control : this.tunnel;
-  try {
-    this.writer = KnxNetProtocol.createWriter();
-    var packet = this.writer.KNXNetHeader(datagram);
-    this.send(channel, packet.buffer, function() {
-      self.handle(self, 'sent_'+st, datagram);
-      callback && callback();
-    });
-  }
-  catch (e) {
-    console.log(util.format("*** ERROR: %s, %j", e, e.stack));
-  }
+  // hand off the outbound request to the state machine
+  self.handle ( 'outbound_'+st, datagram );
   if (typeof callback === 'function') callback();
 }
 
@@ -397,9 +392,11 @@ KnxConnection.prototype.prepareDatagram = function (svcType) {
       this.AddCRI(datagram);
       break;
     case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
-      this.sequenceNumber++;
       this.AddTunnState(datagram);
       this.AddCEMI(datagram);
+      break;
+    case KnxConstants.SERVICE_TYPE.TUNNELING_ACK:
+      this.AddTunnState(datagram);
       break;
     default:
       console.trace('Do not know how to deal with svc type %d', svcType);
@@ -407,33 +404,56 @@ KnxConnection.prototype.prepareDatagram = function (svcType) {
   return datagram;
 }
 
-KnxConnection.prototype.send = function(channel, buf, callback) {
+/*
+send the telegram over the wire
+*/
+KnxConnection.prototype.send = function(telegram, callback) {
   var conn = this;
-  var reader = KnxNetProtocol.createReader(buf);
-  reader.KNXNetHeader('packet');
-  var dg = reader.next()['packet'];
-  // append the CEMI service type if this is a tunneling request...
-  var cemitype = (dg.service_type == 1056) ? KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode) : "";
-  var svctype = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
-  this.debugPrint(util.format(
-    'Send %s(/%s) %j (%d bytes) from port %d ==> %j',
-    svctype, cemitype, buf, buf.length, channel.address().port, dg
-  ));
-  channel.send(
-    buf, 0, buf.length,
-    conn.remoteEndpoint.port, conn.remoteEndpoint.addr,
-    function (err) {
-      conn.debugPrint(util.format(
-        'udp sent to %j, err[' + (err ? err.toString() : 'no_err') + ']',
-        conn.remoteEndpoint));
-      if (typeof callback === 'function') callback(err);
-    });
-  // ... then drive the state machine
-  var signal = util.format('sent_%s', svctype);
-  this.handle( signal, dg );
+
+  // select which UDP channel we should use (control/tunnel)
+  var channel = [
+    KnxConstants.SERVICE_TYPE.CONNECT_REQUEST,
+    KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST,
+    KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST]
+    .indexOf(telegram.service_type) > -1 ?  this.control : this.tunnel;
+  try {
+    var cemitype ;
+    this.writer = KnxNetProtocol.createWriter();
+    // append the CEMI service type if this is a tunneling request...
+    if (telegram.service_type == 1056) { // KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST)
+      // increment the sequence number only when about to send!
+      telegram.tunnstate.seqnum = ++this.sequenceNumber;
+      cemitype = KnxConstants.keyText('MESSAGECODES', telegram.cemi.msgcode);
+    }
+    var packet = this.writer.KNXNetHeader(telegram);
+    var buf = packet.buffer;
+    var svctype = KnxConstants.keyText('SERVICE_TYPE', telegram.service_type);
+    this.debugPrint(util.format(
+      'Sending %s(/%s) %j (%d bytes) from port %d ==> %j',
+      svctype, cemitype, buf, buf.length, channel.address().port, telegram
+    ));
+    channel.send(
+      buf, 0, buf.length,
+      conn.remoteEndpoint.port, conn.remoteEndpoint.addr,
+      function (err) {
+        conn.debugPrint(util.format(
+          'udp sent to %j, err[' + (err ? err.toString() : 'no_err') + ']',
+          conn.remoteEndpoint));
+        if (typeof callback === 'function') callback(err);
+      });
+    // ... then drive the state machine
+    var signal = util.format('sent_%s', svctype);
+    this.handle( signal, telegram );
+    callback && callback();
+  }
+  catch (e) {
+    console.log(util.format("*** ERROR: %s, %j", e, e.stack));
+  }
+
 }
 
 KnxConnection.prototype.write = function(grpaddr, value, dpt) {
+  // outbound request onto the state machine
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
     datagram.cemi.dest_addr = grpaddr;
     datagram.cemi.apdu.data = value; // FIXME: use datapoints to format APDU
