@@ -15,10 +15,10 @@ connection.Connect(function() {
   console.log('             Now sending a Read request');
   var dp = new knx.Datapoint({ga: '1/1/8'});
   dp.bind(connection);
+  dp.read((src, dest, value) => {
+    console.log("**** RESPONSE %j reports that %j has current value: %j", src, dest, value);
+  });
   dp.write(1);
-//  dp.read((src, dest, value) => {
-//    console.log("**** RESPONSE %j reports that %j has current value: %j", src, dest, value);
-//  });
   //
   //console.log('%j', knx.Devices);
   //var light = new knx.Devices.BinarySwitch({ga: '1/1/1', status_ga: '1/1/101'}, connection);

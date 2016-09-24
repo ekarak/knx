@@ -152,11 +152,11 @@ const KnxConnection = machina.Fsm.extend({
           // time out on inactivity...
           this.transition(  "requestingConnState" );
         }.bind( this ), 10000 );
-        this.emit( "state", { status: "IDLE" } );
+        this.debugPrint( " ... " );
       },
       // queue an OUTGOING tunelling request...
       outbound_TUNNELING_REQUEST: function ( datagram ) {
-        this.debugPrint('OUTBOUND tunneling request');
+        // this.debugPrint(util.format('OUTBOUND tunneling request: %j', datagram));
         this.transition(  'sendingTunnelingRequest', datagram );
       },
       // OR receive an INBOUND tunneling request
@@ -269,7 +269,11 @@ const KnxConnection = machina.Fsm.extend({
         sm.send( sm.prepareDatagram (KnxConstants.SERVICE_TYPE.TUNNELING_ACK, datagram), function() {
           sm.transition(  'idle' );
         });
-      }
+      },
+      "*": function ( data ) {
+        this.debugPrint(util.format('*** deferring Until Transition %j', data));
+        this.deferUntilTransition();
+      },
     }
   }
 });
@@ -286,8 +290,8 @@ KnxConnection.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
     KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode)
     : "";
   this.debugPrint(util.format(
-    "Received %s(/%s) message: %j from %j:%d == %j",
-    svctype, cemitype, msg, rinfo.address, rinfo.port, dg
+    "Received %s(/%s) message from %j:%d == %j",
+    svctype, cemitype, rinfo.address, rinfo.port, dg
   ));
   // ... to drive the state machine
   var signal = util.format('inbound_%s', svctype);
@@ -437,8 +441,8 @@ KnxConnection.prototype.send = function(telegram, callback) {
       conn.remoteEndpoint.port, conn.remoteEndpoint.addr,
       function (err) {
         conn.debugPrint(util.format(
-          'udp sent to %j, err[' + (err ? err.toString() : 'no_err') + ']',
-          conn.remoteEndpoint));
+          'UDP sent %d bytes to %j, err[' + (err ? err.toString() : 'no_err') + ']',
+          buf.length, conn.remoteEndpoint));
         if (typeof callback === 'function') callback(err);
       });
     // ... then drive the state machine
