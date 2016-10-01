@@ -4,46 +4,24 @@
 */
 
 const util = require('util');
-const DPT = require('./Datapoint');
+const DPTLib = require('./dptlib');
 const KnxProtocol = require('./KnxProtocol');
 const KnxConstants = require('./KnxConstants');
 
-/*
-Datatypes
-=========
-KNX/EIB Function                   Information length      EIS         DPT     Value
-Switch                             1 Bit                   EIS 1       DPT 1	0,1
-Dimming (Position, Control, Value) 1 Bit, 4 Bit, 8 Bit     EIS 2	    DPT 3	[0,0]...[1,7]
-Time                               3 Byte                  EIS 3	    DPT 10
-Date                               3 Byte                  EIS 4       DPT 11
-Floating point                     2 Byte                  EIS 5	    DPT 9	-671088,64 - 670760,96
-8-bit unsigned value               1 Byte                  EIS 6	    DPT 5	0...255
-8-bit unsigned value               1 Byte                  DPT 5.001	DPT 5.001	0...100
-Blinds / Roller shutter            1 Bit                   EIS 7	    DPT 1	0,1
-Priority                           2 Bit                   EIS 8	    DPT 2	[0,0]...[1,1]
-IEEE Floating point                4 Byte                  EIS 9	    DPT 14	4-Octet Float Value IEEE 754
-16-bit unsigned value              2 Byte                  EIS 10	    DPT 7	0...65535
-16-bit signed value                2 Byte                  DPT 8	    DPT 8	-32768...32767
-32-bit unsigned value              4 Byte                  EIS 11	    DPT 12	0...4294967295
-32-bit signed value                4 Byte                  DPT 13	    DPT 13	-2147483648...2147483647
-Access control                     1 Byte                  EIS 12	    DPT 15
-ASCII character                    1 Byte                  EIS 13	    DPT 4
-8859_1 character                   1 Byte                  DPT 4.002	DPT 4.002
-8-bit signed value                 1 Byte                  EIS 14	    DPT 6	-128...127
-14 character ASCII                 14 Byte                 EIS 15	    DPT 16
-14 character 8859_1                14 Byte                 DPT 16.001	DPT 16.001
-Scene                              1 Byte                  DPT 17	    DPT 17	0...63
-HVAC                               1 Byte                  DPT 20	    DPT 20	0..255
-Unlimited string 8859_1            .                       DPT 24	    DPT 24
-List 3-byte value                  3 Byte                  DPT 232	    DPT 232	RGB[0,0,0]...[255,255,255]
-*/
-
 function Datapoint(options, conn) {
   if (options == null || options.ga == null) {
-    throw "must supply at least { groupaddr, dpt }!";
+    throw "must supply at least { ga, dpt }!";
   }
-  this.dpt = options.dpt || "DPT1";
   this.options = options;
+  this.dptid = options.dpt || "DPT1.001";
+  // "DPT9.001" => "dpt9", "001"
+  var arr = this.dptid.split('.');
+  this.dptbasetype = arr[0];
+  this.dptsubtype = arr[1];
+  console.log('dptid: %s, basetype: %j', this.dptid, this.dptbasetype);
+  if (DPTLib.hasOwnProperty(this.dptbasetype)) {
+    this.dpt = DPTLib[this.dptbasetype];
+  } else throw "Unknown Datapoint Type: " + this.dptid;
   if (conn) this.bind(conn);
 }
 
@@ -51,26 +29,44 @@ Datapoint.prototype.bind = function (conn) {
   var self = this;
   if (!conn) throw "must supply a valid KNX connection to bind to"
   this.conn = conn;
-  conn.on('event', function (evt, src, dest, value) {
-    if (dest == self.options.ga) {
-      switch (evt) {
-        case "GroupValue_Response":
-          if (typeof self.readcb == 'function') self.readcb(src, dest, value);
-      }
+  // bind generic event handler for this address
+  conn.on(util.format('event_%s',self.options.ga), function (evt, src, value) {
+    var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    var jsvalue = self.dpt.fromBuffer(value);
+    console.log("%s **** DATAPOINT %j %s\n", ts, jsvalue, self.dptsubtype && self.dptsubtype.units);
+    switch (evt) {
+      case "GroupValue_Response":
+        self.previous_value = self.current_value;
+        self.current_value = jsvalue;
+        if (typeof self.readcb == 'function') self.readcb(src, dest, jsvalue);
     }
   });
 }
 
+/* format a Javascript value into the APDU format dictated by the DPT
+   and submit a GroupValue_Write to the connection */
 Datapoint.prototype.write = function (value) {
-  if (!this.conn) throw "must supply a valid KNX connection to bind to"
-  // TODO: interpret value as per own DPT
-  this.conn.write(this.options.ga, value);
+  if (!this.conn) throw "must supply a valid KNX connection to bind to";
+  if (this.dpt.hasOwnProperty('range')) {
+    // check if value is in range
+    var range = this.dpt.basetype.range;
+    if (value < range[0] || value > range[1]) {
+      throw util.format("Value %j(%s) out of bounds(%j) for %s",
+        value, (typeof value), range, this.dptid);
+    }
+  }
+  var apdu_data = (typeof this.dpt.formatAPDU == 'function') ?
+    this.dpt.formatAPDU(value) : value;
+  this.conn.write(this.options.ga, apdu_data);
 }
 
 Datapoint.prototype.read = function (callback) {
   if (!this.conn) throw "must supply a valid KNX connection to bind to"
-  this.readcb = callback;
-  this.conn.read(this.options.ga);
+  this.conn.read(this.options.ga, callback);
+}
+
+Datapoint.prototype.toString = function () {
+  return util.format('%s (%s)', this.options.ga, this.mod.dptid);
 }
 
 module.exports = Datapoint;

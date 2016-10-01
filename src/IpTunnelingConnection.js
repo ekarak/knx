@@ -3,12 +3,11 @@
 * (C) 2016 Elias Karakoulakis
 */
 
+const os = require('os');
+const util = require('util');
+const dgram = require('dgram');
 const KnxConnection = require('./KnxConnection');
 const KnxNetProtocol = require('./KnxProtocol');
-
-var os = require('os');
-var util = require('util');
-var dgram = require('dgram');
 
 /// <summary>
 ///     Initializes a new KNX tunneling connection with provided values. Make sure the local system allows

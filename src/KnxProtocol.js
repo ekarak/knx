@@ -2,13 +2,14 @@
 * knx.js - a pure Javascript library for KNX
 * (C) 2016 Elias Karakoulakis
 */
-var util = require('util');
-var ipv4 = require('ipv4.js');
-var Parser = require('binary-parser').Parser;
-var BinaryProtocol = require('binary-protocol');
-var KnxProtocol = new BinaryProtocol();
-var KnxAddress = require('./Address');
-var KnxConstants = require ('./KnxConstants');
+
+const util = require('util');
+const ipv4 = require('ipv4.js');
+const Parser = require('binary-parser').Parser;
+const BinaryProtocol = require('binary-protocol');
+const KnxProtocol = new BinaryProtocol();
+const KnxAddress = require('./Address');
+const KnxConstants = require ('./KnxConstants');
 
 // defaults
 KnxProtocol.twoLevelAddressing = false;
@@ -26,7 +27,7 @@ function knxlen(objectName, context) {
   else
     return lf;
 }
-//
+
 KnxProtocol.define('IPv4Endpoint', {
   read: function (propertyName) {
     this.pushStack({ addr: null, port: null})
@@ -351,13 +352,13 @@ var ctrlStruct = new Parser()
   .bit4('extendedFrame');
 
 // most common APDU: 2 bytes, tcpi = 6 bits, apci = 4 bits, remaining 6 bits = data
-var apduStruct = new Parser()
+KnxProtocol.apduStruct = new Parser()
   .bit6('tpci')
   .bit4('apci')
   .bit6('data')
 
 // less common APDU: tpci = 6 bits, apci= 10 bits, data follows
-var apduStructLong = new Parser()
+KnxProtocol.apduStructLong = new Parser()
   .bit6('tpci')
   .bit10('apci')
 
@@ -375,9 +376,9 @@ KnxProtocol.define('APDU', {
       //console.log('%j', hdr)
       var apdu;
       if (hdr.apdu_length == 1) {
-        apdu = apduStruct.parse(hdr.apdu_raw);
+        apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
       } else {
-        apdu = apduStructLong.parse(hdr.apdu_raw);
+        apdu = KnxProtocol.apduStructLong.parse(hdr.apdu_raw);
         apdu.data = hdr.apdu_raw.slice(2);
       }
       hdr.tpci = apdu.tpci;

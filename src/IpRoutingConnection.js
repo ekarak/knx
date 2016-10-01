@@ -3,10 +3,10 @@
 * (C) 2016 Elias Karakoulakis
 */
 
-var KnxConnection = require('./KnxConnection');
+const KnxConnection = require('./KnxConnection');
 
-var util = require('util');
-var dgram = require('dgram');
+const util = require('util');
+const dgram = require('dgram');
 
 /**
   Initializes a new KNX routing connection with provided values. Make

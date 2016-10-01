@@ -6,14 +6,16 @@ var connection = knx.IpRoutingConnection();
 
 connection.debug = true;
 connection.Connect(function() {
-  console.log('----------------------------------');
-  console.log('Connected. - Registering event handler');
+  console.log('----------');
+  console.log('Connected!');
+  console.log('----------');
   connection.on('event', function (evt, src, dest, value) {
     var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
-    console.log("%s **** KNX EVENT: %j, src: %j, dest: %j, value: %j", ts, evt, src, dest, value);
+    console.log("%s\n**** KNX EVENT: %j, src: %j, dest: %j, value: %j \n", ts, evt, src, dest, value);
   })
-  console.log('             Now sending a Read request');
-  var dp = new knx.Datapoint({ga: '1/1/8'});
+  connection.write('')
+  console.log('Now sending a Read request');
+  var dp = new knx.Datapoint({ga: '0/0/15', dpt: 'dpt9.001'});
   dp.bind(connection);
   dp.read((src, dest, value) => {
     console.log("**** RESPONSE %j reports that %j has current value: %j", src, dest, value);

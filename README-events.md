@@ -5,20 +5,27 @@ There's a ton of information being emitted by the library, so you can get full d
 ### Connection events
 
 ```js
-// device with 'src' physical address wrote to 'dest' group address
+// Generic groupwrite event: device with 'src' physical address wrote to 'dest' group address
 connection.on('GroupValue_Write', function (src, dest, value) { ... });
-
-// read event: device with physical address 'src', is asking on the KNX
+// Generic groupread event: device with physical address 'src', is asking on the KNX
 // bus the current value of group address 'dest'
 connection.on('GroupValue_Read', function (src, dest) { ... });
-
 // response event: device with physical address 'src', is responding to a
 // read request that the current value of group address 'dest' is 'value'
 connection.on('GroupValue_Response', function (src, dest, value) { ... });
 
+// Specific group address event: device with 'src' physical address
+// .. wrote to group address
+connection.on('GroupValue_Write_1/2/3', function (src, value) { ... });
+// .. or responded about current value
+connection.on('GroupValue_Response_1/2/3', function (src, value) { ... });
+
 // there's also the generic catch-all event which passes the event type
 // as its 1st argument, along with all the other info
 connection.on('event', function (evt, src, dest, value) { ... });)
+// the generic catch-all event can also be used with group addresses
+connection.on('event_1/2/3', function (evt, src, dest, value) { ... });)
+
 ```
 
 Here's the full list of events emitted:

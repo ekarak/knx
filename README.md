@@ -34,6 +34,8 @@ undefined
 Then, here's how to properly talk to KNX from Node:
 
 ```js
+  // sending an arbitrary write request to a binary group address
+  connection.write("1/0/0", true);
   // define a datapoint:
   var dp = new knx.Datapoint({ga: '1/1/1'});
   dp.bind(connection);

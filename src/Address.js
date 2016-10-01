@@ -3,7 +3,7 @@
 * (C) 2016 Elias Karakoulakis
 */
 
-var Parser = require('binary-parser').Parser;
+const Parser = require('binary-parser').Parser;
 
 //           +-----------------------------------------------+
 // 16 bits   |              INDIVIDUAL ADDRESS               |

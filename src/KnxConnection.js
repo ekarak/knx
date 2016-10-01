@@ -67,8 +67,6 @@ const KnxConnection = machina.Fsm.extend({
 
     uninitialized: {
       "*": function() {
-
-          //this.deferUntilTransition( conn );
         this.transition(  "connecting" );
       },
     },
@@ -116,6 +114,10 @@ const KnxConnection = machina.Fsm.extend({
         this.conntime = Date.now();
         this.transition( 'idle');
         this.emit('connected');
+      },
+      "*": function ( data ) {
+        this.debugPrint(util.format('*** deferring Until Transition %j', data));
+        this.deferUntilTransition();
       },
     },
 
@@ -253,17 +255,18 @@ const KnxConnection = machina.Fsm.extend({
           sm.debugPrint(util.format(
             'received L_Data.ind tunelling request (%d bytes) - %s',
             datagram.total_length, evtName));
+          // emit events
           this.emit(evtName,
-            datagram.cemi.src_addr,
-            datagram.cemi.dest_addr,
-            datagram.cemi.apdu.data // TODO: interpret data according to any defined datapoints
-          );
+            datagram.cemi.src_addr, datagram.cemi.dest_addr, datagram.cemi.apdu.data );
+          //
+          this.emit(util.format("%s_%s", evtName, datagram.cemi.dest_addr),
+            datagram.cemi.src_addr, datagram.cemi.apdu.data );
+          //
           this.emit("event",
-            evtName,
-            datagram.cemi.src_addr,
-            datagram.cemi.dest_addr,
-            datagram.cemi.apdu.data
-          );
+            evtName, datagram.cemi.src_addr, datagram.cemi.dest_addr, datagram.cemi.apdu.data );
+          //
+          this.emit(util.format("event_%s", datagram.cemi.dest_addr),
+            evtName, datagram.cemi.src_addr, datagram.cemi.apdu.data );
         }
         // check IF THIS IS NEEDED (maybe look at apdu control field for ack)
         sm.send( sm.prepareDatagram (KnxConstants.SERVICE_TYPE.TUNNELING_ACK, datagram), function() {
@@ -290,8 +293,7 @@ KnxConnection.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
     KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode)
     : "";
   this.debugPrint(util.format(
-    "Received %s(/%s) message from %j:%d == %j",
-    svctype, cemitype, rinfo.address, rinfo.port, dg
+    "Received %s(/%s) message: %j", svctype, cemitype, dg
   ));
   // ... to drive the state machine
   var signal = util.format('inbound_%s', svctype);
@@ -345,7 +347,7 @@ KnxConnection.prototype.AddCEMI = function(datagram) {
       // default operation is GroupValue_Write
       apci: KnxConstants.APCICODES.indexOf('GroupValue_Write'),
       tpci: 0,
-      data: 1
+      data: 0
     }
   }
 }
@@ -456,11 +458,11 @@ KnxConnection.prototype.send = function(telegram, callback) {
 
 }
 
-KnxConnection.prototype.write = function(grpaddr, value, dpt) {
+KnxConnection.prototype.write = function(grpaddr, apdu_data, dpt) {
   // outbound request onto the state machine
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
     datagram.cemi.dest_addr = grpaddr;
-    datagram.cemi.apdu.data = value; // FIXME: use datapoints to format APDU
+    datagram.cemi.apdu.data = apdu_data;
     return datagram;
   });
 }
