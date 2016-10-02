@@ -28,11 +28,19 @@ connection.on('event_1/2/3', function (evt, src, dest, value) { ... });)
 
 ```
 
-Here's the full list of events emitted:
+Here's the full list of events emitted by the connection:
 ```
 ["GroupValue_Read", "GroupValue_Response", "GroupValue_Write",
 "PhysicalAddress_Write",  "PhysicalAddress_Read", "PhysicalAddress_Response",
 "ADC_Read", "ADC_Response", "Memory_Read", "Memory_Response", "Memory_Write",
 "UserMemory", "DeviceDescriptor_Read", "DeviceDescriptor_Response",
 "Restart", "OTHER"]
+```
+
+
+### Datapoint events
+
+```js
+// a datapoint has had its value changed
+datapoint.on('change', function(oldvalue, newvalue){...});
 ```

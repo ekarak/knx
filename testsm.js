@@ -14,13 +14,19 @@ connection.Connect(function() {
     console.log("%s\n**** KNX EVENT: %j, src: %j, dest: %j, value: %j \n", ts, evt, src, dest, value);
   })
   connection.write('')
-  console.log('Now sending a Read request');
+  console.log('Reading room temperature');
   var dp = new knx.Datapoint({ga: '0/0/15', dpt: 'dpt9.001'});
+  dp.on('change', function(oldvalue, newvalue) {
+    console.log("**** RESPONSE 0/0/15 changed from: %j to: %j",
+      oldvalue, newvalue);
+  });
   dp.bind(connection);
+  /*
   dp.read((src, dest, value) => {
     console.log("**** RESPONSE %j reports that %j has current value: %j", src, dest, value);
   });
-  dp.write(1);
+  */
+
   //
   //console.log('%j', knx.Devices);
   //var light = new knx.Devices.BinarySwitch({ga: '1/1/1', status_ga: '1/1/101'}, connection);

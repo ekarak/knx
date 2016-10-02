@@ -42,8 +42,9 @@ var dirEntries = fs.readdirSync(__dirname);
 var dpts = {};
 for (var i = 0; i < dirEntries.length; i++) {
   if (matches = dirEntries[i].match(/(dpt.*)\.js/) ) {
-    dpts[matches[1]] = require(__dirname + path.sep + dirEntries[i]);
-    console.log('DPT library: loading %s (%s)', matches[1], dpts[matches[1]].basetype.desc);
+    var dptid = matches[1].toUpperCase();
+    dpts[dptid] = require(__dirname + path.sep + dirEntries[i]);
+    console.log('DPT library: loading %s (%s)', dptid, dpts[dptid].basetype.desc);
   }
 }
 
