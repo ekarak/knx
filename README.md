@@ -37,11 +37,10 @@ Then, here's how to properly talk to KNX from Node:
   // sending an arbitrary write request to a binary group address
   connection.write("1/0/0", true);
   // define a datapoint:
-  var dp = new knx.Datapoint({ga: '1/1/1'});
-  dp.bind(connection);
+  var dp = new knx.Datapoint({ga: '1/1/1'}, connection);
   // Now send off a couple of requests:
-  dp.read((src, dest, value) => {
-    console.log("**** RESPONSE %j reports that %j has current value: %j", src, dest, value);
+  dp.read((src, value) => {
+    console.log("**** RESPONSE %j reports current value: %j", src, value);
   });
   dp.write(1);
 ```

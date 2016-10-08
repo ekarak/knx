@@ -458,22 +458,27 @@ KnxConnection.prototype.send = function(telegram, callback) {
 
 }
 
-KnxConnection.prototype.write = function(grpaddr, apdu_data, dpt) {
+KnxConnection.prototype.write = function(grpaddr, apdu_data, dpt, callback) {
+  if (grpaddr == null || apdu_data == null) {
+    console.trace('must supply both grpaddr(%j) and apdu_data(%j)!', grpaddr, apdu_data);
+    return;
+  }
   // outbound request onto the state machine
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
     datagram.cemi.dest_addr = grpaddr;
     datagram.cemi.apdu.data = apdu_data;
+    console.log('----- writing to %s apdu_data: %j', grpaddr, apdu_data);
     return datagram;
-  });
+  }, callback);
 }
 
-KnxConnection.prototype.read = function(grpaddr) {
+KnxConnection.prototype.read = function(grpaddr, callback) {
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
     // this is a READ request
     datagram.cemi.apdu.apci = KnxConstants.APCICODES.indexOf("GroupValue_Read");
     datagram.cemi.dest_addr = grpaddr;
     return datagram;
-  });
+  }, callback);
 }
 
 KnxConnection.prototype.debugPrint = function(msg) {

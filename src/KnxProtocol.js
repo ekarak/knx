@@ -351,16 +351,11 @@ var ctrlStruct = new Parser()
   .bit3('hopCount')
   .bit4('extendedFrame');
 
-// most common APDU: 2 bytes, tcpi = 6 bits, apci = 4 bits, remaining 6 bits = data
+// APDU: 2 bytes, tcpi = 6 bits, apci = 4 bits, remaining 6 bits = data (when length=1)
 KnxProtocol.apduStruct = new Parser()
   .bit6('tpci')
   .bit4('apci')
   .bit6('data')
-
-// less common APDU: tpci = 6 bits, apci= 10 bits, data follows
-KnxProtocol.apduStructLong = new Parser()
-  .bit6('tpci')
-  .bit10('apci')
 
 KnxProtocol.define('APDU', {
   read: function (propertyName) {
@@ -375,10 +370,8 @@ KnxProtocol.define('APDU', {
       // Typical example of protocol designed by committee.
       //console.log('%j', hdr)
       var apdu;
-      if (hdr.apdu_length == 1) {
-        apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
-      } else {
-        apdu = KnxProtocol.apduStructLong.parse(hdr.apdu_raw);
+      apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
+      if (hdr.apdu_length > 1) {
         apdu.data = hdr.apdu_raw.slice(2);
       }
       hdr.tpci = apdu.tpci;

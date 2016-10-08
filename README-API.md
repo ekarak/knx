@@ -34,7 +34,9 @@ connection.write("2/1/0", 22.5, "DPT9.001");
 // send a Read request to get the current state of 1/0/1 group address
 // dont forget to register a GroupValue_Response handler!
 connection.read("1/0/1");
-// or, the opposite: send a Response telegram to an incoming GroupValue_Read request
+// you can also pass a callback to capture the response sent by src
+connection.read("1/0/1", (src, responsevalue) => { ... });
+// you can send a Response telegram to an incoming GroupValue_Read request
 connection.response("2/1/0", 22.5, "DPT9.001");)
 //
 ```
@@ -61,7 +63,7 @@ var dimmer_control = new knx.Datapoint({ga: '1/2/33', dpt: 'DPT3.007'});
 ```js
 var entry_light = new knx.Devices.BinarySwitch({ga: '1/2/33', status_ga: '1/2/133'});
 entry_light.switchOn(); // or switchOff();
-console.log("The entry light is %j", entry_light.status);
+console.log("The entry light is %j", entry_light.status.current_value);
 ```
 
 This effectively creates a pair of datapoints typically associated with a binary
