@@ -63,6 +63,9 @@ Datapoint.prototype.bind = function (conn) {
         self.update(jsvalue); // update internal state
         if (typeof self.readcb == 'function') self.readcb(src, jsvalue);
         break;
+      default:
+        // TODO: add default handler; maybe emit warning?
+        break;
     }
   });
   // issue a GroupValue_Read request to try to get the initial state from the bus (if any)

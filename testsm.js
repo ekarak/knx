@@ -11,7 +11,8 @@ connection.Connect(function() {
   console.log('----------');
   connection.on('event', function (evt, src, dest, value) {
     var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
-    console.log("%s **** KNX EVENT: %j, src: %j, dest: %j, value: %j", ts, evt, src, dest, value);
+    var msg = util.format("%s **** KNX EVENT: %j, src: %j, dest: %j", ts, evt, src, dest);
+    console.log("%s %s", msg, value == null ? "" : util.format(", value: %j", value));
   })
   console.log('Reading room temperature');
   var dp = new knx.Datapoint({ga: '0/0/15', dpt: 'dpt9.001'});

@@ -481,6 +481,10 @@ KnxConnection.prototype.read = function(grpaddr, callback) {
   }, callback);
 }
 
+KnxConnection.prototype.Disconnect = function(msg) {
+  this.transition("disconnecting");
+}
+
 KnxConnection.prototype.debugPrint = function(msg) {
   if (this.debug) {
     var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
