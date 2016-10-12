@@ -117,7 +117,7 @@ const KnxConnection = machina.Fsm.extend({
       },
       "*": function ( data ) {
         this.debugPrint(util.format('*** deferring Until Transition %j', data));
-        this.deferUntilTransition();
+        this.deferUntilTransition( 'idle' );
       },
     },
 
@@ -155,6 +155,8 @@ const KnxConnection = machina.Fsm.extend({
           this.transition(  "requestingConnState" );
         }.bind( this ), 10000 );
         this.debugPrint( " ... " );
+        // console.trace();
+        this.processQueue();
       },
       // queue an OUTGOING tunelling request...
       outbound_TUNNELING_REQUEST: function ( datagram ) {
@@ -197,6 +199,10 @@ const KnxConnection = machina.Fsm.extend({
             this.transition('connecting');
         }
       },
+      "*": function ( data ) {
+        this.debugPrint(util.format('*** deferring Until Transition %j', data));
+        this.deferUntilTransition( 'idle' );
+      },
       _onExit: function() {
         clearTimeout( this.connstatetimer );
       },
@@ -233,8 +239,8 @@ const KnxConnection = machina.Fsm.extend({
         this.transition(  'connecting');
       },
       "*": function ( data ) {
-        this.debugPrint(util.format('*** deferring Until Transition %j', data));
-        this.deferUntilTransition();
+        this.debugPrint(util.format('*** deferring until transition %j', data));
+        this.deferUntilTransition( 'idle' );
       },
       _onExit: function( datagram ) {
         clearTimeout( this.tunnelingRequestTimer );
@@ -275,7 +281,7 @@ const KnxConnection = machina.Fsm.extend({
       },
       "*": function ( data ) {
         this.debugPrint(util.format('*** deferring Until Transition %j', data));
-        this.deferUntilTransition();
+        this.deferUntilTransition( 'idle' );
       },
     }
   }
@@ -446,10 +452,7 @@ KnxConnection.prototype.send = function(telegram, callback) {
           'UDP sent %d bytes to %j, err[' + (err ? err.toString() : 'no_err') + ']',
           buf.length, conn.remoteEndpoint));
         if (typeof callback === 'function') callback(err);
-      });
-    // ... then drive the state machine
-    var signal = util.format('sent_%s', svctype);
-    this.handle( signal, telegram );
+    });
     callback && callback();
   }
   catch (e) {
