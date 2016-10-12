@@ -17,6 +17,7 @@ const EventEmitter = require('events').EventEmitter;
 */
 function Datapoint(options, conn) {
   EventEmitter.call(this);
+  console.log('new datapoint: %j', options);
   if (options == null || options.ga == null) {
     throw "must supply at least { ga, dpt }!";
   }
@@ -73,12 +74,11 @@ Datapoint.prototype.bind = function (conn) {
 }
 
 Datapoint.prototype.update = function (jsvalue) {
-  if (this.previous_value != jsvalue) {
+  if (this.current_value != jsvalue) {
     var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
     console.log("%s **** DATAPOINT %s CHANGE %j => %j",
-      ts, this.options.ga, this.previous_value, jsvalue );
-    this.emit('change', this.previous_value, jsvalue);
-    this.previous_value = this.current_value;
+      ts, this.options.ga, this.current_value, jsvalue );
+    this.emit('change', this.current_value, jsvalue );
     this.current_value = jsvalue;
   }
 }

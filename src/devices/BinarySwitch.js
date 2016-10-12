@@ -6,13 +6,14 @@
 const util = require('util');
 const knx = require('../../');
 
-function BinarySwitch(options) {
+function BinarySwitch(options, conn) {
   if (options == null || options.ga == null) {
     throw "must supply at least { ga }!";
   }
   this.control_ga = options.ga;
   this.status_ga = options.status_ga || options.ga;
   this.options = options;
+  if (conn) this.bind(conn);
 }
 
 BinarySwitch.prototype.bind = function (conn) {

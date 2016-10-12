@@ -59,8 +59,8 @@ function IpRoutingConnection(options) {
       });
       // start connection sequence
       sm.transition( 'connecting');
-      sm.on('connected', callback);
     });
+    sm.on('connected', callback);
   }
 
   return instance;
