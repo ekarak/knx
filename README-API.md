@@ -41,7 +41,25 @@ connection.response("2/1/0", 22.5, "DPT9.001");)
 //
 ```
 
+Try writing a value to a group address.
+
+```js
+// switch on a light
+connection.write("1/0/0", 1, "DPT1.001");
+// set the thermostat to 21.5 degrees Celcius
+connection.write("3/0/3", 21.5, "DPT9.001");
+```
+
+**Important**: connection.write() will only accept *raw APDU payloads* and a DPT.
+This practically means that for *reading and writing to anything other than a binary
+switch* (eg. for dimmer controls) you'll need to declare one or more *datapoints*.
+
 ### Declare datapoints based on their DPT
+
+Datapoints correlate an *endpoint* (identifed by a group address such as '1/2/3')
+with a *DPT* (DataPoint Type), so that *serialization* of values to and from KNX
+works correctly (eg. temperatures as 16bit floats), and values are being translated
+to Javascript objects and back.
 
 ```js
 // declare a simple binary control
@@ -58,24 +76,47 @@ binary_control.read( function (response) {
 var dimmer_control = new knx.Datapoint({ga: '1/2/33', dpt: 'DPT3.007'});
 ```
 
-### Declare your devices
+Datapoints need to be bound to a connection. This can be done either at their
+creation, *or* using their `bind()` call. Its important to highlight that before
+you start defining datapoints (and devices as we'll see later), your code
+*needs to ensure that the connection has been established*, usually by using a Promise:
 
 ```js
-var entry_light = new knx.Devices.BinarySwitch({ga: '1/2/33', status_ga: '1/2/133'});
-entry_light.switchOn(); // or switchOff();
-console.log("The entry light is %j", entry_light.status.current_value);
+new Promise(function(resolve, reject) {
+  connection.Connect(function() {
+    console.log('----------');
+    console.log('Connected!');
+    console.log('----------');
+    resolve();
+  });
+}).then(function() {
+  var dp = new knx.Datapoint({ga: '1/1/1'}, connection);
+  // Now send off a couple of requests:
+  dp.read((src, value) => {
+    console.log("**** RESPONSE %j reports current value: %j", src, value);
+  });
+  dp.write(1);
+});
+```
+
+
+### Declare your devices
+
+You can define a device (basically a set of GA's that are related to a
+physical KNX device eg. a binary switch) so that you have higher level of control:
+
+```js
+var light = new knx.Devices.BinarySwitch({ga: '1/1/8', status_ga: '1/1/108'}, connection);
+console.log("The current light status is %j", light.status.current_value);
+light.control.on('change', function(oldvalue, newvalue) {
+  console.log("**** LIGHT control changed from: %j to: %j", oldvalue, newvalue);
+});
+light.status.on('change', function(oldvalue, newvalue) {
+  console.log("**** LIGHT status changed from: %j to: %j", oldvalue, newvalue);
+});
+light.switchOn(); // or switchOff();
 ```
 
 This effectively creates a pair of datapoints typically associated with a binary
 switch, one for controlling it and another for getting a status feedback (eg via
 manual operation)
-
-### Creating custom datapoint bindings
-
-```js
-// DPT1 binary controls (eg relays) are the default DPT type
-var entry_light = new knx.KnxBinding({groupaddr: '1/2/33'})
-// all the non-binary datapoints require a dpt argument:
-var lounge_dimmer = new knx.KnxBinding({groupaddr: '1/4/55', dpt: 'DPT3.007'})
-//
-```
