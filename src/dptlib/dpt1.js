@@ -3,6 +3,10 @@
 * (C) 2016 Elias Karakoulakis
 */
 
+exports.formatAPDU = function(value) {
+  return (value ? 1 : 0);
+}
+
 // DPT basetype info hash
 exports.basetype = {
     'bitlength': 1,

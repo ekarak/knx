@@ -51,10 +51,9 @@ function IpRoutingConnection(options) {
   /// </summary>
   instance.Connect = function (callback) {
     var sm = this;
-
     sm.control = sm.tunnel = sm.BindSocket( function(socket) {
       socket.on("message", function(msg, rinfo, callback)  {
-        sm.debugPrint(util.format('Inbound message from multicast group %j', rinfo));
+        sm.debugPrint(util.format('Inbound multicast message %j: %j', rinfo, msg));
         sm.onUdpSocketMessage(msg, rinfo, callback);
       });
       // start connection sequence

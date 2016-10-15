@@ -368,7 +368,7 @@ KnxProtocol.define('APDU', {
     .tap(function (hdr) {
       // Parse the APDU. tcpi/apci bits split across byte boundary.
       // Typical example of protocol designed by committee.
-      console.log('%j', hdr)
+      //console.log('%j', hdr)
       var apdu;
       apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
       if (hdr.apdu_length > 1) {
