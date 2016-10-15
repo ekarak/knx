@@ -25,7 +25,6 @@ connection.on('GroupValue_Response_1/2/3', function (src, value) { ... });
 connection.on('event', function (evt, src, dest, value) { ... });)
 // the generic catch-all event can also be used with group addresses
 connection.on('event_1/2/3', function (evt, src, dest, value) { ... });)
-
 ```
 
 Here's the full list of events emitted by the connection:
@@ -37,6 +36,11 @@ Here's the full list of events emitted by the connection:
 "Restart", "OTHER"]
 ```
 
+Other connection events:
+```js
+// an outgoing tunnelling request didn't get any acknowledgement
+connection.on('unacknowledged', function (datagram) { ... });)
+```
 
 ### Datapoint events
 

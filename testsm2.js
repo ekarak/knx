@@ -4,7 +4,7 @@ var util = require('util');
 //var connection = knx.IpTunnelingConnection({ipAddr:'192.168.8.4'});
 var connection = knx.IpRoutingConnection();
 
-connection.debug = true;
+//connection.debug = true;
 
 connection.Connect(function() {
   console.log('----------');
@@ -19,5 +19,5 @@ connection.Connect(function() {
     console.log("**** LIGHT status changed from: %j to: %j",
       oldvalue, newvalue);
   });
-  light.switchOn();
+  light.switchOff();
 });

@@ -20,7 +20,7 @@ At last, here's a **reliable** KNX connection that simply works without any conf
 var knx = require('knx');
 var connection = knx.IpRoutingConnection(); // multicast!
 connection.Connect(function() {
-  // Connected!
+  console.log('Connected!');
   connection.on('event', function (evt, src, dest, value) {
   console.log("%s **** KNX EVENT: %j, src: %j, dest: %j, value: %j",
     new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''),

@@ -368,7 +368,7 @@ KnxProtocol.define('APDU', {
     .tap(function (hdr) {
       // Parse the APDU. tcpi/apci bits split across byte boundary.
       // Typical example of protocol designed by committee.
-      //console.log('%j', hdr)
+      console.log('%j', hdr)
       var apdu;
       apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
       if (hdr.apdu_length > 1) {
@@ -386,33 +386,44 @@ KnxProtocol.define('APDU', {
     if (!value)      throw "cannot write null APDU value";
     var total_length = knxlen('APDU', value);
     //console.log('APDU.write: \t%j (total %d bytes)', value, total_length);
-    if (total_length < 3) throw util.format("APDU is too short (%d bytes)", total_length);
+    if (total_length < 3) throw util.format("APDU is too small (%d bytes)", total_length);
+    if (total_length > 16) throw util.format("APDU is too big (%d bytes)", total_length);
     this.UInt8(total_length - 2);
     if (total_length == 3) {
       // commonest case:
-      // apdu_length(1 byte) + tpci: 6 bits + apci: 4 bits, data: 6 bits (2 bytes)
+      //   APDU length (1 byte)
+      //   tpci: 6 bits + apci: 4 bits, data: 6 bits (2 bytes)
       var word =
         value.tpci * 0x400 +
         value.apci * 0x40 +
         value.data;
-      //console.log('data==%d', value.data)
       this.UInt16BE(word);
     } else {
       // tpci:6 bits + apci:10 bits
       var word =
         value.tpci * 0x400 +
-        value.apci ;
+        value.apci * 0x40;
       this.UInt16BE(word);
-      this.raw(value.data || new Buffer(), total_length-3);
+      this.raw(value.data, value.data.length);
     }
   }
 });
+/* APDU length is truly chaotic: header and data can be interleaved (but
+not always!), so that apdu_length=1 means _2_ bytes following the apdu_length */
 KnxProtocol.lengths['APDU'] = function(value) {
-//console.log(value);
-  if (value instanceof Buffer) {
-    return 1 + value.length;
+  if (value.data instanceof Buffer) {
+    if (value.data.length < 1) throw ('APDU value buffer is empty');
+    if (value.data.length > 14) throw ('APDU value buffer too big, must be <= 14 bytes');
+    // tpci + apci == 2 bytes
+    return 3 + value.data.length;
   } else {
-    return 3; // hard assumption
+    // 6-bit payload: 0 <= value <= 63
+    if (!isNaN(parseFloat(value.data)) && isFinite(value.data)
+      && value.data >= 0 && value.data <= 63) {
+        return 3;
+    } else {
+      throw util.format('APDU payload must be either a Buffer or a 6-bit unsigned integer (got %j)', value.data);
+    }
   }
 }
 

@@ -112,8 +112,8 @@ const KnxConnection = machina.Fsm.extend({
           str, datagram.connstate.channel_id));
         // ready to go!
         this.conntime = Date.now();
-        this.transition( 'idle');
         this.emit('connected');
+        this.transition( 'idle');
       },
       "*": function ( data ) {
         this.debugPrint(util.format('*** deferring Until Transition %j', data));
@@ -195,7 +195,7 @@ const KnxConnection = machina.Fsm.extend({
             break;
           default:
             this.debugPrint(util.format(
-              '*** error (connstate.code: %d)', datagram.connstate.status));
+              '*** error *** (connstate.code: %d)', datagram.connstate.status));
             this.transition('connecting');
         }
       },
@@ -217,7 +217,7 @@ const KnxConnection = machina.Fsm.extend({
         //sm.debugPrint('setting up tunnreq timeout for %j', datagram);
         this.tunnelingRequestTimer = setTimeout( function() {
           sm.handle(  "timeout", datagram );
-        }.bind( this ), 1000 );
+        }.bind( this ), 2000 );
         // send the telegram on the wire
         this.send( datagram );
       },
@@ -236,7 +236,8 @@ const KnxConnection = machina.Fsm.extend({
       },
       timeout: function (datagram) {
         this.debugPrint('timed out waiting for outgoing TUNNELING_ACK');
-        this.transition(  'connecting');
+        this.emit('unacknowledged', datagram);
+        this.transition( 'idle' );
       },
       "*": function ( data ) {
         this.debugPrint(util.format('*** deferring until transition %j', data));
