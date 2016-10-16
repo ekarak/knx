@@ -1,12 +1,25 @@
-var dgram = require('dgram');
-var s = dgram.createSocket('udp4', function(msg, err) {
-	console.log("createSocket: %s (%s)", msg, err);
+var knx = require('.');
+var util = require('util');
+
+//var connection = knx.IpTunnelingConnection({ipAddr:'192.168.8.4'});
+var connection = knx.IpRoutingConnection();
+
+connection.debug = true;
+
+connection.Connect(function() {
+  console.log('----------');
+  console.log('Connected!');
+  console.log('----------');
 });
 
-s.bind(3671, function() {
-  s.addMembership('224.0.12.23');
+connection.on('event', function (evt, src, dest, value) {
+  console.log("%s: %j, src: %j, dest: %j, value: %j",
+    new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''),
+    evt, src, dest, value
+  );
 });
-s.on("message", function (msg, rinfo) {
-  console.log("server got: " + msg + " from " +
-    rinfo.address + ":" + rinfo.port);
+connection.on('error', function (connstatus) {
+  console.log("%s: **** ERROR: %j",
+    new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''),
+    connstatus);
 });

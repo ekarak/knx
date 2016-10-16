@@ -45,8 +45,9 @@ function IpTunnelingConnection(options) {
   /// </summary>
   instance.Connect = function (callback) {
     var sm = this;
+    this.localAddress = this.getLocalAddress(this.options);
     // create a control socket for CONNECT, CONNECTIONSTATE and DISCONNECT
-    sm.control = sm.BindSocket( function(socket) {
+    this.control = this.BindSocket( function(socket) {
       socket.on("message", function(msg, rinfo, callback)  {
         sm.debugPrint('Inbound message in CONTROL channel');
         sm.onUdpSocketMessage(msg, rinfo, callback);
