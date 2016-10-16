@@ -9,21 +9,6 @@ const util = require('util');
 const KnxConstants = require('./KnxConstants.js');
 const KnxNetProtocol = require('./KnxProtocol.js');
 
-// an array of all available IPv4 addresses
-var candidateInterfaces = [];
-var interfaces = os.networkInterfaces();
-for (var k in interfaces) {
-    //console.log('k: %j', k);
-    for (var k2 in interfaces[k]) {
-        var intf = interfaces[k][k2];
-        //console.log('k2: %j, intf: %j', k, intf);
-        if (intf.family == 'IPv4' && !intf.internal) {
-          console.log("=== candidate interface: %s (%j) ===", k, intf);
-            candidateInterfaces.push(intf);
-        }
-    }
-}
-
 module.exports = machina.Fsm.extend({
 
   // the initialize method is called right after the FSM
@@ -35,28 +20,8 @@ module.exports = machina.Fsm.extend({
     this.options = options;
     // set the local IP endpoint
     this.localAddress = null;
-    if (candidateInterfaces.length == 0) {
-      // no local IpV4 interfaces?
-      throw "No valid IPv4 interfaces detected";
-    } else if (candidateInterfaces.length == 1) {
-      this.localAddress = candidateInterfaces[0].address;
-    } else {
-      candidateInterfaces.forEach( function(intf) {
-        if (intf.family == 'IPv4' && !intf.internal && !this.localAddress) {
-          this.localAddress = intf.address;
-        }
-      })
-      if (!this.localAddress) {
-        throw "You must supply a valid network interface for KNX traffic";
-      }
-    }
-    this.debugPrint(util.format(
-      "Using %s as local IP for KNX traffic", this.localAddress
-    ));
-    this.connected = false;
     this.ThreeLevelGroupAddressing = true;
     this.remoteEndpoint = { addr: options.ipAddr, port: options.ipPort || 3671 };
-    this.incomingPacketCounter = 0 ;
   },
 
   namespace: "knxnet",
@@ -67,25 +32,19 @@ module.exports = machina.Fsm.extend({
 
     uninitialized: {
       "*": function() {
-        this.transition(  "connecting" );
+        this.transition( "connecting" );
       },
     },
 
     connecting: {
       _onEnter: function( ) {
         var sm = this;
-        sm.debugPrint('connecting...');
-        sm.connectionAttempt = 0;
+        if (!sm.localAddress) throw "Not bound to an IPv4 non-loopback interface";
+        sm.debugPrint(util.format('Connecting to %s...', sm.localAddress));
         // set a connection timer for 3 seconds, 3 retries
         sm.connecttimer = setInterval( function() {
-          if (sm.connectionAttempt < 3) {
-            sm.connectionAttempt++;
-            sm.debugPrint('connection timed out - retrying...');
-            sm.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
-          } else {
-            sm.debugPrint('connection timed out - max retries reached...');
-            sm.transition( "uninitialized" );
-          }
+          sm.debugPrint('connection timed out - retrying...');
+          sm.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
         }.bind( this ), 3000 );
         // send connect request directly
         sm.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
@@ -115,6 +74,10 @@ module.exports = machina.Fsm.extend({
         this.conntime = Date.now();
         this.emit('connected');
         this.transition( 'idle');
+      },
+      // any inbound tunneling requests must be
+      inbound_TUNNELING_REQUEST: function ( datagram ) {
+        this.debugPrint("*** ignoring inbound tunneling requests while establishing connection");
       },
       "*": function ( data ) {
         this.debugPrint(util.format('*** deferring Until Transition %j', data));
@@ -156,7 +119,6 @@ module.exports = machina.Fsm.extend({
           this.transition(  "requestingConnState" );
         }.bind( this ), 10000 );
         this.debugPrint( " ... " );
-        // console.trace();
         this.processQueue();
       },
       // queue an OUTGOING tunelling request...
@@ -166,7 +128,13 @@ module.exports = machina.Fsm.extend({
       },
       // OR receive an INBOUND tunneling request
       inbound_TUNNELING_REQUEST: function( datagram ) {
-        this.transition(  'receivingTunnelingRequest', datagram );
+        if (datagram.tunnstate.channel_id == this.channel_id) {
+          this.transition(  'receivingTunnelingRequest', datagram );
+        } else {
+          this.debugPrint(util.format(
+            "*** Ignoring datagram for channel %d (own: %d)",
+            datagram.tunnstate.channel_id, this.channel_id));
+        }
       },
       inbound_DISCONNECT_REQUEST: function( datagram ) {
         this.transition( 'connecting' );
@@ -184,10 +152,11 @@ module.exports = machina.Fsm.extend({
         sm.send (sm.prepareDatagram (KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST));
         //
         this.connstatetimer = setTimeout( function() {
-          sm.debugPrint('timed out waiting for CONNECTIONSTATE_RESPONSE');
-          sm.transition(  'connecting');
+          var msg = 'timed out waiting for CONNECTIONSTATE_RESPONSE';
+          sm.emit('error', msg);
+          sm.debugPrint(msg);
+          sm.transition( 'connecting' );
         }.bind( this ), 1000 );
-        this.emit( "state", { status: "CONNECTIONSTATE_REQUEST" } );
       },
       inbound_CONNECTIONSTATE_RESPONSE: function ( datagram ) {
         switch (datagram.connstate.status) {
@@ -197,7 +166,8 @@ module.exports = machina.Fsm.extend({
           default:
             this.debugPrint(util.format(
               '*** error *** (connstate.code: %d)', datagram.connstate.status));
-            this.transition('connecting');
+            this.emit('error', datagram.connstate);
+            this.transition( 'connecting' );
         }
       },
       "*": function ( data ) {
@@ -270,10 +240,10 @@ module.exports = machina.Fsm.extend({
     receivingTunnelingRequest: {
       _onEnter: function (datagram) {
         var sm = this;
-        if (datagram.tunnstate.channel_id == this.channel_id) {
-          this.recvSeqNum = datagram.tunnstate.seqnum;
-        }
-        console.log('^^^^ recvSeq == %d sendSeq == %d', this.recvSeqNum, this.sendSeqNum);
+        this.recvSeqNum = datagram.tunnstate.seqnum;
+        this.debugPrint(util.format(
+          '^^^^ recvSeq: %d sendSeq: %d', this.recvSeqNum, this.sendSeqNum
+        ));
         var evtName = KnxConstants.APCICODES[datagram.cemi.apdu.apci];
         if(datagram.cemi.msgcode == KnxConstants.MESSAGECODES["L_Data.ind"]) {
           sm.debugPrint(util.format(
@@ -302,5 +272,38 @@ module.exports = machina.Fsm.extend({
         this.deferUntilTransition( 'idle' );
       },
     }
+  },
+  // get the local address of the IPv4 interface we're going to use
+  getLocalAddress: function() {
+    var candidateInterfaces = [];
+    var interfaces = os.networkInterfaces();
+    for (var k in interfaces) {
+        for (var k2 in interfaces[k]) {
+            var intf = interfaces[k][k2];
+            //console.log('k2: %j, intf: %j', k, intf);
+            if (intf.family == 'IPv4' && !intf.internal) {
+              this.debugPrint(util.format(
+                "=== candidate interface: %s (%j) ===", k, intf
+              ));
+              candidateInterfaces.push(intf);
+            }
+        }
+    }
+    if (candidateInterfaces.length == 1) {
+      // there is only one choice really
+      return candidateInterfaces[0].address;
+    } else if (this.options && candidateInterfaces[this.options.interface]) {
+      // user override
+      return candidateInterfaces[this.options.interface].address;
+    } else {
+      // just return the first available IPv4 non-loopback interface
+      candidateInterfaces.forEach( function(intf) {
+        if (intf.family == 'IPv4' && !intf.internal && !this.localAddress) {
+          return intf.address;
+        }
+      })
+    }
+    // no local IpV4 interfaces?
+    throw "No valid IPv4 interfaces detected";
   }
 });

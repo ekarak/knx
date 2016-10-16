@@ -51,15 +51,16 @@ function IpRoutingConnection(options) {
   /// </summary>
   instance.Connect = function (callback) {
     var sm = this;
-    sm.control = sm.tunnel = sm.BindSocket( function(socket) {
+    this.localAddress = this.getLocalAddress(this.options);
+    this.control = this.tunnel = this.BindSocket( function(socket) {
       socket.on("message", function(msg, rinfo, callback)  {
         sm.debugPrint(util.format('Inbound multicast message %j: %j', rinfo, msg));
         sm.onUdpSocketMessage(msg, rinfo, callback);
       });
       // start connection sequence
-      sm.transition( 'connecting');
+      sm.transition( 'connecting' );
     });
-    sm.on('connected', callback);
+    this.on('connected', callback);
   }
 
   return instance;
