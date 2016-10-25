@@ -69,6 +69,9 @@ Address.toString = function (buf /*buffer*/, addrtype /*ADDRESS_TYPE*/, twoLevel
 
 // parse address string to 2-byte Buffer
 Address.parse = function (addr /*string*/, addrtype /*TYPE*/, twoLevelAddressing) {
+  if (!addr) {
+    console.trace('Fix your code - no address given');
+  }
   var group = (addrtype === TYPE.GROUP) ;
   var address = new Buffer(2);
   var tokens  = addr.split((group ? '/' : '.'));

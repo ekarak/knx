@@ -264,19 +264,21 @@ module.exports = machina.Fsm.extend({
     }
   },
   emitEvent: function(datagram) {
-    // emit events to our beloved subscribers
+    // emit events to our beloved subscribers in a multitude of targets
     var evtName = KnxConstants.APCICODES[datagram.cemi.apdu.apci];
-    this.emit(evtName,
-      datagram.cemi.src_addr, datagram.cemi.dest_addr, datagram.cemi.apdu.data );
-    //
+    // 'GroupValue_Write_1/2/3', src, data
     this.emit(util.format("%s_%s", evtName, datagram.cemi.dest_addr),
       datagram.cemi.src_addr, datagram.cemi.apdu.data );
-    //
-    this.emit("event",
-      evtName, datagram.cemi.src_addr, datagram.cemi.dest_addr, datagram.cemi.apdu.data );
-    //
+    // 'GroupValue_Write', src, dest, data
+    this.emit(evtName,
+      datagram.cemi.src_addr, datagram.cemi.dest_addr, datagram.cemi.apdu.data );
+    // 'event_<dest_addr>', ''GroupValue_Write', src, data
     this.emit(util.format("event_%s", datagram.cemi.dest_addr),
       evtName, datagram.cemi.src_addr, datagram.cemi.apdu.data );
+    // 'event', 'GroupValue_Write', src, dest, data
+    this.emit("event",
+      evtName, datagram.cemi.src_addr, datagram.cemi.dest_addr, datagram.cemi.apdu.data );
+
   },
   // get the local address of the IPv4 interface we're going to use
   getLocalAddress: function() {

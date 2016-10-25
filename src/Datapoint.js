@@ -17,26 +17,14 @@ const EventEmitter = require('events').EventEmitter;
 */
 function Datapoint(options, conn) {
   EventEmitter.call(this);
-  console.log('new datapoint: %j', options);
+  // console.log('new datapoint: %j', options);
   if (options == null || options.ga == null) {
     throw "must supply at least { ga, dpt }!";
   }
   this.options = options;
   this.dptid = options.dpt || "DPT1.001";
-  // "dpt9.001" => "DPT9", "001"
-  var arr = this.dptid.toUpperCase().split('.');
-  this.dptbasetypeid = arr[0];
-  this.dptsubtypeid = arr[1];
-  /* console.log('new datapoint %s dptid: %s, basetype: %j',
-  this.options.ga, this.dptid, this.dptbasetypeid); */
-  if (DPTLib.hasOwnProperty(this.dptbasetypeid)) {
-    this.dpt  = DPTLib[this.dptbasetypeid];
-    this.dpst = (
-      this.dpt.hasOwnProperty('subtypes') &&
-      this.dpt.subtypes.hasOwnProperty(this.dptsubtypeid)
-    ) ? this.dpt.subtypes[this.dptsubtypeid] : {};
-  } else throw "Unknown Datapoint Type: " + this.dptid;
-  //
+  this.dpt = DPTLib.resolve(this.dptid);
+  // console.log('resolved %s to %j', this.dptid, this.dpt);
   this.current_value = null;
   if (conn) this.bind(conn);
 }
@@ -51,39 +39,44 @@ Datapoint.prototype.bind = function (conn) {
   if (!conn) throw "must supply a valid KNX connection to bind to"
   this.conn = conn;
   // bind generic event handler for our group address
-  conn.on(util.format('event_%s',self.options.ga), function (evt, src, buf) {
+  var gaevent = util.format('event_%s', self.options.ga);
+  conn.on(gaevent, function (evt, src, buf) {
+    //console.log('EVENT!!! %s %j', evt, buf);
+    var jsvalue = buf;
     // get the Javascript value from the raw buffer, if the DPT defines fromBuffer()
-    var jsvalue;
-    if (buf) {
-      jsvalue = (typeof self.dpt.fromBuffer == 'function') ?
-        self.dpt.fromBuffer(buf) : buf;
+    if (buf && typeof self.dpt.fromBuffer == 'function') {
+      jsvalue = self.dpt.fromBuffer(buf);
     }
-    //
     switch (evt) {
       case "GroupValue_Write":
-        if (jsvalue) self.update(jsvalue); // update internal state
-        break;
       case "GroupValue_Response":
-        if (jsvalue) self.update(jsvalue); // update internal state
-        if (typeof self.readcb == 'function') self.readcb(src, jsvalue);
+        self.update(jsvalue); // update internal state
+        if (evt == "GroupValue_Response" && typeof self.readcb == 'function')
+          self.readcb(src, jsvalue);
         break;
       default:
         // TODO: add default handler; maybe emit warning?
-        break;
     }
   });
   // issue a GroupValue_Read request to try to get the initial state from the bus (if any)
-  this.read();
+  if (conn.conntime) {
+    // immediately or...
+    this.read();
+  } else {
+    // ... when the connection is established
+    conn.on('connected', function() { self.read(); });
+  }
 }
 
 Datapoint.prototype.update = function (jsvalue) {
+  //console.log('UPDATE %j', jsvalue);
   if (this.current_value != jsvalue) {
     var old_value = this.current_value;
     this.emit('change', this.current_value, jsvalue );
     this.current_value = jsvalue;
-    var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
-    console.log("%s **** %s DATAPOINT CHANGE (was: %j)",
-      ts, this.toString(), old_value );
+     var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    //console.log("%s **** %s DATAPOINT CHANGE (was: %j)", ts, this.toString(), old_value );
+
   }
 }
 
@@ -91,7 +84,7 @@ Datapoint.prototype.update = function (jsvalue) {
    and submit a GroupValue_Write to the connection */
 Datapoint.prototype.write = function (value) {
   var self = this;
-  console.log('write %j', value)
+  // console.log('write %j', value)
   if (!this.conn) throw "must supply a valid KNX connection to bind to";
   if (this.dpt.hasOwnProperty('range')) {
     // check if value is in range
@@ -106,7 +99,7 @@ Datapoint.prototype.write = function (value) {
   if (typeof this.dpt.formatAPDU == 'function') {
     apdu_data = this.dpt.formatAPDU(value);
   }
-  this.conn.write(this.options.ga, apdu_data, this.dpt, function() {
+  this.conn.write(this.options.ga, apdu_data, this.dptid, function() {
     // once we've written to the bus, update internal state
     self.update(value);
   });
@@ -122,13 +115,18 @@ Datapoint.prototype.read = function (callback) {
   this.conn.read(this.options.ga, function(){
     // once its done, register the response callback
     if (typeof callback == 'function') {
+      // TODO: use DPT fromBuffer() to decode response
       self.readcb = callback;
     }
   });
 }
 
 Datapoint.prototype.toString = function () {
-  return util.format('(%s) %s %s', this.options.ga, this.current_value, this.dpst.unit || '');
+  return util.format('(%s) %s %s',
+    this.options.ga,
+    this.current_value,
+    this.dpt.subtype && this.dpt.subtype.unit || ''
+  );
 }
 
 

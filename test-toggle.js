@@ -6,17 +6,10 @@ if (process.argv.length < 3) {
 }
 var connection = knx.IpRoutingConnection();
 connection.debug = true;
-
-var p1 = new Promise(function(resolve, reject) {
-  connection.Connect(function() {
-    console.log('----------');
-    console.log('Connected!');
-    console.log('----------');
-    resolve();
-  });
-});
-
-p1.then(function() {
+connection.Connect(function() {
+  console.log('----------');
+  console.log('Connected!');
+  console.log('----------');
   // define a datapoint:
   var dp = new knx.Datapoint({ ga: process.argv[2], dpt: 'DPT1.001' }, connection);
   if (process.argv[3]) {

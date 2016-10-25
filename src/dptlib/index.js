@@ -36,6 +36,7 @@ List 3-byte value                  3 Byte                  DPT 232	  DPT 232	RGB
 
 const fs = require('fs');
 const path = require('path');
+const util = require('util');
 
 var matches;
 var dirEntries = fs.readdirSync(__dirname);
@@ -46,6 +47,24 @@ for (var i = 0; i < dirEntries.length; i++) {
     dpts[dptid] = require(__dirname + path.sep + dirEntries[i]);
     //console.log('DPT library: loading %s (%s)', dptid, dpts[dptid].basetype.desc);
   }
+}
+
+// a generic DPT resolution function
+// DPTs might come in as 9/"9"/"9.001"/"DPT9.001"
+dpts.resolve = function(dptid) {
+  if (isFinite(dptid)) {
+    // we're passed in a raw number (9)
+    return this[dptid];
+  }
+  if (typeof dptid == 'string') {
+    var m = dptid.toUpperCase().match(/(\d+)(\.(\d+))?/);
+    var dpt = dpts[util.format('DPT%s', m[1])];
+    if (!dpt) throw "no such DPT: "+dpt;
+    if (m[2]) dpt.subtype = dpt[m[2]];
+    return dpt;
+  }
+  console.trace("no such DPT: %j",dpt);
+  throw "No such DPT";
 }
 
 module.exports = dpts;

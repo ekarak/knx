@@ -184,10 +184,18 @@ KnxConnection.prototype.send = function(telegram, callback) {
 
 }
 
-KnxConnection.prototype.write = function(grpaddr, apdu_data, dpt, callback) {
+KnxConnection.prototype.write = function(grpaddr, apdu_data, dptid, callback) {
   if (grpaddr == null || apdu_data == null) {
     console.trace('must supply both grpaddr(%j) and apdu_data(%j)!', grpaddr, apdu_data);
     return;
+  }
+  if (dptid) {
+    var dpt = DPTLib.resolve(dptid);
+    if (typeof dpt.formatAPDU == 'function') {
+      apdu_data = dpt.formatAPDU(apdu_data);
+    } else {
+      console.trace('---- no formatAPDU found in %s, passing raw value instead', dptid);
+    }
   }
   // outbound request onto the state machine
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
@@ -210,7 +218,7 @@ KnxConnection.prototype.read = function(grpaddr, callback) {
 KnxConnection.prototype.Disconnect = function(msg) {
   this.transition("disconnecting");
   // machina.js removeAllListeners equivalent:
-  this.off();
+  // this.off();
 }
 
 KnxConnection.prototype.debugPrint = function(msg) {
