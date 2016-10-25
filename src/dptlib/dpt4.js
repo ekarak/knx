@@ -7,13 +7,14 @@
 // DPT4: 8-bit character
 //
 exports.formatAPDU = function(value) {
+  var apdu_data;
   if (!value) throw "cannot write null value for DPT4"
   else {
-    var apdu_data;
-    if (typeof value == 'string' &&
-      value.length == 1)
-        apdu_data = value.charCodeAt(0);
+    if (typeof value == 'string') {
+      apdu_data = value.charCodeAt(0);
+    }
     else throw "Must supply a character";
+    if (apdu_data > 255) throw "must supply an ASCII character";
   }
   return apdu_data;
 }

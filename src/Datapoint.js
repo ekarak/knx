@@ -53,15 +53,18 @@ Datapoint.prototype.bind = function (conn) {
   // bind generic event handler for our group address
   conn.on(util.format('event_%s',self.options.ga), function (evt, src, buf) {
     // get the Javascript value from the raw buffer, if the DPT defines fromBuffer()
-    var jsvalue = (typeof self.dpt.fromBuffer == 'function') ?
-      self.dpt.fromBuffer(buf) : buf;
+    var jsvalue;
+    if (buf) {
+      jsvalue = (typeof self.dpt.fromBuffer == 'function') ?
+        self.dpt.fromBuffer(buf) : buf;
+    }
     //
     switch (evt) {
       case "GroupValue_Write":
-        self.update(jsvalue); // update internal state
+        if (jsvalue) self.update(jsvalue); // update internal state
         break;
       case "GroupValue_Response":
-        self.update(jsvalue); // update internal state
+        if (jsvalue) self.update(jsvalue); // update internal state
         if (typeof self.readcb == 'function') self.readcb(src, jsvalue);
         break;
       default:
@@ -75,11 +78,12 @@ Datapoint.prototype.bind = function (conn) {
 
 Datapoint.prototype.update = function (jsvalue) {
   if (this.current_value != jsvalue) {
-    var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
-    console.log("%s **** DATAPOINT %s CHANGE %j => %j",
-      ts, this.options.ga, this.current_value, jsvalue );
+    var old_value = this.current_value;
     this.emit('change', this.current_value, jsvalue );
     this.current_value = jsvalue;
+    var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    console.log("%s **** %s DATAPOINT CHANGE (was: %j)",
+      ts, this.toString(), old_value );
   }
 }
 
@@ -87,6 +91,7 @@ Datapoint.prototype.update = function (jsvalue) {
    and submit a GroupValue_Write to the connection */
 Datapoint.prototype.write = function (value) {
   var self = this;
+  console.log('write %j', value)
   if (!this.conn) throw "must supply a valid KNX connection to bind to";
   if (this.dpt.hasOwnProperty('range')) {
     // check if value is in range
@@ -97,8 +102,10 @@ Datapoint.prototype.write = function (value) {
     }
   }
   // get the raw APDU data for the given JS value
-  var apdu_data = (typeof this.dpt.formatAPDU == 'function') ?
-    this.dpt.formatAPDU(value) : value;
+  var apdu_data = value;
+  if (typeof this.dpt.formatAPDU == 'function') {
+    apdu_data = this.dpt.formatAPDU(value);
+  }
   this.conn.write(this.options.ga, apdu_data, this.dpt, function() {
     // once we've written to the bus, update internal state
     self.update(value);
@@ -121,7 +128,7 @@ Datapoint.prototype.read = function (callback) {
 }
 
 Datapoint.prototype.toString = function () {
-  return util.format('%s (%s)', this.options.ga, this.mod.dptid);
+  return util.format('(%s) %s %s', this.options.ga, this.current_value, this.dpst.unit || '');
 }
 
 

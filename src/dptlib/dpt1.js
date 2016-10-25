@@ -4,7 +4,14 @@
 */
 
 exports.formatAPDU = function(value) {
-  return (value ? 1 : 0);
+  // numeric values (in native and string form) are truthy if NOT zero
+  var f = parseFloat(value);
+  if (!isNaN(f) && isFinite(value)) {
+    return Boolean(f) ? 1 : 0;
+  } else {
+    // truthiness is Boolean true or the string 'true'.
+    return (value == true || value == 'true') ? 1 : 0;
+  }
 }
 
 // DPT basetype info hash

@@ -21,13 +21,27 @@ exports.formatAPDU = function(value) {
   return apdu_data;
 }
 
+// Javascript contains no notion of "time of day", hence this function
+// returns a regular Date object for today, with the hour/minute/second part
+// overwritten from the KNX telegram
 exports.fromBuffer = function(buf) {
   if (buf.length != 3) throw "Buffer should be 3 bytes long";
   var d = new Date();
   // FIXME: no ability to setDay() without week context
-  d.setHours(buf[0] & 0b00011111);
-  d.setMinutes(buf[1]);
-  d.setSeconds(buf[2]);
+  var hours = buf[0] & 0b00011111;
+  var minutes = buf[1];
+  var seconds = buf[2];
+  if (hours >= 0 & hours <= 23 &
+    minutes >= 0 & minutes <= 59 &
+    seconds >= 0 & seconds <= 59) {
+    d.setHours(hours);
+    d.setMinutes(minutes);
+    d.setSeconds(seconds);
+  } else {
+    throw util.format(
+      "%j (%d:%d:%d) is not a valid time according to DPT10",
+      buf, hours, minutes, seconds);
+  }
   return d;
 }
 

@@ -21,10 +21,21 @@ exports.formatAPDU = function(value) {
 exports.fromBuffer = function(buf) {
   if (buf.length != 3) throw "Buffer should be 3 bytes long";
   var d = new Date();
-  // FIXME: no ability to setDay() without week context
-  d.setDate    (buf[0]         & 0b00011111);
-  d.setMonth   (1    + (buf[1] & 0b00001111));
-  d.setFullYear(2000 + (buf[2] & 0b01111111));
+  var day   = buf[0] & 0b00011111;
+  var month = 1    + (buf[1] & 0b00001111);
+  var year  = 2000 + (buf[2] & 0b01111111);
+  if (day >= 0 & day <= 31 &
+    month >= 0 & month <= 11 &
+    year >= 2000 & year <= 2059) {
+    // FIXME: no ability to setDay() without week context
+    d.setDate    (day);
+    d.setMonth   (month);
+    d.setFullYear(year);
+  } else {
+    throw util.format(
+      "%j => %d/%d/%d is not valid date according to DPT11",
+      buf, day, month, year);
+  }
   return d;
 }
 

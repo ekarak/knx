@@ -49,6 +49,6 @@ exports.basetype = {
 exports.subtypes = {
   // 19.001
   "001" : {
-      "name" : "DPT_DateTime", "desc" : "scene control"
+      "name" : "DPT_DateTime", "desc" : "datetime"
   },
 }
