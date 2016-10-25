@@ -1,7 +1,7 @@
 {
   "name": "knx",
   "description": "KNXnet/IP protocol implementation for Node",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "private": false,
   "repository": {
     "type": "git",
@@ -12,6 +12,12 @@
     "name": "Elias Karakoulakis",
     "email": "Elias.Karakoulakis@gmail.com"
   },
+  "maintainers": [
+    {
+    "name": "Elias Karakoulakis",
+    "email": "elias.karakoulakis@gmail.com"
+    }
+  ],
   "keywords": [
     "knx",
     "eibd",

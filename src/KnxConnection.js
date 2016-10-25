@@ -6,6 +6,7 @@ const os = require('os');
 const dgram = require('dgram');
 const machina = require('machina');
 const util = require('util');
+const DPTLib = require('./dptlib');
 const KnxConstants = require('./KnxConstants.js');
 const KnxNetProtocol = require('./KnxProtocol.js');
 const KnxConnection = require('./KnxConnectionFSM.js');
@@ -53,20 +54,20 @@ KnxConnection.prototype.AddCRI = function (datagram) {
   }
 }
 
-KnxConnection.prototype.AddCEMI = function(datagram) {
+KnxConnection.prototype.AddCEMI = function(datagram, msgcode) {
   datagram.cemi = {
-    msgcode: 0x11, // FIXME: L_Data.req
+    msgcode: msgcode || 0x11, // default: L_Data.req
     ctrl: {
       frameType   : 1, // 0=extended 1=standard
-      reserved    : 0,
-      repeat      : 1,
-      broadcast   : 1,
-      priority    : 1, // 0-system 1-normal 2-urgent 3-low
+      reserved    : 0, // always 0
+      repeat      : 1, // the OPPOSITE: 1=do NOT repeat
+      broadcast   : 1, // 0-system broadcast 1-broadcast
+      priority    : 3, // 0-system 1-normal 2-urgent 3-low
       acknowledge : 1, // FIXME: only for L_Data.req
       confirm     : 0, // FIXME: only for L_Data.con 0-ok 1-error
       // 2nd byte
       destAddrType: 1, // FIXME: 0-physical 1-groupaddr
-      hopCount    : 7,
+      hopCount    : 5,
       extendedFrame: 0
     },
     src_addr: "15.15.15", // FIXME: add local physical address property
@@ -192,7 +193,7 @@ KnxConnection.prototype.write = function(grpaddr, apdu_data, dpt, callback) {
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
     datagram.cemi.dest_addr = grpaddr;
     datagram.cemi.apdu.data = apdu_data;
-    console.log('----- writing to %s apdu_data: %j', grpaddr, apdu_data);
+    //console.trace('----- writing to %s apdu_data: %j', grpaddr, apdu_data);
     return datagram;
   }, callback);
 }
@@ -208,6 +209,8 @@ KnxConnection.prototype.read = function(grpaddr, callback) {
 
 KnxConnection.prototype.Disconnect = function(msg) {
   this.transition("disconnecting");
+  // machina.js removeAllListeners equivalent:
+  this.off();
 }
 
 KnxConnection.prototype.debugPrint = function(msg) {

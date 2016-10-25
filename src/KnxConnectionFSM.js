@@ -194,18 +194,17 @@ module.exports = machina.Fsm.extend({
         this.lastSentDatagram = datagram;
       },
       inbound_TUNNELING_ACK: function ( datagram ) {
-        var sm = this;
         clearTimeout( this.tunnelingAckTimer );
-        // check connstate.seqnum
+        var sm = this;
         if (datagram.connstate.seqnum != this.lastSentDatagram.tunnstate.seqnum) {
           this.debugPrint(util.format('Receive sequence MISMATCH, got %d (expected %d)',
             datagram.connstate.seqnum, this.lastSentDatagram.tunnstate.seqnum));
         } else {
-          sm.incSeqSend();
+          //
+          this.tunnelingRequestTimer = setTimeout( function() {
+            sm.handle( "timeout_tun_req", datagram );
+          }.bind( this ), 2000 );
         }
-        this.tunnelingRequestTimer = setTimeout( function() {
-          sm.handle( "timeout_tun_req", datagram );
-        }.bind( this ), 2000 );
       },
       timeout_tun_ack: function (datagram) {
         this.debugPrint('timed out waiting for TUNNELING_ACK');
@@ -213,13 +212,15 @@ module.exports = machina.Fsm.extend({
         this.transition( 'idle' );
       },
       inbound_TUNNELING_REQUEST: function ( datagram ) {
-        var sm = this;
         clearTimeout( this.tunnelingRequestTimer );
-        // TODO: compare datagrams sm.lastSentDatagram == datagram ??
+        var sm = this;
+        // TODO: compare datagrams sm.lastSentDatagram == datagram ?? EXCLUDE sequence number from comparison!!
+        sm.recvSeqNum = datagram.tunnstate.seqnum;
+        sm.incSeqSend();
         sm.send( sm.prepareDatagram(
           KnxConstants.SERVICE_TYPE.TUNNELING_ACK,
           datagram), function() {
-            sm.incSeqRecv();
+            sm.emitEvent(datagram);
             sm.transition( 'idle' );
         })
       },
@@ -244,27 +245,16 @@ module.exports = machina.Fsm.extend({
         this.debugPrint(util.format(
           '^^^^ recvSeq: %d sendSeq: %d', this.recvSeqNum, this.sendSeqNum
         ));
-        var evtName = KnxConstants.APCICODES[datagram.cemi.apdu.apci];
         if(datagram.cemi.msgcode == KnxConstants.MESSAGECODES["L_Data.ind"]) {
           sm.debugPrint(util.format(
-            'received L_Data.ind tunelling request (%d bytes) - %s',
-            datagram.total_length, evtName));
-          // emit events
-          this.emit(evtName,
-            datagram.cemi.src_addr, datagram.cemi.dest_addr, datagram.cemi.apdu.data );
-          //
-          this.emit(util.format("%s_%s", evtName, datagram.cemi.dest_addr),
-            datagram.cemi.src_addr, datagram.cemi.apdu.data );
-          //
-          this.emit("event",
-            evtName, datagram.cemi.src_addr, datagram.cemi.dest_addr, datagram.cemi.apdu.data );
-          //
-          this.emit(util.format("event_%s", datagram.cemi.dest_addr),
-            evtName, datagram.cemi.src_addr, datagram.cemi.apdu.data );
+            'received L_Data.ind tunelling request (%d bytes)',
+            datagram.total_length));
+          this.emitEvent(datagram);
         }
         // check IF THIS IS NEEDED (maybe look at apdu control field for ack)
-        sm.send( sm.prepareDatagram (KnxConstants.SERVICE_TYPE.TUNNELING_ACK, datagram), function() {
-          sm.transition(  'idle' );
+        var ack = sm.prepareDatagram (KnxConstants.SERVICE_TYPE.TUNNELING_ACK, datagram);
+        sm.send(ack, function() {
+          sm.transition( 'idle' );
         });
       },
       "*": function ( data ) {
@@ -272,6 +262,21 @@ module.exports = machina.Fsm.extend({
         this.deferUntilTransition( 'idle' );
       },
     }
+  },
+  emitEvent: function(datagram) {
+    // emit events to our beloved subscribers
+    var evtName = KnxConstants.APCICODES[datagram.cemi.apdu.apci];
+    this.emit(evtName,
+      datagram.cemi.src_addr, datagram.cemi.dest_addr, datagram.cemi.apdu.data );
+    //
+    this.emit(util.format("%s_%s", evtName, datagram.cemi.dest_addr),
+      datagram.cemi.src_addr, datagram.cemi.apdu.data );
+    //
+    this.emit("event",
+      evtName, datagram.cemi.src_addr, datagram.cemi.dest_addr, datagram.cemi.apdu.data );
+    //
+    this.emit(util.format("event_%s", datagram.cemi.dest_addr),
+      evtName, datagram.cemi.src_addr, datagram.cemi.apdu.data );
   },
   // get the local address of the IPv4 interface we're going to use
   getLocalAddress: function() {

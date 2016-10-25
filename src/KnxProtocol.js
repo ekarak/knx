@@ -422,7 +422,8 @@ KnxProtocol.lengths['APDU'] = function(value) {
       && value.data >= 0 && value.data <= 63) {
         return 3;
     } else {
-      throw util.format('APDU payload must be either a Buffer or a 6-bit unsigned integer (got %j)', value.data);
+      console.trace('Fix your code - APDU payload must be either a Buffer or a 6-bit unsigned integer, got: %j (%s)', value.data, typeof value.data);
+      throw 'APDU payload must be either a Buffer or a 6-bit unsigned integer';
     }
   }
 }
