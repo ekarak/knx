@@ -3,6 +3,7 @@
 * (C) 2016 Elias Karakoulakis
 */
 const os = require('os');
+const ipv4 = require('ipv4.js');
 const dgram = require('dgram');
 const machina = require('machina');
 const util = require('util');
@@ -281,34 +282,34 @@ module.exports = machina.Fsm.extend({
 
   },
   // get the local address of the IPv4 interface we're going to use
-  getLocalAddress: function() {
-    var candidateInterfaces = [];
+  getIPv4Interfaces: function() {
+    var candidateInterfaces = {};
     var interfaces = os.networkInterfaces();
-    for (var k in interfaces) {
-        for (var k2 in interfaces[k]) {
-            var intf = interfaces[k][k2];
-            //console.log('k2: %j, intf: %j', k, intf);
+    for (var iface in interfaces) {
+        for (var key in interfaces[iface]) {
+            var intf = interfaces[iface][key];
+            //console.log('key: %j, intf: %j', key, intf);
             if (intf.family == 'IPv4' && !intf.internal) {
               this.debugPrint(util.format(
-                "=== candidate interface: %s (%j) ===", k, intf
+                "=== candidate interface: %s (%j) ===", iface, intf
               ));
-              candidateInterfaces.push(intf);
+              candidateInterfaces[iface] = intf;
             }
         }
     }
-    if (candidateInterfaces.length == 1) {
-      // there is only one choice really
-      return candidateInterfaces[0].address;
-    } else if (this.options && candidateInterfaces[this.options.interface]) {
-      // user override
-      return candidateInterfaces[this.options.interface].address;
+    return candidateInterfaces;
+  },
+  getLocalAddress: function() {
+    var candidateInterfaces = this.getIPv4Interfaces();
+    // if user has declared a desired interface then use it
+    if (this.options && this.options.interface) {
+      if (!candidateInterfaces.hasOwnProperty(this.options.interface))
+        throw "Interface "+this.options.interface+" not found or has no useful IPv4 address!"
+      else
+        return candidateInterfaces[this.options.interface].address;
     } else {
       // just return the first available IPv4 non-loopback interface
-      candidateInterfaces.forEach( function(intf) {
-        if (intf.family == 'IPv4' && !intf.internal && !this.localAddress) {
-          return intf.address;
-        }
-      })
+      return candidateInterfaces[Object.keys(candidateInterfaces)[0]].address;
     }
     // no local IpV4 interfaces?
     throw "No valid IPv4 interfaces detected";

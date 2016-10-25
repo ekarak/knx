@@ -21,4 +21,4 @@
 |DPT17   	| Scene number 	|   	|   	|  incomplete|
 |DPT18   	| Scene control 	|   	|   	|   incomplete|
 |DPT19   	| 8-byte Date and Time 	|  Date | new Date() |   	|
-|DPT20-255   	| feel free to contribute! 	|   |  |   	|
+|DPT20-255 | feel free to contribute! 	|   |  |   	|

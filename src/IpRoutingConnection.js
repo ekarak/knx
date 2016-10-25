@@ -26,10 +26,11 @@ function IpRoutingConnection(options) {
     udpSocket.bind(function() {
       instance.debugPrint(util.format(
         'IpRoutingConnection.BindSocket %j, add membership for %s',
-        udpSocket.address(), conn.remoteEndpoint.addr));
-  		conn.control.addMembership(conn.remoteEndpoint.addr);
+        udpSocket.address(), conn.remoteEndpoint.addr
+      ));
+      conn.control.addMembership(conn.remoteEndpoint.addr);
       cb && cb(udpSocket);
-  	});
+    });
     return udpSocket;
   }
 
