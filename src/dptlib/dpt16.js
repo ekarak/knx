@@ -7,7 +7,16 @@
 // DPT16: ASCII string
 //
 
-// TODO: implement fromBuffer, formatAPDU
+exports.formatAPDU = function(value) {
+  if (typeof value != 'string') throw "Must supply a string value"
+  var buf = new Buffer(14);
+  buf.write(value, 'ascii')
+  return buf;
+}
+
+exports.fromBuffer = function(buf) {
+  return buf.toString('ascii');
+}
 
 // DPT16 basetype info
 exports.basetype = {

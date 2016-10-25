@@ -9,14 +9,14 @@
 
 // TODO: implement fromBuffer, formatAPDU
 
-// DPT16 basetype info
+// DPT17 basetype info
 exports.basetype = {
   bitlength : 8,
   valuetype : 'basic',
   desc : "scene number"
 }
 
-// DPT9 subtypes
+// DPT17 subtypes
 exports.subtypes = {
   // 17.001 Scene number
   "001" : { use : "G",

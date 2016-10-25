@@ -11,7 +11,6 @@
 // Always 8-bit aligned.
 
 exports.formatAPDU = function(value) {
-  if (!value) throw "cannot write null value for DPT10"
   var apdu_data = new Buffer(3);
   if (typeof value == 'object' && value.constructor.name == 'Date') {
     apdu_data[0] = value.getDay() << 5 + value.getHours();
