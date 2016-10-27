@@ -57,7 +57,7 @@ exports.formatAPDU = function(value) {
 exports.fromBuffer = function(buf) {
   if (buf.length != 2) throw "Buffer should be 2 bytes long";
   var sign     =  buf[0] >> 7;
-  var exponent = (buf[0] || 127) >> 3;
+  var exponent = (buf[0] & 0b01111000) >> 3;
   var mantissa = 256 * (buf[0] & 0b00000111) + buf[1];
   mantissa = (sign == 1) ? ~(mantissa^2047) : mantissa;
   return ldexp((0.01*mantissa), exponent);
