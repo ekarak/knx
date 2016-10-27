@@ -121,10 +121,10 @@ KnxConnection.prototype.prepareDatagram = function (svcType) {
   //
   switch(svcType) {
     case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST:
+      this.AddCRI(datagram); // no break!
     case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST:
     case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST:
       this.AddConnState(datagram);
-      this.AddCRI(datagram);
       break;
     case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
       this.AddTunnState(datagram);
@@ -224,7 +224,7 @@ KnxConnection.prototype.Disconnect = function(msg) {
 KnxConnection.prototype.debugPrint = function(msg) {
   if (this.debug) {
     var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
-    console.log('%s (state=%s): %s', ts, this.compositeState(), msg);
+    console.log('%s (%s): %s', ts, this.compositeState(), msg);
   }
 }
 
