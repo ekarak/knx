@@ -28,7 +28,11 @@ function IpRoutingConnection(options) {
         'IpRoutingConnection.BindSocket %j, add membership for %s',
         udpSocket.address(), conn.remoteEndpoint.addr
       ));
-      conn.control.addMembership(conn.remoteEndpoint.addr);
+      try {
+        conn.control.addMembership(conn.remoteEndpoint.addr);
+      } catch (err) {
+        console.log('IPRouting connection: cannot add membership (%s)', err);
+      }
       cb && cb(udpSocket);
     });
     return udpSocket;

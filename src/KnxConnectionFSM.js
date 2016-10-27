@@ -167,7 +167,7 @@ module.exports = machina.Fsm.extend({
           default:
             this.debugPrint(util.format(
               '*** error *** (connstate.code: %d)', datagram.connstate.status));
-            this.emit('error', datagram.connstate);
+            this.emit('error', KNXConstants.keyText('RESPONSECODE', datagram.connstate.status));
             this.transition( 'connecting' );
         }
       },

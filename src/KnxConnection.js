@@ -17,17 +17,23 @@ KnxConnection.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
   var reader = KnxNetProtocol.createReader(msg);
   reader.KNXNetHeader('tmp');
   var dg = reader.next()['tmp'];
-  var svctype = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
-  // append the CEMI service type if this is a tunneling request...
-  var cemitype = (dg.service_type == 1056) ?
-    KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode)
-    : "";
-  this.debugPrint(util.format(
-    "Received %s(/%s) message: %j", svctype, cemitype, dg
-  ));
-  // ... to drive the state machine
-  var signal = util.format('inbound_%s', svctype);
-  this.handle(signal, dg);
+  if (dg) {
+    var svctype = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
+    // append the CEMI service type if this is a tunneling request...
+    var cemitype = (dg.service_type == 1056) ?
+      KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode)
+      : "";
+    this.debugPrint(util.format(
+      "Received %s(/%s) message: %j", svctype, cemitype, dg
+    ));
+    // ... to drive the state machine
+    var signal = util.format('inbound_%s', svctype);
+    this.handle(signal, dg);
+  } else {
+    this.debugPrint(util.format(
+      "Incomplete/unparseable UDP packet: %j", msg
+    ));
+  }
 };
 
 KnxConnection.prototype.AddConnState = function (datagram) {
