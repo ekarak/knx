@@ -5,7 +5,8 @@ var dgrams = [
   "06100205001a0801c0a80ab3d96d0801c0a80ab3d83604040200", //CONNECT_REQUEST
   "061002060014030008010a0c17350e5704040000", // connect response
   "061004200015040200002e00bce000000832010081", // tunneling request
-  "061004200016040201002900bce00000083b0200804a"
+  "061004200016040201002900bce00000083b0200804a",
+  "0610020600080024" // CONNECT_RESPONSE, failure E_NO_MORE_CONNECTIONS: 0x24
 ];
 
 //knxnetprotocol.debug = true;
@@ -29,11 +30,9 @@ function seesaw(i){
 }
 
 for (var i=0; i < dgrams.length; i++) {
-
   try {
     seesaw(i);
   } catch (ex) {
-    console.log(ex, ex.stack.split("\n"))
     knxnetprotocol.debug = true;
     try {seesaw(i);} catch(e) {console.log(e);}
   }
