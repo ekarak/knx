@@ -197,7 +197,7 @@ KnxConnection.prototype.write = function(grpaddr, apdu_data, dptid, callback) {
   }
   if (dptid) {
     var dpt = DPTLib.resolve(dptid);
-    if (typeof dpt.formatAPDU == 'function') {
+    if (dpt && typeof dpt.formatAPDU == 'function') {
       apdu_data = dpt.formatAPDU(apdu_data);
     } else {
       console.trace('---- no formatAPDU found in %s, passing raw value instead', dptid);
