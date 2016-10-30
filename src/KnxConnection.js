@@ -212,13 +212,33 @@ KnxConnection.prototype.write = function(grpaddr, apdu_data, dptid, callback) {
   }, callback);
 }
 
+// send a READ request to the bus
+// you can pass a callback function which gets bound to the RESPONSE telegram event
 KnxConnection.prototype.read = function(grpaddr, callback) {
+  if (typeof callback == 'function') {
+    var conn = this;
+    // when the response arrives:
+    var responseEvent = 'GroupValue_Response_'+grpaddr;
+    this.debugPrint('Binding connection to '+responseEvent);
+    var binding = function(src, data) {
+      // unbind the event
+      conn.off(responseEvent, binding);
+      // fire the callback
+      callback(src, data);
+    }
+    // prepare for the response
+    this.on(responseEvent, binding);
+    // clean up after 3 seconds just in case no one answers the read request
+    setTimeout(function() {
+      conn.off(responseEvent, binding);
+    },3000);
+  }
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
     // this is a READ request
     datagram.cemi.apdu.apci = KnxConstants.APCICODES.indexOf("GroupValue_Read");
     datagram.cemi.dest_addr = grpaddr;
     return datagram;
-  }, callback);
+  });
 }
 
 KnxConnection.prototype.Disconnect = function(msg) {
