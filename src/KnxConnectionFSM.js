@@ -47,6 +47,7 @@ module.exports = machina.Fsm.extend({
           sm.debugPrint('connection timed out - retrying...');
           sm.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
         }.bind( this ), 3000 );
+        delete sm.channel_id;
         // send connect request directly
         sm.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
       },
@@ -57,8 +58,9 @@ module.exports = machina.Fsm.extend({
       },
       inbound_CONNECT_RESPONSE: function (datagram) {
         var sm = this;
-        this.recvSeqNum = 0;
-        this.sendSeqNum = 0;
+        /*this.recvSeqNum = 0;
+        this.sendSeqNum = 0;*/
+        this.seqnum = 0;
         sm.debugPrint(util.format('got connect response'));
         // store channel ID into the Connection object
         this.channel_id = datagram.connstate.channel_id;
@@ -92,23 +94,20 @@ module.exports = machina.Fsm.extend({
         var aliveFor = this.conntime ? Date.now() - this.conntime : 0;
         this.debugPrint(util.format('connection alive for %d seconds', aliveFor/1000));
         sm.disconnecttimer = setTimeout( function() {
-          this.handle(  "disconnect-timeout" );
+          sm.debugPrint("disconnection timed out");
+          sm.transition( "uninitialized");
         }.bind( this ), 3000 );
         //
         sm.send( sm.prepareDatagram ( KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST), function() {
           sm.debugPrint('sent DISCONNECT_REQUEST');
         });
       },
-      "disconnect-timeout": function () {
-        this.debugPrint("disconnection timed out");
-        this.transition( "uninitialized")
-      },
       _onExit: function() {
-        clearTimeout( this. disconnecttimer)
+        clearTimeout( this. disconnecttimer )
       },
       inbound_DISCONNECT_RESPONSE: function (datagram) {
         this.debugPrint(util.format('got disconnect response'));
-        this.transition(  'uninitialized');
+        this.transition(  'uTimeoutTimeoutninitialized');
       },
     },
 
@@ -120,22 +119,17 @@ module.exports = machina.Fsm.extend({
           this.transition(  "requestingConnState" );
         }.bind( this ), 10000 );
         this.debugPrint( " ... " );
+        //console.trace();
         this.processQueue();
       },
       // queue an OUTGOING tunelling request...
       outbound_TUNNELING_REQUEST: function ( datagram ) {
         // this.debugPrint(util.format('OUTBOUND tunneling request: %j', datagram));
-        this.transition(  'sendingTunnelingRequest', datagram );
+        this.transition(  'sendTunnReq', datagram );
       },
       // OR receive an INBOUND tunneling request
       inbound_TUNNELING_REQUEST: function( datagram ) {
-        if (datagram.tunnstate.channel_id == this.channel_id) {
-          this.transition(  'receivingTunnelingRequest', datagram );
-        } else {
-          this.debugPrint(util.format(
-            "*** Ignoring datagram for channel %d (own: %d)",
-            datagram.tunnstate.channel_id, this.channel_id));
-        }
+        this.transition(  'receivingTunnelingRequest', datagram );
       },
       inbound_DISCONNECT_REQUEST: function( datagram ) {
         this.transition( 'connecting' );
@@ -183,52 +177,75 @@ module.exports = machina.Fsm.extend({
     /*
     * 1) OUTBOUND TUNNELING_REQUEST
     */
-    sendingTunnelingRequest:  {
+    sendTunnReq:  {
+      _onEnter: function ( datagram ) {
+        var sm = this;
+        /*this.debugPrint(util.format(
+          '>>>>> recvSeq: %d sendSeq: %d', this.recvSeqNum, this.sendSeqNum
+        ));*/
+        this.debugPrint(util.format('>>>>> seqnum: %d', this.seqnum));
+        // send the telegram on the wire
+        this.send( datagram, function() {
+          sm.lastSentDatagram = datagram;
+          sm.transition( 'sendTunnReq_waitACK', datagram );
+        });
+      },
+      "*": function ( data ) {
+        this.debugPrint(util.format('*** deferring until transition %j', data));
+        this.deferUntilTransition( 'idle' );
+      }
+    },
+    sendTunnReq_waitACK:  {
       _onEnter: function ( datagram ) {
         var sm = this;
         //sm.debugPrint('setting up tunnreq timeout for %j', datagram);
         this.tunnelingAckTimer = setTimeout( function() {
-          sm.handle( "timeout_tun_ack", datagram );
+          sm.debugPrint('timed out waiting for TUNNELING_ACK');
+          sm.emit('tunnelreqfailed', datagram);
+          sm.transition( 'idle' );
         }.bind( this ), 2000 );
-        // send the telegram on the wire
-        this.send( datagram );
-        this.lastSentDatagram = datagram;
       },
       inbound_TUNNELING_ACK: function ( datagram ) {
-        clearTimeout( this.tunnelingAckTimer );
-        var sm = this;
-        if (datagram.connstate.seqnum != this.lastSentDatagram.tunnstate.seqnum) {
+        if (datagram.tunnstate.seqnum != this.lastSentDatagram.tunnstate.seqnum) {
           this.debugPrint(util.format('Receive sequence MISMATCH, got %d (expected %d)',
-            datagram.connstate.seqnum, this.lastSentDatagram.tunnstate.seqnum));
+            datagram.tunnstate.seqnum, this.lastSentDatagram.tunnstate.seqnum));
         } else {
-          //
-          this.tunnelingRequestTimer = setTimeout( function() {
-            sm.handle( "timeout_tun_req", datagram );
-          }.bind( this ), 2000 );
+          clearTimeout( this.tunnelingAckTimer );
+          // this.recvSeqNum = datagram.tunnstate.seqnum;
+          this.seqnum = datagram.tunnstate.seqnum;
+          this.transition( 'sendTunnReq_waitEcho' , datagram);
         }
       },
-      timeout_tun_ack: function (datagram) {
-        this.debugPrint('timed out waiting for TUNNELING_ACK');
-        this.emit('tunnelreqfailed', datagram);
-        this.transition( 'idle' );
+      "*": function ( data ) {
+        this.debugPrint(util.format('*** deferring until transition %j', data));
+        this.deferUntilTransition( 'idle' );
+      }
+    },
+    sendTunnReq_waitEcho: {
+      _onEnter: function ( datagram ) {
+        var sm = this;
+        this.tunnelingRequestTimer = setTimeout( function() {
+          sm.debugPrint('timed out waiting for TUNNELING_REQUEST');
+          sm.emit('unacknowledged', datagram);
+          sm.transition( 'idle' );
+        }.bind( this ), 2000 );
       },
       inbound_TUNNELING_REQUEST: function ( datagram ) {
-        clearTimeout( this.tunnelingRequestTimer );
         var sm = this;
-        // TODO: compare datagrams sm.lastSentDatagram == datagram ?? EXCLUDE sequence number from comparison!!
-        sm.recvSeqNum = datagram.tunnstate.seqnum;
-        sm.incSeqSend();
-        sm.send( sm.prepareDatagram(
-          KnxConstants.SERVICE_TYPE.TUNNELING_ACK,
-          datagram), function() {
-            sm.emitEvent(datagram);
-            sm.transition( 'idle' );
-        })
-      },
-      timeout_tun_req: function (datagram) {
-        this.debugPrint('timed out waiting for TUNNELING_REQUEST');
-        this.emit('unacknowledged', datagram);
-        this.transition( 'idle' );
+        if (this.lastSentDatagram.tunnstate.seqnum == datagram.tunnstate.seqnum) {
+          clearTimeout( this.tunnelingRequestTimer );
+          sm.send( sm.prepareDatagram(
+            KnxConstants.SERVICE_TYPE.TUNNELING_ACK,
+            datagram), function(err) {
+              sm.debugPrint(util.format('UDP sent [%s]', (err ? err.toString() : 'no_err')));
+              sm.emitEvent(datagram);
+              sm.seqnum = (sm.seqnum + 1) & 0xFF;
+              sm.transition( 'idle' );
+          });
+        } else {
+          this.debugPrint(util.format('*** deferring until transition %j', datagram));
+          this.deferUntilTransition( 'idle' );
+        }
       },
       "*": function ( data ) {
         this.debugPrint(util.format('*** deferring until transition %j', data));
@@ -242,10 +259,13 @@ module.exports = machina.Fsm.extend({
     receivingTunnelingRequest: {
       _onEnter: function (datagram) {
         var sm = this;
-        this.recvSeqNum = datagram.tunnstate.seqnum;
+        /*this.recvSeqNum = datagram.tunnstate.seqnum;
         this.debugPrint(util.format(
-          '^^^^ recvSeq: %d sendSeq: %d', this.recvSeqNum, this.sendSeqNum
-        ));
+          '<<<<< recvSeq: %d sendSeq: %d', this.recvSeqNum, this.sendSeqNum
+        ));*/
+        this.seqnum = datagram.tunnstate.seqnum;
+        this.debugPrint(util.format('<<<<< SeqNum: %d', this.seqnum));
+        //
         if(datagram.cemi.msgcode == KnxConstants.MESSAGECODES["L_Data.ind"]) {
           sm.debugPrint(util.format(
             'received L_Data.ind tunelling request (%d bytes)',

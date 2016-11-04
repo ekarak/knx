@@ -20,15 +20,25 @@ KnxConnection.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
   if (dg) {
     var svctype = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
     // append the CEMI service type if this is a tunneling request...
-    var cemitype = (dg.service_type == 1056) ?
+    var cemitype = (dg.service_type == KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST) ?
       KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode)
       : "";
     this.debugPrint(util.format(
       "Received %s(/%s) message: %j", svctype, cemitype, dg
     ));
-    // ... to drive the state machine
-    var signal = util.format('inbound_%s', svctype);
-    this.handle(signal, dg);
+    if(!isNaN(this.channel_id) &&
+       ((dg.hasOwnProperty('connstate') &&
+        dg.connstate.channel_id != this.channel_id) ||
+       (dg.hasOwnProperty('tunnstate') &&
+        dg.tunnstate.channel_id != this.channel_id))) {
+      this.debugPrint(util.format(
+        "*** Ignoring %s datagram for other channel (own: %d)",
+        svctype, this.channel_id));
+    } else {
+      // ... to drive the state machine
+      var signal = util.format('inbound_%s', svctype);
+      this.handle(signal, dg);
+    }
   } else {
     this.debugPrint(util.format(
       "Incomplete/unparseable UDP packet: %j", msg
@@ -134,12 +144,10 @@ KnxConnection.prototype.prepareDatagram = function (svcType) {
       break;
     case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
       this.AddTunnState(datagram);
-      datagram.tunnstate.seqnum = this.sendSeqNum;
       this.AddCEMI(datagram);
       break;
     case KnxConstants.SERVICE_TYPE.TUNNELING_ACK:
       this.AddTunnState(datagram);
-      datagram.tunnstate.seqnum = this.recvSeqNum;
       break;
     default:
       console.trace('Do not know how to deal with svc type %d', svcType);
@@ -148,46 +156,45 @@ KnxConnection.prototype.prepareDatagram = function (svcType) {
 }
 
 /*
-send the telegram over the wire
+send the datagram over the wire
 */
-KnxConnection.prototype.send = function(telegram, callback) {
+KnxConnection.prototype.send = function(datagram, callback) {
   var conn = this;
-
   // select which UDP channel we should use (control/tunnel)
   var channel = [
     KnxConstants.SERVICE_TYPE.CONNECT_REQUEST,
     KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST,
     KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST]
-    .indexOf(telegram.service_type) > -1 ?  this.control : this.tunnel;
+    .indexOf(datagram.service_type) > -1 ?  this.control : this.tunnel;
   try {
-    var cemitype ;
+    var cemitype;
     this.writer = KnxNetProtocol.createWriter();
-    // append the CEMI service type if this is a tunneling request...
-    if (telegram.service_type == 1056) { // KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST)
-      cemitype = KnxConstants.keyText('MESSAGECODES', telegram.cemi.msgcode);
+    switch(datagram.service_type) {
+      case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
+        // append the CEMI service type if this is a tunneling request...
+        cemitype = KnxConstants.keyText('MESSAGECODES', datagram.cemi.msgcode);
+        datagram.tunnstate.seqnum = this.seqnum;
+        break;
+      case KnxConstants.SERVICE_TYPE.TUNNELING_ACK:
+        //datagram.tunnstate.seqnum = this.sendSeqNum;
+        datagram.tunnstate.seqnum = this.seqnum;
+        break;
     }
-    var packet = this.writer.KNXNetHeader(telegram);
+    var packet = this.writer.KNXNetHeader(datagram);
     var buf = packet.buffer;
-    var svctype = KnxConstants.keyText('SERVICE_TYPE', telegram.service_type);
+    var svctype = KnxConstants.keyText('SERVICE_TYPE', datagram.service_type);
     this.debugPrint(util.format(
       'Sending %s(/%s) %j (%d bytes) from port %d ==> %j',
-      svctype, cemitype, buf, buf.length, channel.address().port, telegram
+      svctype, cemitype, buf, buf.length, channel.address().port, datagram
     ));
     channel.send(
       buf, 0, buf.length,
-      conn.remoteEndpoint.port, conn.remoteEndpoint.addr,
-      function (err) {
-        conn.debugPrint(util.format(
-          'UDP sent %d bytes to %j, err[' + (err ? err.toString() : 'no_err') + ']',
-          buf.length, conn.remoteEndpoint));
-        if (typeof callback === 'function') callback(err);
-    });
-    callback && callback();
+      conn.remoteEndpoint.port, conn.remoteEndpoint.addr, callback
+    );
   }
   catch (e) {
     console.log(util.format("*** ERROR: %s, %j", e, e.stack));
   }
-
 }
 
 KnxConnection.prototype.write = function(grpaddr, apdu_data, dptid, callback) {
@@ -213,7 +220,7 @@ KnxConnection.prototype.write = function(grpaddr, apdu_data, dptid, callback) {
 }
 
 // send a READ request to the bus
-// you can pass a callback function which gets bound to the RESPONSE telegram event
+// you can pass a callback function which gets bound to the RESPONSE datagram event
 KnxConnection.prototype.read = function(grpaddr, callback) {
   if (typeof callback == 'function') {
     var conn = this;
@@ -249,7 +256,7 @@ KnxConnection.prototype.Disconnect = function(msg) {
 
 KnxConnection.prototype.debugPrint = function(msg) {
   if (this.debug) {
-    var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    var ts = new Date().toISOString().replace(/T/, ' ').replace(/Z$/, '');
     console.log('%s (%s): %s', ts, this.compositeState(), msg);
   }
 }
