@@ -18,13 +18,9 @@ KnxConnection.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
   reader.KNXNetHeader('tmp');
   var dg = reader.next()['tmp'];
   if (dg) {
-    var svctype = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
-    // append the CEMI service type if this is a tunneling request...
-    var cemitype = (dg.service_type == KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST) ?
-      KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode)
-      : "";
+    var descr = this.datagramDesc(dg);
     this.debugPrint(util.format(
-      "Received %s(/%s) message: %j", svctype, cemitype, dg
+      "Received %s message: %j", descr, dg
     ));
     if(!isNaN(this.channel_id) &&
        ((dg.hasOwnProperty('connstate') &&
@@ -33,10 +29,10 @@ KnxConnection.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
         dg.tunnstate.channel_id != this.channel_id))) {
       this.debugPrint(util.format(
         "*** Ignoring %s datagram for other channel (own: %d)",
-        svctype, this.channel_id));
+        descr, this.channel_id));
     } else {
-      // ... to drive the state machine
-      var signal = util.format('inbound_%s', svctype);
+      // ... to drive the state machine (eg "inbound_TUNNELING_REQUEST_L_Data.ind")
+      var signal = util.format('inbound_%s', descr);
       this.handle(signal, dg);
     }
   } else {
@@ -173,11 +169,11 @@ KnxConnection.prototype.send = function(datagram, callback) {
       case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
         // append the CEMI service type if this is a tunneling request...
         cemitype = KnxConstants.keyText('MESSAGECODES', datagram.cemi.msgcode);
-        datagram.tunnstate.seqnum = this.seqnum;
+        datagram.tunnstate.seqnum = this.seqnumSend;
         break;
       case KnxConstants.SERVICE_TYPE.TUNNELING_ACK:
-        //datagram.tunnstate.seqnum = this.sendSeqNum;
-        datagram.tunnstate.seqnum = this.seqnum;
+        //datagram.tunnstate.seqnum = this.seqnumRecv;
+        // add the sequence number just before serializing the datagram
         break;
     }
     var packet = this.writer.KNXNetHeader(datagram);
@@ -188,8 +184,13 @@ KnxConnection.prototype.send = function(datagram, callback) {
       svctype, cemitype, buf, buf.length, channel.address().port, datagram
     ));
     channel.send(
-      buf, 0, buf.length,
-      conn.remoteEndpoint.port, conn.remoteEndpoint.addr, callback
+      buf, 0, buf.length, conn.remoteEndpoint.port, conn.remoteEndpoint.addr,
+      function(err) {
+        conn.debugPrint(util.format('UDP sent %d bytes to %j: %s',
+          buf.length, conn.remoteEndpoint, (err ? err.toString() : 'OK')
+        ));
+        if (typeof callback === 'function') callback(err);
+      }
     );
   }
   catch (e) {
@@ -238,7 +239,7 @@ KnxConnection.prototype.read = function(grpaddr, callback) {
     // clean up after 3 seconds just in case no one answers the read request
     setTimeout(function() {
       conn.off(responseEvent, binding);
-    },3000);
+    }, 3000);
   }
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
     // this is a READ request
@@ -257,16 +258,22 @@ KnxConnection.prototype.Disconnect = function(msg) {
 KnxConnection.prototype.debugPrint = function(msg) {
   if (this.debug) {
     var ts = new Date().toISOString().replace(/T/, ' ').replace(/Z$/, '');
-    console.log('%s (%s): %s', ts, this.compositeState(), msg);
+    console.log('%s (%s):\t%s', ts, this.compositeState(), msg);
   }
 }
 
+// return a descriptor for this datagram (TUNNELING_REQUEST_L_Data.ind)
+KnxConnection.prototype.datagramDesc = function (dg) {
+  var blurb = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
+  if (dg.service_type == KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST) {
+    blurb += '_' + KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode);
+  }
+  return blurb;
+}
 KnxConnection.prototype.incSeqSend = function () {
-  this.sendSeqNum = (this.sendSeqNum + 1) & 0xFF;
+  this.seqnumSend = (this.seqnumSend + 1) & 0xFF;
 };
-
 KnxConnection.prototype.incSeqRecv = function () {
-  this.recvSeqNum = (this.recvSeqNum + 1) & 0xFF;
+  this.seqnumRecv = (this.seqnumRecv + 1) & 0xFF;
 };
-
 module.exports = KnxConnection;

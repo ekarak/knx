@@ -12,7 +12,7 @@ function setupDatapoint(groupadress, statusga) {
 
 new Promise(function(resolve, reject) {
   connection.Connect(function() {
-    console.log('Connected!');
+    console.log('===========\nConnected!\n===========');
     resolve();
   });
   }).then(function() {

@@ -15,14 +15,14 @@ var p1 = new Promise(function(resolve, reject) {
 });
 
 connection.on('event', function (evt, src, dest, value) {
-  console.log("%s: %j, src: %j, dest: %j, value: %j",
-    new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''),
+  console.log("%s ===> %s <===, src: %j, dest: %j, value: %j",
+    new Date().toISOString().replace(/T/, ' ').replace(/Z$/, ''),
     evt, src, dest, value
   );
 });
 connection.on('error', function (connstatus) {
-  console.log("%s: **** ERROR: %j",
-    new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''),
+  console.log("%s **** ERROR: %j",
+    new Date().toISOString().replace(/T/, ' ').replace(/Z$/, ''),
     connstatus);
 });
 

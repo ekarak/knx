@@ -12,16 +12,13 @@ const KnxNetProtocol = require('./KnxProtocol.js');
 
 module.exports = machina.Fsm.extend({
 
-  // the initialize method is called right after the FSM
-  // instance is constructed, giving you a place for any
-  // setup behavior, etc. It receives the same arguments
-  // (options) as the constructor function.
   initialize: function( options ) {
     //this.debugPrint( util.format('initialize connection: %j', options));
     this.options = options;
     // set the local IP endpoint
     this.localAddress = null;
     this.ThreeLevelGroupAddressing = true;
+    this.sentTunnRequests = [];
     this.remoteEndpoint = { addr: options.ipAddr, port: options.ipPort || 3671 };
   },
 
@@ -46,10 +43,13 @@ module.exports = machina.Fsm.extend({
         sm.connecttimer = setInterval( function() {
           sm.debugPrint('connection timed out - retrying...');
           sm.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
+          // TODO: handle send err
         }.bind( this ), 3000 );
         delete sm.channel_id;
+        delete sm.conntime;
         // send connect request directly
         sm.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
+        // TODO: handle send err
       },
       // _onExit is a special handler that is invoked just before
       // the FSM leaves the current state and transitions to another
@@ -58,29 +58,25 @@ module.exports = machina.Fsm.extend({
       },
       inbound_CONNECT_RESPONSE: function (datagram) {
         var sm = this;
-        /*this.recvSeqNum = 0;
-        this.sendSeqNum = 0;*/
-        this.seqnum = 0;
         sm.debugPrint(util.format('got connect response'));
         // store channel ID into the Connection object
         this.channel_id = datagram.connstate.channel_id;
         // send connectionstate request directly
         sm.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST ));
+        // TODO: handle send err
       },
       inbound_CONNECTIONSTATE_RESPONSE: function (datagram) {
         var sm = this;
         var str = KnxConstants.keyText('RESPONSECODE', datagram.connstate.status);
         sm.debugPrint(util.format(
-          'CONNECTED! got connection state response, connstate: %s, channel ID: %d',
+          'Got connection state response, connstate: %s, channel ID: %d',
           str, datagram.connstate.channel_id));
-        // ready to go!
+        // ready to go! Reset sequence counters..
+        this.seqnumSend = 0;
+        this.seqnumRecv = 0;
         this.conntime = Date.now();
         this.emit('connected');
         this.transition( 'idle');
-      },
-      // any inbound tunneling requests must be
-      inbound_TUNNELING_REQUEST: function ( datagram ) {
-        this.debugPrint("*** ignoring inbound tunneling requests while establishing connection");
       },
       "*": function ( data ) {
         this.debugPrint(util.format('*** deferring Until Transition %j', data));
@@ -98,7 +94,8 @@ module.exports = machina.Fsm.extend({
           sm.transition( "uninitialized");
         }.bind( this ), 3000 );
         //
-        sm.send( sm.prepareDatagram ( KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST), function() {
+        sm.send( sm.prepareDatagram ( KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST), function(err) {
+          // TODO: handle send err
           sm.debugPrint('sent DISCONNECT_REQUEST');
         });
       },
@@ -111,7 +108,6 @@ module.exports = machina.Fsm.extend({
       },
     },
 
-      // while idle we can either...
     idle: {
       _onEnter: function() {
         this.idletimer = setTimeout( function() {
@@ -119,17 +115,34 @@ module.exports = machina.Fsm.extend({
           this.transition(  "requestingConnState" );
         }.bind( this ), 10000 );
         this.debugPrint( " ... " );
-        //console.trace();
+        // process any deferred items from the FSM internal queue
         this.processQueue();
       },
-      // queue an OUTGOING tunelling request...
+      // while idle we can either...
+      // 1) queue an OUTGOING tunelling request...
       outbound_TUNNELING_REQUEST: function ( datagram ) {
         // this.debugPrint(util.format('OUTBOUND tunneling request: %j', datagram));
-        this.transition(  'sendTunnReq', datagram );
+        this.transition( 'sendTunnReq', datagram );
       },
-      // OR receive an INBOUND tunneling request
-      inbound_TUNNELING_REQUEST: function( datagram ) {
-        this.transition(  'receivingTunnelingRequest', datagram );
+      // 2) receive an INBOUND tunneling request INDICATION (L_Data.ind)
+      'inbound_TUNNELING_REQUEST_L_Data.ind': function( datagram ) {
+        this.transition( 'recvTunnReqIndication', datagram );
+      },
+      // 3) receive an INBOUND tunneling request CONFIRMATION (L_Data.con) to one of our sent tunnreq's
+      'inbound_TUNNELING_REQUEST_L_Data.con': function ( datagram ) {
+        var sm = this;
+        sm.debugPrint(util.format(
+          'Successful confirmation of seq %d!', datagram.tunnstate.seqnum));
+        // TODO: sm.emit('confirmed', ??? )
+        var ack = sm.prepareDatagram(
+          KnxConstants.SERVICE_TYPE.TUNNELING_ACK,
+          datagram);
+        ack.tunnstate.seqnum = datagram.tunnstate.seqnum;
+        sm.send(ack, function(err) {
+          // TODO: handle send err
+          sm.emitEvent(datagram);
+          sm.transition( 'idle' );
+        });
       },
       inbound_DISCONNECT_REQUEST: function( datagram ) {
         this.transition( 'connecting' );
@@ -145,6 +158,7 @@ module.exports = machina.Fsm.extend({
         var sm = this;
         sm.debugPrint('requesting Connection State');
         sm.send (sm.prepareDatagram (KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST));
+        // TODO: handle send err
         //
         this.connstatetimer = setTimeout( function() {
           var msg = 'timed out waiting for CONNECTIONSTATE_RESPONSE';
@@ -180,13 +194,12 @@ module.exports = machina.Fsm.extend({
     sendTunnReq:  {
       _onEnter: function ( datagram ) {
         var sm = this;
-        /*this.debugPrint(util.format(
-          '>>>>> recvSeq: %d sendSeq: %d', this.recvSeqNum, this.sendSeqNum
-        ));*/
-        this.debugPrint(util.format('>>>>> seqnum: %d', this.seqnum));
+        this.debugPrint(util.format('>>>>> seqnum: %d / %d', this.seqnumSend, this.seqnumRecv));
         // send the telegram on the wire
-        this.send( datagram, function() {
-          sm.lastSentDatagram = datagram;
+        this.send( datagram, function(err) {
+          // TODO: handle send err
+          sm.sentTunnRequests[datagram.tunnstate.seqnum] = datagram;
+          // and then wait for the acknowledgement
           sm.transition( 'sendTunnReq_waitACK', datagram );
         });
       },
@@ -201,19 +214,30 @@ module.exports = machina.Fsm.extend({
         //sm.debugPrint('setting up tunnreq timeout for %j', datagram);
         this.tunnelingAckTimer = setTimeout( function() {
           sm.debugPrint('timed out waiting for TUNNELING_ACK');
+          // TODO: resend datagram, up to 3 times
           sm.emit('tunnelreqfailed', datagram);
           sm.transition( 'idle' );
         }.bind( this ), 2000 );
       },
       inbound_TUNNELING_ACK: function ( datagram ) {
-        if (datagram.tunnstate.seqnum != this.lastSentDatagram.tunnstate.seqnum) {
-          this.debugPrint(util.format('Receive sequence MISMATCH, got %d (expected %d)',
-            datagram.tunnstate.seqnum, this.lastSentDatagram.tunnstate.seqnum));
-        } else {
+        var sm = this;
+        var acked_dg = sm.sentTunnRequests[datagram.tunnstate.seqnum];
+        if (acked_dg) {
           clearTimeout( this.tunnelingAckTimer );
-          // this.recvSeqNum = datagram.tunnstate.seqnum;
-          this.seqnum = datagram.tunnstate.seqnum;
-          this.transition( 'sendTunnReq_waitEcho' , datagram);
+          delete sm.sentTunnRequests[datagram.tunnstate.seqnum];
+          sm.seqnumRecv = datagram.tunnstate.seqnum;
+          sm.incSeqSend();
+          sm.debugPrint(util.format('===== seqnum: %d / %d', sm.seqnumSend, sm.seqnumRecv));
+          if (acked_dg.cemi.ctrl.confirm) {
+            // only wait for confirmation if the datagram has the 'confirm' flag
+            // TODO: validate meaning of 'confirm' flag, we need to manually flag outgoing requests for confirmation by API call
+            this.transition( 'sendTunnReq_waitCon', acked_dg);
+          } else {
+            delete sm.sentTunnRequests[datagram.tunnstate.seqnum];
+            this.transition( 'idle' );
+          }
+        } else {
+          this.deferUntilTransition( 'idle' );
         }
       },
       "*": function ( data ) {
@@ -221,7 +245,8 @@ module.exports = machina.Fsm.extend({
         this.deferUntilTransition( 'idle' );
       }
     },
-    sendTunnReq_waitEcho: {
+    // wait for a tunneling request confirmation
+    sendTunnReq_waitCon: {
       _onEnter: function ( datagram ) {
         var sm = this;
         this.tunnelingRequestTimer = setTimeout( function() {
@@ -230,51 +255,33 @@ module.exports = machina.Fsm.extend({
           sm.transition( 'idle' );
         }.bind( this ), 2000 );
       },
-      inbound_TUNNELING_REQUEST: function ( datagram ) {
+      'inbound_TUNNELING_REQUEST_L_Data.con': function ( datagram ) {
         var sm = this;
-        if (this.lastSentDatagram.tunnstate.seqnum == datagram.tunnstate.seqnum) {
-          clearTimeout( this.tunnelingRequestTimer );
-          sm.send( sm.prepareDatagram(
-            KnxConstants.SERVICE_TYPE.TUNNELING_ACK,
-            datagram), function(err) {
-              sm.debugPrint(util.format('UDP sent [%s]', (err ? err.toString() : 'no_err')));
-              sm.emitEvent(datagram);
-              sm.seqnum = (sm.seqnum + 1) & 0xFF;
-              sm.transition( 'idle' );
-          });
-        } else {
-          this.debugPrint(util.format('*** deferring until transition %j', datagram));
-          this.deferUntilTransition( 'idle' );
-        }
+        sm.emit('acknowledged', datagram);
+        sm.transition( 'idle' );
       },
       "*": function ( data ) {
         this.debugPrint(util.format('*** deferring until transition %j', data));
         this.deferUntilTransition( 'idle' );
       }
-  },
+    },
 
     /*
-    * 2) INBOUND tunneling request
+    * 2) INBOUND tunneling request (L_Data.ind)
     */
-    receivingTunnelingRequest: {
+    recvTunnReqIndication: {
       _onEnter: function (datagram) {
         var sm = this;
-        /*this.recvSeqNum = datagram.tunnstate.seqnum;
-        this.debugPrint(util.format(
-          '<<<<< recvSeq: %d sendSeq: %d', this.recvSeqNum, this.sendSeqNum
-        ));*/
-        this.seqnum = datagram.tunnstate.seqnum;
-        this.debugPrint(util.format('<<<<< SeqNum: %d', this.seqnum));
-        //
-        if(datagram.cemi.msgcode == KnxConstants.MESSAGECODES["L_Data.ind"]) {
-          sm.debugPrint(util.format(
-            'received L_Data.ind tunelling request (%d bytes)',
-            datagram.total_length));
-          this.emitEvent(datagram);
-        }
+        sm.debugPrint(util.format(
+          'received L_Data.ind tunelling request (%d bytes)',
+          datagram.total_length));
+        sm.emitEvent(datagram);
         // check IF THIS IS NEEDED (maybe look at apdu control field for ack)
         var ack = sm.prepareDatagram (KnxConstants.SERVICE_TYPE.TUNNELING_ACK, datagram);
-        sm.send(ack, function() {
+        ack.tunnstate.seqnum = datagram.tunnstate.seqnum;
+        sm.send(ack, function(err) {
+          // TODO: handle err
+          sm.seqnumRecv = datagram.tunnstate.seqnum;
           sm.transition( 'idle' );
         });
       },
@@ -282,7 +289,7 @@ module.exports = machina.Fsm.extend({
         this.debugPrint(util.format('*** deferring Until Transition %j', data));
         this.deferUntilTransition( 'idle' );
       },
-    }
+    },
   },
   emitEvent: function(datagram) {
     // emit events to our beloved subscribers in a multitude of targets
