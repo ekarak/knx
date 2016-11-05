@@ -70,7 +70,7 @@ KnxProtocol.define('CRI', {
       }
     })
     .popStack(propertyName, function (data) {
-      //if (KnxProtocol.debug) console.log('read CRI: '+JSON.stringify(data));
+      if (KnxProtocol.debug) console.log('read CRI: '+JSON.stringify(data));
       // pop the interim value off the stack and insert the real value into `propertyName`
       return data
     });
@@ -97,7 +97,7 @@ KnxProtocol.define('ConnState', {
     .UInt8('channel_id')
     .UInt8('status')
     .popStack(propertyName, function (data) {
-      //if (KnxProtocol.debug) console.log('read ConnState: %j', data);
+      if (KnxProtocol.debug) console.log('read ConnState: %j', data);
       return data;
     });
   },
@@ -123,7 +123,7 @@ KnxProtocol.define('TunnState', {
     .UInt8('seqnum')
     .UInt8('rsvd')
     .tap(function (hdr) {
-      //if (KnxProtocol.debug) console.log('reading TunnState: %j', hdr);
+      if (KnxProtocol.debug) console.log('reading TunnState: %j', hdr);
       switch (hdr.status) {
         case 0x00:
           break;
@@ -138,7 +138,7 @@ KnxProtocol.define('TunnState', {
   write: function (value) {
     if (!value) console.trace("TunnState: cannot write null value for TunnState")
     else {
-      //if (KnxProtocol.debug) console.log('writing TunnState: %j', value);
+      if (KnxProtocol.debug) console.log('writing TunnState: %j', value);
       this
         .UInt8(0x04)
         .UInt8(value.channel_id)
@@ -172,15 +172,13 @@ KnxProtocol.define('HPAI', {
     .IPv4Endpoint('tunnel_endpoint')
     .tap(function (hdr) {
       if (this.buffer.length < hdr.header_length) {
-        //console.log('%d %d %d', this.buffer.length, this.offset, hdr.header_length);
+        if (KnxProtocol.debug) console.log('%d %d %d', this.buffer.length, this.offset, hdr.header_length);
         throw "Incomplete KNXNet HPAI header";
       }
-/*
       if (KnxProtocol.debug) {
         console.log('read HPAI: %j', hdr);
         console.log("     HPAI: proto = %s", KnxConstants.keyText('PROTOCOL_TYPE', hdr.protocol_type));
       }
-*/
       switch (hdr.protocol_type) {
         case KnxConstants.PROTOCOL_TYPE.IPV4_TCP:
           throw "TCP is not supported";
@@ -365,13 +363,13 @@ KnxProtocol.define('APDU', {
     this.pushStack({ apdu_length: null, apdu_raw: null, tpci: null, apci: null, data: null })
     .UInt8('apdu_length')
     .tap(function (hdr) {
-      //console.log('--- parsing extra %d apdu bytes', hdr.apdu_length+1);
+      if (KnxProtocol.debug) console.log('--- parsing extra %d apdu bytes', hdr.apdu_length+1);
       this.raw('apdu_raw', hdr.apdu_length+1);
     })
     .tap(function (hdr) {
       // Parse the APDU. tcpi/apci bits split across byte boundary.
       // Typical example of protocol designed by committee.
-      //console.log('%j', hdr)
+      if (KnxProtocol.debug) console.log('%j', hdr);
       var apdu;
       apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
       if (hdr.apdu_length > 1) {
@@ -388,7 +386,7 @@ KnxProtocol.define('APDU', {
   write: function (value) {
     if (!value)      throw "cannot write null APDU value";
     var total_length = knxlen('APDU', value);
-    //console.log('APDU.write: \t%j (total %d bytes)', value, total_length);
+    if (KnxProtocol.debug) console.log('APDU.write: \t%j (total %d bytes)', value, total_length);
     if (total_length < 3) throw util.format("APDU is too small (%d bytes)", total_length);
     if (total_length > 16) throw util.format("APDU is too big (%d bytes)", total_length);
     this.UInt8(total_length - 2);
@@ -441,7 +439,7 @@ KnxProtocol.define('CEMI', {
     .raw('dest_addr', 2)
     .APDU('apdu')
     .tap(function (hdr) {
-      //console.log('--- APDU as seen from CEMI==%j', hdr.apdu);
+      if (KnxProtocol.debug) console.log('--- APDU as seen from CEMI==%j', hdr.apdu);
       // parse 16bit control field
       hdr.ctrl = ctrlStruct.parse(hdr.ctrl);
       // KNX source addresses are always physical
@@ -455,7 +453,7 @@ KnxProtocol.define('CEMI', {
   },
   write: function (value) {
     if (!value)      throw "cannot write null CEMI value";
-    //console.log('CEMI.write: \n\t%j', value);
+    if (KnxProtocol.debug) console.log('CEMI.write: \n\t%j', value);
     if (value.apdu === null) throw "no APDU supplied";
     if (value.ctrl === null) throw "no Control Field supplied";
     var ctrlField1 =
@@ -483,13 +481,13 @@ KnxProtocol.define('CEMI', {
 KnxProtocol.lengths['CEMI'] = function(value) {
   if (!value) return 0;
   var apdu_length = knxlen('APDU', value.apdu);
-  //console.log('knxlen of cemi: %j == %d', value, 8 + apdu_length);
+  if (KnxProtocol.debug) console.log('knxlen of cemi: %j == %d', value, 8 + apdu_length);
   return 8 + apdu_length;
 }
 
 KnxProtocol.define('KNXNetHeader', {
   read: function (propertyName) {
-    // if (KnxProtocol.debug) console.log('reading KNXNetHeader');
+    if (KnxProtocol.debug) console.log('reading KNXNetHeader');
     this.pushStack({ header_length: 0, protocol_version: -1, service_type: -1, total_length: 0})
     .UInt8   ('header_length')
     .UInt8   ('protocol_version')
@@ -522,31 +520,27 @@ KnxProtocol.define('KNXNetHeader', {
           break;
         }
         // most common case:
-        case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST: {
-          this
-            .TunnState('tunnstate')
-            .CEMI('cemi');
+        case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
+          this.TunnState('tunnstate');
+          this.CEMI('cemi');
           break;
-        }
-        case KnxConstants.SERVICE_TYPE.TUNNELING_ACK: {
-          this
-            .TunnState('connstate'); // FIXME: typo?
+        case KnxConstants.SERVICE_TYPE.TUNNELING_ACK:
+          this.TunnState('tunnstate');
           break;
-        }
         default: {
           console.trace("read KNXNetHeader: unhandled serviceType = %s", KnxConstants.keyText('SERVICE_TYPE', hdr.service_type));
         }
       }
     })
     .popStack(propertyName, function (data) {
-      //if (KnxProtocol.debug) console.log(JSON.stringify(data, null, 4));
+      if (KnxProtocol.debug) console.log(JSON.stringify(data, null, 4));
       return data;
     });
   },
   write: function (value) {
     if (!value) throw "cannot write null KNXNetHeader value"
     value.total_length = knxlen('KNXNetHeader', value);
-    //console.log("writing KnxHeader:", value);
+    if (KnxProtocol.debug) console.log("writing KnxHeader:", value);
     this
       .UInt8(6)    // header length (6 bytes constant)
       .UInt8(0x10) // protocol version 1.0
@@ -557,7 +551,7 @@ KnxProtocol.define('KNXNetHeader', {
       case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST:
       case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST: {
         if (value.hpai) this.HPAI(value.hpai);
-        if (value.tunn) this.HPAI(value.tunn)
+        if (value.tunn) this.HPAI(value.tunn);
         if (value.cri)  this.CRI(value.cri);
         break;
       }

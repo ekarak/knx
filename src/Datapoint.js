@@ -51,8 +51,6 @@ Datapoint.prototype.bind = function (conn) {
       case "GroupValue_Write":
       case "GroupValue_Response":
         self.update(jsvalue); // update internal state
-        if (evt == "GroupValue_Response" && typeof self.readcb == 'function')
-          self.readcb(src, jsvalue);
         break;
       default:
         // TODO: add default handler; maybe emit warning?
@@ -107,18 +105,12 @@ Datapoint.prototype.write = function (value) {
 
 /*
 * Issue a GroupValue_Read request to the bus for this datapoint
-* use the optional callback to get notified upon response
+* use the optional callback() to get notified upon response
 */
 Datapoint.prototype.read = function (callback) {
   var self = this;
   if (!this.conn) throw "must supply a valid KNX connection to bind to";
-  this.conn.read(this.options.ga, function(){
-    // once its done, register the response callback
-    if (typeof callback == 'function') {
-      // TODO: use DPT fromBuffer() to decode response
-      self.readcb = callback;
-    }
-  });
+  this.conn.read(this.options.ga, callback);
 }
 
 Datapoint.prototype.toString = function () {
