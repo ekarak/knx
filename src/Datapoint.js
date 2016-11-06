@@ -44,8 +44,8 @@ Datapoint.prototype.bind = function (conn) {
     //console.log('EVENT!!! %s %j', evt, buf);
     var jsvalue = buf;
     // get the Javascript value from the raw buffer, if the DPT defines fromBuffer()
-    if (buf && typeof self.dpt.fromBuffer == 'function') {
-      jsvalue = self.dpt.fromBuffer(buf);
+    if (buf) {
+      jsvalue = DPTLib.fromBuffer(buf, self);
     }
     switch (evt) {
       case "GroupValue_Write":
@@ -74,7 +74,6 @@ Datapoint.prototype.update = function (jsvalue) {
     this.current_value = jsvalue;
      var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
     //console.log("%s **** %s DATAPOINT CHANGE (was: %j)", ts, this.toString(), old_value );
-
   }
 }
 

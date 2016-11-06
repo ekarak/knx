@@ -43,9 +43,10 @@ var dirEntries = fs.readdirSync(__dirname);
 var dpts = {};
 for (var i = 0; i < dirEntries.length; i++) {
   if (matches = dirEntries[i].match(/(dpt.*)\.js/) ) {
-    var dptid = matches[1].toUpperCase();
+    var dptid = matches[1].toUpperCase(); // DPT1..DPTxxx
     dpts[dptid] = require(__dirname + path.sep + dirEntries[i]);
-    //console.log('DPT library: loading %s (%s)', dptid, dpts[dptid].basetype.desc);
+    dpts[dptid].id = dptid;
+    //console.log('DPT library: loaded %s (%s)', dptid, dpts[dptid].basetype.desc);
   }
 }
 
@@ -60,11 +61,101 @@ dpts.resolve = function(dptid) {
     var m = dptid.toUpperCase().match(/(\d+)(\.(\d+))?/);
     var dpt = dpts[util.format('DPT%s', m[1])];
     if (!dpt) throw "no such DPT: "+dpt;
-    if (m[3]) dpt.subtype = dpt.subtypes[m[3]];
+    if (m[3]) {
+      dpt.subtypeid = m[3];
+      dpt.subtype = dpt.subtypes[m[3]];
+    }
     return dpt;
   }
   console.trace("no such DPT: %j",dpt);
   throw "No such DPT";
+}
+
+/* format an APDU from a given Javascript value for the given DPT
+* - either by a custom DPT formatAPDU function
+* - or by this generic version, which:
+* --  1) checks if the value adheres to the range set from the DPT's bitlength
+*/
+dpts.formatAPDU = function(value, dpt) {
+  var nbytes = Math.ceil(dpt.basetype.bitlength / 8);
+  //console.log('%s: %d bytes', dpt.id, nbytes);
+  var apdu_data = new Buffer(nbytes);
+  var tgtvalue;
+  // get the raw APDU data for the given JS value
+  if (typeof dpt.formatAPDU == 'function') {
+    // nothing to do here, DPT-specific formatAPDU implementation will handle everything
+    apdu_data = dpt.formatAPDU(value);
+  } else {
+    if (!isFinite(value)) throw util.format("Invalid value, expected a %s", dpt.desc);
+    // check if value is in range, be it explicitly defined or implied from bitlength
+    var range = (dpt.basetype.hasOwnProperty('range')) ?
+      dpt.basetype.range : [0, Math.pow(2, dpt.bitlength)-1];
+    // is there a scalar range? eg. DPT5.003 angle degrees (0=0, ff=360)
+    if (dpt.hasOwnProperty('subtype')
+     && dpt.subtype.hasOwnProperty('scalar_range')) {
+      var scalar = dpt.subtype.scalar_range;
+      if (value < scalar[0] || value > scalar[1]) {
+        throw util.format(
+          "Value %j(%s) out of scalar range(%j) for %s",
+          value, (typeof value), scalar, dpt.id);
+      }
+      // convert value from its scalar representation
+      // e.g. in DPT5.001, 50(%) => 0x7F , 100(%) => 0xFF
+      var a = (scalar[1] - scalar[0]) / (range[1] - range[0]);
+      var b = (scalar[0] - range[0]);
+      tgtvalue = Math.round((value - b) / a);
+    } else {
+      // just a plain numeric value, only check if within bounds
+      if (value < range[0] || value > range[1]) {
+        throw util.format("Value %j(%s) out of bounds(%j) for %s.%s",
+          value, (typeof value), range, dpt.id, dpt.subtypeid);
+      } else {
+        tgtvalue = value;
+      }
+    }
+    for (var i = 0; i < nbytes; i++) {
+      apdu_data[i] = tgtvalue % 256;
+      //console.log('apdu_data[%d] == %j', i, apdu_data[i]);
+      tgtvalue = tgtvalue >> 8;
+    }
+  }
+  console.log('generic formatAPDU value=%j => apdu=%j', value, apdu_data);
+  return apdu_data;
+}
+
+/* get the correct Javascript value from a APDU buffer for the given DPT
+* - either by a custom DPT formatAPDU function
+* - or by this generic version, which:
+* --  1) checks if the value adheres to the range set from the DPT's bitlength
+*/
+dpts.fromBuffer = function(buf, dpt) {
+  // sanity check
+  if (!dpt) throw util.format("DPT %s not found", dpt);
+  var value = 0;
+  // get the raw APDU data for the given JS value
+  if (typeof dpt.fromBuffer == 'function') {
+    // nothing to do here, DPT-specific fromBuffer implementation will handle everything
+    value = dpt.fromBuffer(buf);
+  } else {
+    // get the raw numeric from the buffer
+    for (var i = 0; i < buf.length; i++) {
+      value += Math.pow(2, i) * buf[i];
+    }
+    var range = (dpt.hasOwnProperty('range')) ?
+      dpt.range : [0, Math.pow(2, dpt.bitlength)-1];
+    if (dpt.hasOwnProperty('subtype')
+     && dpt.subtype.hasOwnProperty('scalar_range')) {
+      var scalar = dpt.subtype.scalar_range;
+      // convert value from its scalar representation
+      // e.g. in DPT5.001, 50(%) => 0x7F , 100(%) => 0xFF
+      var a = (scalar[1] - scalar[0]) / (range[1] - range[0]);
+      var b = (scalar[0] - range[0]);
+      value = Math.round(a*value + b);
+      // console.log('&&& a=%j b=%j %j', a,b, value);
+    }
+  }
+  console.log('generic fromBuffer buf=%j, value=%j', buf, value);
+  return value;
 }
 
 module.exports = dpts;

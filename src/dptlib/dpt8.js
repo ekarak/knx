@@ -11,6 +11,7 @@
 exports.basetype = {
   "bitlength" : 16,
   "valuetype" : "basic",
+  "range" : [-32768, 32767],
   "desc" : "16-bit signed value"
 }
 

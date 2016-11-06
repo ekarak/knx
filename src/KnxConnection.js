@@ -139,8 +139,6 @@ KnxConnection.prototype.prepareDatagram = function (svcType) {
     case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST:
       this.AddConnState(datagram);
       break;
-      console.log('DISCONNECT: %j', datagram);
-      break;
     case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
       this.AddTunn(datagram);
       this.AddTunnState(datagram);
@@ -175,10 +173,6 @@ KnxConnection.prototype.send = function(datagram, callback) {
         cemitype = KnxConstants.keyText('MESSAGECODES', datagram.cemi.msgcode);
         datagram.tunnstate.seqnum = this.seqnumSend;
         break;
-      case KnxConstants.SERVICE_TYPE.TUNNELING_ACK:
-        //datagram.tunnstate.seqnum = this.seqnumRecv;
-        // add the sequence number just before serializing the datagram
-        break;
     }
     var packet = this.writer.KNXNetHeader(datagram);
     var buf = packet.buffer;
@@ -209,17 +203,13 @@ KnxConnection.prototype.write = function(grpaddr, apdu_data, dptid, callback) {
   }
   if (dptid) {
     var dpt = DPTLib.resolve(dptid);
-    if (dpt && typeof dpt.formatAPDU == 'function') {
-      apdu_data = dpt.formatAPDU(apdu_data);
-    } else {
-      console.trace('---- no formatAPDU found in %s, passing raw value instead', dptid);
-    }
+    apdu_data = DPTLib.formatAPDU(apdu_data, dpt);
   }
   // outbound request onto the state machine
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
     datagram.cemi.dest_addr = grpaddr;
     datagram.cemi.apdu.data = apdu_data;
-    //console.trace('----- writing to %s apdu_data: %j', grpaddr, apdu_data);
+    console.trace('----- writing to %s apdu_data: %j', grpaddr, apdu_data);
     return datagram;
   }, callback);
 }
@@ -290,8 +280,5 @@ KnxConnection.prototype.AddTunn = function (datagram) {
 }
 KnxConnection.prototype.incSeqSend = function () {
   this.seqnumSend = (this.seqnumSend + 1) & 0xFF;
-};
-KnxConnection.prototype.incSeqRecv = function () {
-  this.seqnumRecv = (this.seqnumRecv + 1) & 0xFF;
 };
 module.exports = KnxConnection;

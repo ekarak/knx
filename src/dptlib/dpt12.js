@@ -12,8 +12,7 @@
 exports.basetype = {
   "bitlength" : 32,
   "valuetype" : "basic",
-  "desc" : "4-byte unsigned value",
-  "range" : [0, Math.pow(2, 32)-1]
+  "desc" : "4-byte unsigned value"
 }
 
 // DPT12 subtype info

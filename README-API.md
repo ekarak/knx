@@ -28,7 +28,7 @@ var connection = knx.IpTunnelingConnection( {ipAddr: '192.168.2.222', ipPort: 36
 
 ```js
 // sending an arbitrary write request to a binary group address
-connection.write("1/0/0", true);
+connection.write("1/0/0", 1);
 // you also can be explicit about the datapoint type, eg. DPT9.001 is temperature Celcius
 connection.write("2/1/0", 22.5, "DPT9.001");
 // send a Read request to get the current state of 1/0/1 group address
@@ -45,7 +45,7 @@ Try writing a value to a group address.
 
 ```js
 // switch on a light
-connection.write("1/0/0", 1, "DPT1.001");
+connection.write("1/0/0", true, "DPT1");
 // set the thermostat to 21.5 degrees Celcius
 connection.write("3/0/3", 21.5, "DPT9.001");
 ```

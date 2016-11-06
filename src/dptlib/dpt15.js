@@ -16,7 +16,7 @@ exports.basetype = {
   "desc" : "4-byte access control data"
 }
 
-//  DPT8 subtypes info
+//  DPT15 subtypes info
 exports.subtypes = {
   "000" : {
     "name" : "DPT_Access_Data"

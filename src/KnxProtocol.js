@@ -370,14 +370,11 @@ KnxProtocol.define('APDU', {
       // Parse the APDU. tcpi/apci bits split across byte boundary.
       // Typical example of protocol designed by committee.
       if (KnxProtocol.debug) console.log('%j', hdr);
-      var apdu;
-      apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
-      if (hdr.apdu_length > 1) {
-        apdu.data = hdr.apdu_raw.slice(2);
-      }
+      var apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
       hdr.tpci = apdu.tpci;
       hdr.apci = apdu.apci;
-      hdr.data = apdu.data;
+      // APDU data must ALWAYS be a buffer, even for 1-bit payloads
+      hdr.data = (hdr.apdu_length > 1) ? hdr.apdu_raw.slice(2) : new Buffer([apdu.data]);
     })
     .popStack(propertyName, function (data) {
       return data;
