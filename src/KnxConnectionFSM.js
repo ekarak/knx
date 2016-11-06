@@ -104,7 +104,7 @@ module.exports = machina.Fsm.extend({
       },
       inbound_DISCONNECT_RESPONSE: function (datagram) {
         this.debugPrint(util.format('got disconnect response'));
-        this.transition(  'uTimeoutTimeoutninitialized');
+        this.transition( 'uninitialized');
       },
     },
 
@@ -117,6 +117,9 @@ module.exports = machina.Fsm.extend({
         this.debugPrint( " ... " );
         // process any deferred items from the FSM internal queue
         this.processQueue();
+      },
+      _onExit: function() {
+        clearTimeout( this.idletimer );
       },
       // while idle we can either...
       // 1) queue an OUTGOING tunelling request...
@@ -147,9 +150,6 @@ module.exports = machina.Fsm.extend({
       inbound_DISCONNECT_REQUEST: function( datagram ) {
         this.transition( 'connecting' );
       },
-      _onExit: function() {
-        clearTimeout( this.idletimer );
-      },
     },
 
     // if idle for too long, request connection state from the KNX IP router
@@ -167,6 +167,9 @@ module.exports = machina.Fsm.extend({
           sm.transition( 'connecting' );
         }.bind( this ), 1000 );
       },
+      _onExit: function() {
+        clearTimeout( this.connstatetimer );
+      },
       inbound_CONNECTIONSTATE_RESPONSE: function ( datagram ) {
         switch (datagram.connstate.status) {
           case 0:
@@ -182,9 +185,6 @@ module.exports = machina.Fsm.extend({
       "*": function ( data ) {
         this.debugPrint(util.format('*** deferring Until Transition %j', data));
         this.deferUntilTransition( 'idle' );
-      },
-      _onExit: function() {
-        clearTimeout( this.connstatetimer );
       },
     },
 
@@ -219,11 +219,13 @@ module.exports = machina.Fsm.extend({
           sm.transition( 'idle' );
         }.bind( this ), 2000 );
       },
+      _onExit: function () {
+        clearTimeout( this.tunnelingAckTimer );
+      },
       inbound_TUNNELING_ACK: function ( datagram ) {
         var sm = this;
         var acked_dg = sm.sentTunnRequests[datagram.tunnstate.seqnum];
         if (acked_dg) {
-          clearTimeout( this.tunnelingAckTimer );
           delete sm.sentTunnRequests[datagram.tunnstate.seqnum];
           sm.seqnumRecv = datagram.tunnstate.seqnum;
           sm.incSeqSend();
@@ -243,7 +245,7 @@ module.exports = machina.Fsm.extend({
       "*": function ( data ) {
         this.debugPrint(util.format('*** deferring until transition %j', data));
         this.deferUntilTransition( 'idle' );
-      }
+      },
     },
     // wait for a tunneling request confirmation
     sendTunnReq_waitCon: {

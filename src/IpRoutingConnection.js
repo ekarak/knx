@@ -38,19 +38,6 @@ function IpRoutingConnection(options) {
     return udpSocket;
   }
 
-  instance.AddHPAI = function (datagram) {
-    // add the control udp local endpoint
-    datagram.hpai = {
-      protocol_type:1, // UDP
-      tunnel_endpoint: this.localAddress + ":" + this.control.address().port
-    };
-    // add the tunneling udp local endpoint
-    datagram.tunn = {
-      protocol_type:1, // UDP
-      tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
-    };
-  }
-
   // <summary>
   ///     Start the connection
   /// </summary>

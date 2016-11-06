@@ -54,13 +54,13 @@ for (var i = 0; i < dirEntries.length; i++) {
 dpts.resolve = function(dptid) {
   if (isFinite(dptid)) {
     // we're passed in a raw number (9)
-    return this[dptid];
+    return this[util.format('DPT%s', dptid)];
   }
   if (typeof dptid == 'string') {
     var m = dptid.toUpperCase().match(/(\d+)(\.(\d+))?/);
     var dpt = dpts[util.format('DPT%s', m[1])];
     if (!dpt) throw "no such DPT: "+dpt;
-    if (m[2]) dpt.subtype = dpt[m[2]];
+    if (m[3]) dpt.subtype = dpt.subtypes[m[3]];
     return dpt;
   }
   console.trace("no such DPT: %j",dpt);

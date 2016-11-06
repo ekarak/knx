@@ -548,8 +548,7 @@ KnxProtocol.define('KNXNetHeader', {
       .UInt16BE(value.total_length);
     switch (value.service_type) {
       //case SERVICE_TYPE.SEARCH_REQUEST:
-      case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST:
-      case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST: {
+      case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST: {
         if (value.hpai) this.HPAI(value.hpai);
         if (value.tunn) this.HPAI(value.tunn);
         if (value.cri)  this.CRI(value.cri);
@@ -557,7 +556,8 @@ KnxProtocol.define('KNXNetHeader', {
       }
       case KnxConstants.SERVICE_TYPE.CONNECT_RESPONSE:
       case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST:
-      case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_RESPONSE: {
+      case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_RESPONSE:
+      case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST: {
         if (value.connstate) this.ConnState(value.connstate);
         if (value.hpai)     this.HPAI(value.hpai);
         if (value.cri)      this.CRI(value.cri);
@@ -584,7 +584,6 @@ KnxProtocol.lengths['KNXNetHeader'] = function(value) {
   switch (value.service_type) {
     //case SERVICE_TYPE.SEARCH_REQUEST:
     case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST:
-    case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST:
       return 6
         + knxlen('HPAI', value.hpai)
         + knxlen('HPAI', value.tunn)
@@ -592,6 +591,7 @@ KnxProtocol.lengths['KNXNetHeader'] = function(value) {
     case KnxConstants.SERVICE_TYPE.CONNECT_RESPONSE:
     case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST:
     case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_RESPONSE:
+    case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST:
       return 6
         + knxlen('ConnState', value.connstate)
         + knxlen('HPAI', value.hpai)

@@ -133,12 +133,16 @@ KnxConnection.prototype.prepareDatagram = function (svcType) {
   //
   switch(svcType) {
     case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST:
+      this.AddTunn(datagram);
       this.AddCRI(datagram); // no break!
     case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST:
     case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST:
       this.AddConnState(datagram);
       break;
+      console.log('DISCONNECT: %j', datagram);
+      break;
     case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
+      this.AddTunn(datagram);
       this.AddTunnState(datagram);
       this.AddCEMI(datagram);
       break;
@@ -269,6 +273,20 @@ KnxConnection.prototype.datagramDesc = function (dg) {
     blurb += '_' + KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode);
   }
   return blurb;
+}
+// add the control udp local endpoint
+KnxConnection.prototype.AddHPAI = function (datagram) {
+  datagram.hpai = {
+    protocol_type:1, // UDP
+    tunnel_endpoint: this.localAddress + ":" + this.control.address().port
+  };
+}
+// add the tunneling udp local endpoint
+KnxConnection.prototype.AddTunn = function (datagram) {
+  datagram.tunn = {
+    protocol_type:1, // UDP
+    tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
+  };
 }
 KnxConnection.prototype.incSeqSend = function () {
   this.seqnumSend = (this.seqnumSend + 1) & 0xFF;
