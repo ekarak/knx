@@ -104,6 +104,7 @@ module.exports = machina.Fsm.extend({
       },
       inbound_DISCONNECT_RESPONSE: function (datagram) {
         this.debugPrint(util.format('got disconnect response'));
+        this.disconnected()
         this.transition( 'uninitialized');
       },
     },

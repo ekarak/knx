@@ -52,6 +52,11 @@ function IpTunnelingConnection(options) {
     });
   }
 
+  instance.disconnected = function() {
+    this.control.close();
+    this.tunnel.close();
+  }
+
   return instance;
 }
 
