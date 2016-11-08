@@ -55,6 +55,10 @@ function IpRoutingConnection(options) {
     this.on('connected', callback);
   }
 
+  instance.disconnected = function() {
+    this.control.close()
+  }
+
   return instance;
 }
 
