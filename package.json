@@ -7,6 +7,9 @@
     "type": "git",
     "url": "https://ekarak@bitbucket.org/ekarak/knx.js.git"
   },
+  "scripts": {
+    "test": "multi-tape test/*/test-*.js"
+  },
   "license": "MIT",
   "author": {
     "name": "Elias Karakoulakis",

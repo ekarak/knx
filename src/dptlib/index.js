@@ -119,7 +119,7 @@ dpts.formatAPDU = function(value, dpt) {
       tgtvalue = tgtvalue >> 8;
     }
   }
-  console.log('generic formatAPDU value=%j => apdu=%j', value, apdu_data);
+//  console.log('generic formatAPDU value=%j => apdu=%j', value, apdu_data);
   return apdu_data;
 }
 
@@ -154,7 +154,7 @@ dpts.fromBuffer = function(buf, dpt) {
       // console.log('&&& a=%j b=%j %j', a,b, value);
     }
   }
-  console.log('generic fromBuffer buf=%j, value=%j', buf, value);
+//  console.log('generic fromBuffer buf=%j, value=%j', buf, value);
   return value;
 }
 
