@@ -209,7 +209,7 @@ KnxConnection.prototype.write = function(grpaddr, apdu_data, dptid, callback) {
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
     datagram.cemi.dest_addr = grpaddr;
     datagram.cemi.apdu.data = apdu_data;
-    console.trace('----- writing to %s apdu_data: %j', grpaddr, apdu_data);
+    //console.trace('----- writing to %s apdu_data: %j', grpaddr, apdu_data);
     return datagram;
   }, callback);
 }
