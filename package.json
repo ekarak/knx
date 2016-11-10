@@ -17,8 +17,8 @@
   },
   "maintainers": [
     {
-    "name": "Elias Karakoulakis",
-    "email": "elias.karakoulakis@gmail.com"
+      "name": "Elias Karakoulakis",
+      "email": "elias.karakoulakis@gmail.com"
     }
   ],
   "keywords": [
@@ -31,5 +31,9 @@
     "binary-protocol": "0.0.0",
     "ipv4.js": "0.0.2",
     "machina": "^2.0.0-1"
+  },
+  "devDependencies": {
+    "multi-tape": "^1.1.1",
+    "tape": "^4.6.2"
   }
 }
