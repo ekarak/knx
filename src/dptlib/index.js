@@ -142,7 +142,7 @@ dpts.fromBuffer = function(buf, dpt) {
       value += Math.pow(2, i) * buf[i];
     }
     var range = (dpt.hasOwnProperty('range')) ?
-      dpt.range : [0, Math.pow(2, dpt.bitlength)-1];
+      dpt.range : [0, Math.pow(2, dpt.basetype.bitlength)-1];
     if (dpt.hasOwnProperty('subtype')
      && dpt.subtype.hasOwnProperty('scalar_range')) {
       var scalar = dpt.subtype.scalar_range;
@@ -151,7 +151,7 @@ dpts.fromBuffer = function(buf, dpt) {
       var a = (scalar[1] - scalar[0]) / (range[1] - range[0]);
       var b = (scalar[0] - range[0]);
       value = Math.round(a*value + b);
-      // console.log('&&& a=%j b=%j %j', a,b, value);
+      //console.log('fromBuffer scalar a=%j b=%j %j', a,b, value);
     }
   }
 //  console.log('generic fromBuffer buf=%j, value=%j', buf, value);

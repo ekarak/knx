@@ -6,23 +6,43 @@
 //
 // DPT10.*: time (3 bytes)
 //
+const util = require('util');
+var timeRegexp = /(\d{1,2}):(\d{1,2}):(\d{1,2})/;
 
 // DPTFrame to parse a DPT10 frame.
 // Always 8-bit aligned.
 
 exports.formatAPDU = function(value) {
   var apdu_data = new Buffer(3);
-  if (typeof value == 'object' && value.constructor.name == 'Date') {
-    apdu_data[0] = value.getDay() << 5 + value.getHours();
-    apdu_data[1] = value.getMinutes();
-    apdu_data[2] = value.getSeconds();
-  } else throw 'Must supply a Date object for DPT10';
+  switch(typeof value) {
+    case 'string':
+      // try to parse
+      match = timeRegexp.exec(value);
+      if (match) {
+        apdu_data[0] = parseInt(match[1]);
+        apdu_data[1] = parseInt(match[2]);
+        apdu_data[2] = parseInt(match[3]);
+      } else {
+        throw util.format("invalid time for DPT10: %s", value);
+      }
+      break;
+    case 'object':
+      if (value.constructor.name != 'Date') {
+        throw 'Must supply a Date or String object for DPT10 time';
+        break;
+      }
+    case 'number':
+      value = new Date(value);
+    default:
+      apdu_data[0] = value.getUTCHours();
+      apdu_data[1] = value.getUTCMinutes();
+      apdu_data[2] = value.getUTCSeconds();
+  }
   return apdu_data;
 }
 
 // Javascript contains no notion of "time of day", hence this function
-// returns a regular Date object for today, with the hour/minute/second part
-// overwritten from the KNX telegram
+// returns a string representation of the time. Beware, no timezone!
 exports.fromBuffer = function(buf) {
   if (buf.length != 3) throw "Buffer should be 3 bytes long";
   var d = new Date();
@@ -33,9 +53,7 @@ exports.fromBuffer = function(buf) {
   if (hours >= 0 & hours <= 23 &
     minutes >= 0 & minutes <= 59 &
     seconds >= 0 & seconds <= 59) {
-    d.setHours(hours);
-    d.setMinutes(minutes);
-    d.setSeconds(seconds);
+    return util.format("%d:%d:%d", hours, minutes, seconds);
   } else {
     throw util.format(
       "%j (%d:%d:%d) is not a valid time according to DPT10",
