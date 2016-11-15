@@ -42,6 +42,7 @@ test('DPT9 floating point conversion', function(t) {
     ['DPT9', [0x00, 0x02], 0.02],
     ['DPT9', [0x87, 0xfe], -0.02],
     ['DPT9', [0x0c, 0x24], 21.2],
+    ['DPT9', [0x0c, 0x7e], 23],
     ['DPT9', [0x5c, 0xc4], 24985.6],
     ['DPT9', [0xdb, 0x3c], -24985.6],
     ['DPT9', [0x7f, 0xfe], 670433.28],
