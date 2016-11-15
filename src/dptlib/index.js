@@ -100,19 +100,20 @@ dpts.formatAPDU = function(value, dpt) {
      && dpt.subtype.hasOwnProperty('scalar_range')) {
       var scalar = dpt.subtype.scalar_range;
       if (value < scalar[0] || value > scalar[1]) {
-        throw util.format(
+        console.trace(
           "Value %j(%s) out of scalar range(%j) for %s",
           value, (typeof value), scalar, dpt.id);
+      } else {
+        // convert value from its scalar representation
+        // e.g. in DPT5.001, 50(%) => 0x7F , 100(%) => 0xFF
+        var a = (scalar[1] - scalar[0]) / (range[1] - range[0]);
+        var b = (scalar[0] - range[0]);
+        tgtvalue = Math.round((value - b) / a);
       }
-      // convert value from its scalar representation
-      // e.g. in DPT5.001, 50(%) => 0x7F , 100(%) => 0xFF
-      var a = (scalar[1] - scalar[0]) / (range[1] - range[0]);
-      var b = (scalar[0] - range[0]);
-      tgtvalue = Math.round((value - b) / a);
     } else {
       // just a plain numeric value, only check if within bounds
       if (value < range[0] || value > range[1]) {
-        throw util.format("Value %j(%s) out of bounds(%j) for %s.%s",
+        console.trace("Value %j(%s) out of bounds(%j) for %s.%s",
           value, (typeof value), range, dpt.id, dpt.subtypeid);
       } else {
         tgtvalue = value;
@@ -148,8 +149,8 @@ dpts.fromBuffer = function(buf, dpt) {
     }
     console.log('%s %j', dpt.id, dpt.basetype);
 
-    var range = (dpt.hasOwnProperty('range')) ?
-      dpt.range : [0, Math.pow(2, dpt.basetype.bitlength)-1];
+    var range = (dpt.basetype.hasOwnProperty('range')) ?
+      dpt.basetype.range : [0, Math.pow(2, dpt.basetype.bitlength)-1];
     if (dpt.hasOwnProperty('subtype')
      && dpt.subtype.hasOwnProperty('scalar_range')) {
       var scalar = dpt.subtype.scalar_range;

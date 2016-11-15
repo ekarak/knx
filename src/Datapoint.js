@@ -41,16 +41,16 @@ Datapoint.prototype.bind = function (conn) {
   // bind generic event handler for our group address
   var gaevent = util.format('event_%s', self.options.ga);
   conn.on(gaevent, function (evt, src, buf) {
-    console.log('EVENT!!! %s %j', evt, buf);
+    //console.log('EVENT!!! %s %j', evt, buf);
     var jsvalue = buf;
     // get the Javascript value from the raw buffer, if the DPT defines fromBuffer()
-    if (buf) {
-      jsvalue = DPTLib.fromBuffer(buf, self.dpt);
-    }
     switch (evt) {
       case "GroupValue_Write":
       case "GroupValue_Response":
-        self.update(jsvalue); // update internal state
+        if (buf) {
+          jsvalue = DPTLib.fromBuffer(buf, self.dpt);
+          self.update(jsvalue); // update internal state
+        }
         break;
       default:
         // TODO: add default handler; maybe emit warning?
