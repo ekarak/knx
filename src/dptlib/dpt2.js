@@ -7,21 +7,25 @@
 // DPT2 frame description.
 // Always 8-bit aligned.
 exports.formatAPDU = function(value) {
-  if (!value) throw "cannot write null value for DPT2"
-  else {
+  if (!value) {
+    console.trace("DPT2: cannot write null value");
+  } else {
     var apdu_data;
     if (typeof value == 'object' &&
       value.hasOwnProperty('priority') &&
       value.hasOwnProperty('data')) {
-        apdu_data = (value.priority << 1) + (value.data & 0b00000001);
-      }
-    else throw "Must supply a value object of {priority, data}";
+      apdu_data = (value.priority << 1) + (value.data & 0b00000001);
+    } else {
+      console.trace("DPT2: Must supply an value {priority:<bool>, data:<bool>}");
+    }
+    return apdu_data;
   }
-  return apdu_data;
 }
 
 exports.fromBuffer = function(buf) {
-  if (buf.length != 1) throw "Buffer should be 1 byte long"
+  if (buf.length != 1) {
+    console.trace( "Buffer should be 1 byte long" );
+  } else 
   return {
     priority: (buf & 0b00000011) >> 1,
     data:     (buf & 0b00000001)

@@ -2,11 +2,11 @@
 * knx.js - a pure Javascript library for KNX
 * (C) 2016 Elias Karakoulakis
 */
-
 //
 // DPT9.*: 2-byte floating point value
 //
 
+const util = require('util');
 // kudos to http://croquetweak.blogspot.gr/2014/08/deconstructing-floats-frexp-and-ldexp.html
 function ldexp(mantissa, exponent) {
    return exponent > 1023 // avoid multiplying by infinity
@@ -32,8 +32,9 @@ function frexp(value) {
 
 exports.formatAPDU = function(value) {
   var apdu_data;
-  if (!isFinite(value)) throw "cannot write non-numeric or undefined value for DPT9"
-  else {
+  if (!isFinite(value)) {
+    console.trace( "DPT9: cannot write non-numeric or undefined value" );
+  } else {
     var arr = frexp(value);
     var mantissa = arr[0], exponent = arr[1];
     // find the minimum exponent that will upsize the normalized mantissa (0,5 to 1 range)
@@ -55,12 +56,15 @@ exports.formatAPDU = function(value) {
 }
 
 exports.fromBuffer = function(buf) {
-  if (buf.length != 2) throw "Buffer should be 2 bytes long";
-  var sign     =  buf[0] >> 7;
-  var exponent = (buf[0] & 0b01111000) >> 3;
-  var mantissa = 256 * (buf[0] & 0b00000111) + buf[1];
-  mantissa = (sign == 1) ? ~(mantissa^2047) : mantissa;
-  return ldexp((0.01*mantissa), exponent);
+  if (buf.length != 2) {
+    console.trace("DPT9.fromBuffer: buf should be 2 bytes long (got %d bytes)", buf.length);
+  } else {
+    var sign     =  buf[0] >> 7;
+    var exponent = (buf[0] & 0b01111000) >> 3;
+    var mantissa = 256 * (buf[0] & 0b00000111) + buf[1];
+    mantissa = (sign == 1) ? ~(mantissa^2047) : mantissa;
+    return ldexp((0.01*mantissa), exponent);
+  }
 }
 
 // DPT9 basetype info

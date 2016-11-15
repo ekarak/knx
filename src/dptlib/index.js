@@ -44,8 +44,13 @@ var dpts = {};
 for (var i = 0; i < dirEntries.length; i++) {
   if (matches = dirEntries[i].match(/(dpt.*)\.js/) ) {
     var dptid = matches[1].toUpperCase(); // DPT1..DPTxxx
-    dpts[dptid] = require(__dirname + path.sep + dirEntries[i]);
-    dpts[dptid].id = dptid;
+    var mod = require(__dirname + path.sep + dirEntries[i]);
+    if (!mod.hasOwnProperty('basetype') ||
+      !mod.basetype.hasOwnProperty('bitlength')) {
+      throw 'incomplete '+dptid+', missing basetype and/or bitlength!';
+    }
+    mod.id = dptid;
+    dpts[dptid] = mod;
     //console.log('DPT library: loaded %s (%s)', dptid, dpts[dptid].basetype.desc);
   }
 }
@@ -89,7 +94,7 @@ dpts.formatAPDU = function(value, dpt) {
     if (!isFinite(value)) throw util.format("Invalid value, expected a %s", dpt.desc);
     // check if value is in range, be it explicitly defined or implied from bitlength
     var range = (dpt.basetype.hasOwnProperty('range')) ?
-      dpt.basetype.range : [0, Math.pow(2, dpt.bitlength)-1];
+      dpt.basetype.range : [0, Math.pow(2, dpt.basetype.bitlength)-1];
     // is there a scalar range? eg. DPT5.003 angle degrees (0=0, ff=360)
     if (dpt.hasOwnProperty('subtype')
      && dpt.subtype.hasOwnProperty('scalar_range')) {
@@ -141,6 +146,8 @@ dpts.fromBuffer = function(buf, dpt) {
     for (var i = 0; i < buf.length; i++) {
       value += Math.pow(2, i) * buf[i];
     }
+    console.log('%s %j', dpt.id, dpt.basetype);
+
     var range = (dpt.hasOwnProperty('range')) ?
       dpt.range : [0, Math.pow(2, dpt.basetype.bitlength)-1];
     if (dpt.hasOwnProperty('subtype')

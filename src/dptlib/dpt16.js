@@ -8,10 +8,12 @@
 //
 
 exports.formatAPDU = function(value) {
-  if (typeof value != 'string') throw "Must supply a string value"
-  var buf = new Buffer(14);
-  buf.write(value, 'ascii')
-  return buf;
+  if (typeof value != 'string') console.trace("Must supply a string value")
+  else {
+    var buf = new Buffer(14);
+    buf.write(value, 'ascii')
+    return buf;
+  }
 }
 
 exports.fromBuffer = function(buf) {

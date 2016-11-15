@@ -13,14 +13,14 @@
 
 exports.formatAPDU = function(value) {
   if (!value || typeof value != 'number')
-    throw 'Must supply a number for DPT14';
+    console.trace('DPT14: Must supply a number value');
   var apdu_data = new Buffer(4);
   apdu_data.writeFloatBE(value,0);
   return apdu_data;
 }
 
 exports.fromBuffer = function(buf) {
-  if (buf.length != 4) throw "Buffer should be 3 bytes long";
+  if (buf.length != 4) console.trace("DPT14: Buffer should be 4 bytes long");
   return buf.readFloatBE(0);
 }
 

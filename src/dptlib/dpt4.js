@@ -7,21 +7,21 @@
 // DPT4: 8-bit character
 //
 exports.formatAPDU = function(value) {
-  var apdu_data;
-  if (!value) throw "cannot write null value for DPT4"
-  else {
+  if (!value) {
+    console.trace("DPT4: cannot write null value");
+  } else {
     if (typeof value == 'string') {
-      apdu_data = value.charCodeAt(0);
+      var apdu_data = value.charCodeAt(0);
+      if (apdu_data > 255) console.trace("DPT4: must supply an ASCII character");
+      return apdu_data;
     }
-    else throw "Must supply a character";
-    if (apdu_data > 255) throw "must supply an ASCII character";
+    else console.trace("DPT4: Must supply a character or string");
   }
-  return apdu_data;
 }
 
 exports.fromBuffer = function(buf) {
-  if (buf.length != 1) throw "Buffer should be 1 byte long"
-  return String.fromCharCode(buf[0]);
+  if (buf.length != 1) console.trace("DPT4: Buffer should be 1 byte long")
+  else return String.fromCharCode(buf[0]);
 }
 
 exports.basetype =  {
