@@ -8,8 +8,9 @@ test('KNX protocol encoder', function(t) {
     "06100205001a0801c0a80ab3d96d0801c0a80ab3d83604040200", //CONNECT_REQUEST
     "061002060014030008010a0c17350e5704040000",             // CONNECT_RESPONSE
     "0610020600080024", // CONNECT_RESPONSE, failure E_NO_MORE_CONNECTIONS: 0x24
-    "061004200015040200002e00bce000000832010081",  // tunneling request  apdu=1byte
-    "061004200016040201002900bce00000083b0200804a" // tunneling request apdu=2byte
+    "061004200015040200002e00bce000000832010000",  // tunneling request (read) apdu=1byte
+    "061004200015040200002e00bce000000832010081",  // tunneling request (write) apdu=1byte
+    "061004200016040201002900bce00000083b0200804a" // tunneling request (write) apdu=2byte
   ];
 
   knxnetprotocol.debug = true;

@@ -4,12 +4,12 @@ var connection = new knx.IpRoutingConnection();
 connection.debug = true;
 
 function setupDatapoint(groupadress, statusga) {
-  var dp = new knx.Datapoint({ga: groupadress, status_ga: statusga, dpt: "DPT9.001"}, connection);
+  var dp = new knx.Datapoint({ga: groupadress, status_ga: statusga, dpt: "DPT1.001"}, connection);
   dp.on('change', (oldvalue, newvalue) => {
     console.log("**** %s current value: %j", groupadress, newvalue);
   });
 }
-
+Error.stackTraceLimit = Infinity;
 new Promise(function(resolve, reject) {
   connection.Connect(function() {
     console.log('===========\nConnected!\n===========');
