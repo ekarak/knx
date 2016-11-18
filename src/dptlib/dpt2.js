@@ -25,7 +25,7 @@ exports.formatAPDU = function(value) {
 exports.fromBuffer = function(buf) {
   if (buf.length != 1) {
     console.trace( "Buffer should be 1 byte long" );
-  } else 
+  } else
   return {
     priority: (buf & 0b00000011) >> 1,
     data:     (buf & 0b00000001)

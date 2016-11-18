@@ -394,7 +394,7 @@ KnxProtocol.define('APDU', {
       value.tpci * 0x400 +
       value.apci * 0x40;
     if (total_length == 3) {
-      word += value.data[0];
+      word += (value.data[0] || value.data);
       this.UInt16BE(word);
     } else {
       this.UInt16BE(word);
@@ -406,9 +406,10 @@ KnxProtocol.define('APDU', {
 /* APDU length is truly chaotic: header and data can be interleaved (but
 not always!), so that apdu_length=1 means _2_ bytes following the apdu_length */
 KnxProtocol.lengths['APDU'] = function(value) {
-  if (value.data instanceof Buffer) {
-    if (value.data.length < 1) throw ('APDU value buffer is empty');
-    if (value.data.length > 14) throw ('APDU value buffer too big, must be <= 14 bytes');
+  if (!value.data) throw('APDU: no data supplied');
+  if (value.data.length) {
+    if (value.data.length < 1) throw ('APDU value is empty');
+    if (value.data.length > 14) throw ('APDU value too big, must be <= 14 bytes');
     if (value.data.length == 1) {
       var v = value.data[0];
       if (!isNaN(parseFloat(v)) && isFinite(v) && v >= 0 && v <= 63) {
@@ -418,8 +419,13 @@ KnxProtocol.lengths['APDU'] = function(value) {
     }
     return 3 + value.data.length;
   } else {
-    console.trace('Fix your code - APDU data payload must be a Buffer (1 to 14 bytes), got: %j (%s)', value.data, typeof value.data);
-    throw 'APDU payload must be a Buffer (1 to 14 bytes)';
+    if (!isNaN(parseFloat(value.data)) && isFinite(value.data)
+      && value.data >= 0 && value.data <= 63) {
+      return 3
+    } else {
+      console.trace('Fix your code - APDU data payload must be a 6-bit int or an Array/Buffer (1 to 14 bytes), got: %j (%s)', value.data, typeof value.data);
+      throw 'APDU payload must be a 6-bit int or an Array/Buffer (1 to 14 bytes)';
+    }
   }
 }
 
