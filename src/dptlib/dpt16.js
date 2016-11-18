@@ -4,7 +4,7 @@
 */
 
 //
-// DPT16: ASCII string
+// DPT16: ASCII string (max 14 chars)
 //
 
 exports.formatAPDU = function(value) {

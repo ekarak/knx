@@ -385,23 +385,20 @@ KnxProtocol.define('APDU', {
     var total_length = knxlen('APDU', value);
     if (KnxProtocol.debug) console.log('APDU.write: \t%j (total %d bytes)', value, total_length);
     if (total_length < 3) throw util.format("APDU is too small (%d bytes)", total_length);
-    if (total_length > 16) throw util.format("APDU is too big (%d bytes)", total_length);
+    if (total_length > 17) throw util.format("APDU is too big (%d bytes)", total_length);
+    // camel designed by committee: total length MIGHT or MIGHT NOT include the payload
+    //     APDU length (1 byte) + TPCI/APCI: 6+4 bits + DATA: 6 bits (2 bytes)
+    // OR: APDU length (1 byte) + TPCI/APCI: 6+4(+6 unused) bits (2bytes) + DATA: (1 to 14 bytes))
     this.UInt8(total_length - 2);
+    var word =
+      value.tpci * 0x400 +
+      value.apci * 0x40;
     if (total_length == 3) {
-      // commonest case:
-      //   APDU length (1 byte)
-      //   tpci: 6 bits + apci: 4 bits, data: 6 bits (2 bytes)
-      var word =
-        value.tpci * 0x400 +
-        value.apci * 0x40 +
-        value.data;
+      word += value.data[0];
       this.UInt16BE(word);
     } else {
-      // tpci:6 bits + apci:10 bits
-      var word =
-        value.tpci * 0x400 +
-        value.apci * 0x40;
       this.UInt16BE(word);
+      // payload follows TPCI+APCI word
       this.raw(value.data, value.data.length);
     }
   }
@@ -412,17 +409,17 @@ KnxProtocol.lengths['APDU'] = function(value) {
   if (value.data instanceof Buffer) {
     if (value.data.length < 1) throw ('APDU value buffer is empty');
     if (value.data.length > 14) throw ('APDU value buffer too big, must be <= 14 bytes');
-    // tpci + apci == 2 bytes
+    if (value.data.length == 1) {
+      var v = value.data[0];
+      if (!isNaN(parseFloat(v)) && isFinite(v) && v >= 0 && v <= 63) {
+        // apdu_length + tpci/apci/6-bit integer == 1+2 bytes
+        return 3;
+      }
+    }
     return 3 + value.data.length;
   } else {
-    // 6-bit payload: 0 <= value <= 63
-    if (!isNaN(parseFloat(value.data)) && isFinite(value.data)
-      && value.data >= 0 && value.data <= 63) {
-        return 3;
-    } else {
-      console.trace('Fix your code - APDU data payload must be either a Buffer or a 6-bit unsigned integer (0 to 63), got: %j (%s)', value.data, typeof value.data);
-      throw 'APDU payload must be either a Buffer or a 6-bit unsigned integer';
-    }
+    console.trace('Fix your code - APDU data payload must be a Buffer (1 to 14 bytes), got: %j (%s)', value.data, typeof value.data);
+    throw 'APDU payload must be a Buffer (1 to 14 bytes)';
   }
 }
 
