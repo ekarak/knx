@@ -373,8 +373,10 @@ KnxProtocol.define('APDU', {
       var apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
       hdr.tpci = apdu.tpci;
       hdr.apci = apdu.apci;
-      // APDU data must ALWAYS be a buffer, even for 1-bit payloads
-      hdr.data = (hdr.apdu_length > 1) ? hdr.apdu_raw.slice(2) : new Buffer([apdu.data]);
+      // APDU data should ALWAYS be a buffer, even for 1-bit payloads
+      hdr.data = (hdr.apdu_length > 1) ?
+        hdr.apdu_raw.slice(2) :
+        new Buffer([apdu.data]);
     })
     .popStack(propertyName, function (data) {
       return data;
@@ -403,10 +405,12 @@ KnxProtocol.define('APDU', {
     }
   }
 });
+
 /* APDU length is truly chaotic: header and data can be interleaved (but
 not always!), so that apdu_length=1 means _2_ bytes following the apdu_length */
 KnxProtocol.lengths['APDU'] = function(value) {
-  if (!value.data) throw('APDU: no data supplied');
+  // not all requests carry a value; eg read requests
+  if (!value.data) value.data = 0;
   if (value.data.length) {
     if (value.data.length < 1) throw ('APDU value is empty');
     if (value.data.length > 14) throw ('APDU value too big, must be <= 14 bytes');
