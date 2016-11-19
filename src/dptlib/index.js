@@ -58,13 +58,9 @@ for (var i = 0; i < dirEntries.length; i++) {
 // a generic DPT resolution function
 // DPTs might come in as 9/"9"/"9.001"/"DPT9.001"
 dpts.resolve = function(dptid) {
-  if (isFinite(dptid)) {
-    // we're passed in a raw number (9)
-    return this[util.format('DPT%s', dptid)];
-  }
   if (typeof dptid == 'string') {
     var m = dptid.toUpperCase().match(/(\d+)(\.(\d+))?/);
-    var dpt = dpts[util.format('DPT%s', m[1])];
+    var dpt = cloneDpt(dpts[util.format('DPT%s', m[1])]);
     if (!dpt) throw "no such DPT: "+dpt;
     if (m[3]) {
       dpt.subtypeid = m[3];
@@ -72,8 +68,12 @@ dpts.resolve = function(dptid) {
     }
     return dpt;
   }
+  if (isFinite(dptid)) {
+    // we're passed in a raw number (9)
+    return cloneDpt(dpts[util.format('DPT%s', dptid)]);
+  }
   console.trace("no such DPT: %j",dpt);
-  throw "No such DPT";
+  throw "no such DPT: "+dpt;
 }
 
 /* format an APDU from a given Javascript value for the given DPT
@@ -164,6 +164,13 @@ dpts.fromBuffer = function(buf, dpt) {
   }
 //  console.log('generic fromBuffer buf=%j, value=%j', buf, value);
   return value;
+}
+
+function cloneDpt(d) {
+  result = JSON.parse(JSON.stringify(d));
+  result.fromBuffer = d.fromBuffer;
+  result.formatAPDU = d.formatAPDU;
+  return result;
 }
 
 module.exports = dpts;
