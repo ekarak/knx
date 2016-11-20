@@ -70,7 +70,7 @@ Datapoint.prototype.update = function (jsvalue) {
   //console.log('UPDATE %j', jsvalue);
   if (this.current_value != jsvalue) {
     var old_value = this.current_value;
-    this.emit('change', this.current_value, jsvalue );
+    this.emit('change', this.current_value, jsvalue, this.options.ga);
     this.current_value = jsvalue;
      var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
     //console.log("%s **** %s DATAPOINT CHANGE (was: %j)", ts, this.toString(), old_value );
