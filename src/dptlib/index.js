@@ -147,12 +147,12 @@ dpts.fromBuffer = function(buf, dpt) {
     for (var i = 0; i < buf.length; i++) {
       value += Math.pow(2, i) * buf[i];
     }
-    console.log('%s %j', dpt.id, dpt.basetype);
+    //console.log('%s %j == %j', dpt.id, dpt.basetype, value);
 
-    var range = (dpt.basetype.hasOwnProperty('range')) ?
-      dpt.basetype.range : [0, Math.pow(2, dpt.basetype.bitlength)-1];
     if (dpt.hasOwnProperty('subtype')
      && dpt.subtype.hasOwnProperty('scalar_range')) {
+      var range = (dpt.basetype.hasOwnProperty('range')) ?
+         dpt.basetype.range : [0, Math.pow(2, dpt.basetype.bitlength)-1];
       var scalar = dpt.subtype.scalar_range;
       // convert value from its scalar representation
       // e.g. in DPT5.001, 50(%) => 0x7F , 100(%) => 0xFF
