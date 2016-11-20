@@ -86,7 +86,7 @@ KnxConnection.prototype.AddCEMI = function(datagram, msgcode) {
     dest_addr: "0/0/0", //
     apdu: {
       // default operation is GroupValue_Write
-      apci: KnxConstants.APCICODES.indexOf('GroupValue_Write'),
+      apci: 'GroupValue_Write',
       tpci: 0,
       data: 0
     }
@@ -209,7 +209,6 @@ KnxConnection.prototype.write = function(grpaddr, apdu_data, dptid, callback) {
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
     datagram.cemi.dest_addr = grpaddr;
     datagram.cemi.apdu.data = apdu_data;
-    //console.trace('----- writing to %s apdu_data: %j', grpaddr, apdu_data);
     return datagram;
   }, callback);
 }
@@ -237,7 +236,7 @@ KnxConnection.prototype.read = function(grpaddr, callback) {
   }
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
     // this is a READ request
-    datagram.cemi.apdu.apci = KnxConstants.APCICODES.indexOf("GroupValue_Read");
+    datagram.cemi.apdu.apci = "GroupValue_Read";
     datagram.cemi.dest_addr = grpaddr;
     return datagram;
   });

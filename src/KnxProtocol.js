@@ -365,14 +365,13 @@ KnxProtocol.define('APDU', {
     .tap(function (hdr) {
       if (KnxProtocol.debug) console.log('--- parsing extra %d apdu bytes', hdr.apdu_length+1);
       this.raw('apdu_raw', hdr.apdu_length+1);
-    })
-    .tap(function (hdr) {
+    }).tap(function (hdr) {
       // Parse the APDU. tcpi/apci bits split across byte boundary.
       // Typical example of protocol designed by committee.
       if (KnxProtocol.debug) console.log('%j', hdr);
       var apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
       hdr.tpci = apdu.tpci;
-      hdr.apci = apdu.apci;
+      hdr.apci = KnxConstants.APCICODES[apdu.apci];
       // APDU data should ALWAYS be a buffer, even for 1-bit payloads
       hdr.data = (hdr.apdu_length > 1) ?
         hdr.apdu_raw.slice(2) :
@@ -384,6 +383,7 @@ KnxProtocol.define('APDU', {
   },
   write: function (value) {
     if (!value)      throw "cannot write null APDU value";
+    if (KnxConstants.APCICODES.indexOf(value.apci) == -1) throw "invalid APCI code: "+value.apci;
     var total_length = knxlen('APDU', value);
     if (KnxProtocol.debug) console.log('APDU.write: \t%j (total %d bytes)', value, total_length);
     if (total_length < 3) throw util.format("APDU is too small (%d bytes)", total_length);
@@ -394,9 +394,10 @@ KnxProtocol.define('APDU', {
     this.UInt8(total_length - 2);
     var word =
       value.tpci * 0x400 +
-      value.apci * 0x40;
+      KnxConstants.APCICODES.indexOf(value.apci) * 0x40;
+    //
     if (total_length == 3) {
-      word += (value.data[0] || value.data);
+      word += parseInt(isFinite(value.data) ? value.data : value.data[0]);
       this.UInt16BE(word);
     } else {
       this.UInt16BE(word);
