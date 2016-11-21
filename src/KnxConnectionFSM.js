@@ -298,7 +298,7 @@ module.exports = machina.Fsm.extend({
   emitEvent: function(datagram) {
     // emit events to our beloved subscribers in a multitude of targets
     // ORDER IS IMPORTANT!
-    var evtName = KnxConstants.APCICODES[datagram.cemi.apdu.apci];
+    var evtName = datagram.cemi.apdu.apci;
     // 1.
     // 'event_<dest_addr>', ''GroupValue_Write', src, data
     this.emit(util.format("event_%s", datagram.cemi.dest_addr),
