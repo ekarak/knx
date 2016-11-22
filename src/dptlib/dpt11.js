@@ -12,21 +12,24 @@ exports.formatAPDU = function(value) {
     var apdu_data = new Buffer(3);
     switch(typeof value) {
       case 'string':
-        // try to parse
+      case 'number':
         value = new Date(value);
         break;
       case 'object':
-        if (value.constructor.name != 'Date') {
-          console.trace('Must supply a Date or String object for DPT11 Date');
-          break;
+        if (value.constructor.name != 'Date' &&
+          value.hasOwnProperty('day') &&
+          value.hasOwnProperty('month') &&
+          value.hasOwnProperty('year')) {
+          value = new Date(parseInt(value.year), parseInt(value.month), parseInt(value.day));
         }
-      case 'number':
-        value = new Date(value);
-      default:
-        apdu_data[0] = value.getDate();
-        apdu_data[1] = value.getMonth() + 1;
-        var year = value.getFullYear();
-        apdu_data[2] = year - (year >= 2000 ? 2000 : 1900);
+    }
+    if (isNaN(value.getDate())) {
+      console.trace('Must supply a numeric timestamp, Date or String object for DPT11 Date');
+    } else {
+      apdu_data[0] = value.getDate();
+      apdu_data[1] = value.getMonth() + 1;
+      var year = value.getFullYear();
+      apdu_data[2] = year - (year >= 2000 ? 2000 : 1900);
     }
     return apdu_data;
   }
@@ -35,25 +38,19 @@ exports.formatAPDU = function(value) {
 exports.fromBuffer = function(buf) {
   if (buf.length != 3) console.trace("Buffer should be 3 bytes long")
   else {
-    var d = new Date();
-    var day   = buf[0] & 0b00011111;
-    var month = (buf[1] & 0b00001111);
+    var day   = (buf[0] & 0b00011111);
+    var month = (buf[1] & 0b00001111)-1;
     var year  = (buf[2] & 0b01111111);
     year = year + (year > 89 ? 1900 : 2000)
-    if (day >= 0 & day <= 31 &
+    if (day >= 1 & day <= 31 &
       month >= 1 & month <= 12 &
       year >= 1990 & year <= 2089) {
-      // FIXME: no ability to setDay() without week context
-      d.setDate    (day);
-      d.setMonth   (month-1);
-      d.setFullYear(year);
-      d.setHours(0,0,0,0);
+      return new Date(year, month, day);
     } else {
       console.trace(
         "%j => %d/%d/%d is not valid date according to DPT11",
         buf, day, month, year);
     }
-    return d;
   }
 }
 
@@ -63,7 +60,6 @@ exports.basetype = {
   valuetype : 'composite',
   desc : "3-byte date value"
 }
-
 
 // DPT11 subtypes info
 exports.subtypes = {
