@@ -34,9 +34,9 @@ exports.formatAPDU = function(value) {
     case 'number':
       value = new Date(value);
     default:
-      apdu_data[0] = value.getUTCHours();
-      apdu_data[1] = value.getUTCMinutes();
-      apdu_data[2] = value.getUTCSeconds();
+      apdu_data[0] = value.getHours();
+      apdu_data[1] = value.getMinutes();
+      apdu_data[2] = value.getSeconds();
   }
   return apdu_data;
 }
