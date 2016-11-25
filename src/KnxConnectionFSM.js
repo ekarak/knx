@@ -245,7 +245,7 @@ module.exports = machina.Fsm.extend({
             this.transition( 'idle' );
           }
         } else {
-          this.debugPrint(util.format('*** deferring %s until transition to idle', data.inputType));
+          this.debugPrint(util.format('*** deferring %s until transition to idle', datagram));
           this.deferUntilTransition( 'idle' );
         }
       },
