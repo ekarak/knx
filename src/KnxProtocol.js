@@ -492,13 +492,13 @@ KnxProtocol.lengths['CEMI'] = function(value) {
 
 KnxProtocol.define('KNXNetHeader', {
   read: function (propertyName) {
-    if (KnxProtocol.debug) console.log('reading KNXNetHeader');
     this.pushStack({ header_length: 0, protocol_version: -1, service_type: -1, total_length: 0})
     .UInt8   ('header_length')
     .UInt8   ('protocol_version')
     .UInt16BE('service_type')
     .UInt16BE('total_length')
     .tap(function (hdr) {
+      if (KnxProtocol.debug) console.log('reading KNXNetHeader :%j', hdr);
       // FIXME: if (this.buffer.length - this.offset < hdr.header_length)
       //  throw util.format("Incomplete KNXNet header: %d - %d < %d", this.buffer.length, this.offset, hdr.header_length);
       switch (hdr.service_type) {

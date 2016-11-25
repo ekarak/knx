@@ -2,26 +2,26 @@
 const knxnetprotocol = require('../../src/KnxProtocol.js');
 const assert = require('assert');
 const test = require('tape');
-//knxnetprotocol.debug = true;
+knxnetprotocol.debug = true;
 
 test('KNX protocol reader/writer', function(t) {
   var tests = {
-    CONNECT_REQUEST: "06100205001a0801c0a80ab3d96d0801c0a80ab3d83604040200",
-    CONNECT_RESPONSE: "061002060014030008010a0c17350e5704040000",
-    "CONNECT_RESPONSE, failure E_NO_MORE_CONNECTIONS: 0x24": "0610020600080024",
-    "tunneling request (GroupValue_Read) apdu=1byte" : "061004200015040200002e00bce000000832010000",
-    "tunneling request (GroupValue_Write) apdu=1byte": "061004200015040200002e00bce000000832010081",
-    "tunneling request (GroupValue_Write) apdu=2byte": "061004200016040201002900bce00000083b0200804a"
+    CONNECT_REQUEST:  new Buffer("06100205001a0801c0a80ab3d96d0801c0a80ab3d83604040200", 'hex'),
+    CONNECT_RESPONSE: new Buffer("061002060014030008010a0c17350e5704040000",'hex'),
+    "CONNECT_RESPONSE, failure E_NO_MORE_CONNECTIONS: 0x24": new Buffer("0610020600080024",'hex'),
+    "tunneling request (GroupValue_Read) apdu=1byte" : new Buffer("061004200015040200002e00bce000000832010000",'hex'),
+    "tunneling request (GroupValue_Write) apdu=1byte": new Buffer("061004200015040200002e00bce000000832010081",'hex'),
+    "tunneling request (GroupValue_Write) apdu=2byte": new Buffer("061004200016040201002900bce00000083b0200804a",'hex'),
+    DISCONNECT_REQUEST: new Buffer([6,16,2,9,0,16,142,142,8,1,192,168,2,222,14,87]),
   };
   Object.keys(tests).forEach((key, idx) => {
-    var dgram = tests[key];
-    var buf = new Buffer(dgram, 'hex');
+    var buf = tests[key];
     var reader = knxnetprotocol.createReader(buf);
     var writer = knxnetprotocol.createWriter();
     reader.KNXNetHeader('tmp');
     var decoded = reader.next()['tmp'];
-    console.log("\n=== %s: %j (%d bytes) ===> %j",
-      key, dgram, buf.length, decoded);
+    console.log("\n=== %s: %j ===> %j",  key, buf, decoded);
+    t.ok(decoded != undefined, `${key}: could not decode packet`);
     writer.KNXNetHeader(decoded);
     if (Buffer.compare(buf, writer.buffer) != 0) {
       console.log("\n\n========\n  OOPS: %s\n========\nbuffer is different: %s",
