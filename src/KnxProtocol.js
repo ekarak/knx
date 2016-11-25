@@ -498,9 +498,10 @@ KnxProtocol.define('KNXNetHeader', {
     .UInt16BE('service_type')
     .UInt16BE('total_length')
     .tap(function (hdr) {
-      if (KnxProtocol.debug) console.log('reading KNXNetHeader :%j', hdr);
-      // FIXME: if (this.buffer.length - this.offset < hdr.header_length)
-      //  throw util.format("Incomplete KNXNet header: %d - %d < %d", this.buffer.length, this.offset, hdr.header_length);
+      if (KnxProtocol.debug) console.log('read KNXNetHeader :%j', hdr);
+      if (this.buffer.length + hdr.header_length < this.total_length)
+        throw util.format("Incomplete KNXNet packet: got %d bytes (expected %d)",
+          this.buffer.length + hdr.header_length, this.total_length);
       switch (hdr.service_type) {
 //        case SERVICE_TYPE.SEARCH_REQUEST:
         case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST: {
@@ -517,7 +518,7 @@ KnxProtocol.define('KNXNetHeader', {
         case KnxConstants.SERVICE_TYPE.DISCONNECT_RESPONSE: {
           this.ConnState('connstate');
           if (hdr.total_length > 8) this.HPAI('hpai');
-          if (hdr.total_length > 10) this.CRI('cri');
+          if (hdr.total_length > 16) this.CRI('cri');
           break;
         }
         case KnxConstants.SERVICE_TYPE.DESCRIPTION_RESPONSE: {
