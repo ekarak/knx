@@ -192,7 +192,7 @@ KnxConnection.prototype.send = function(datagram, callback) {
     );
   }
   catch (e) {
-    console.log(util.format("*** ERROR: %s, %j", e, e.stack));
+    console.log(util.format("*** ERROR: %s", e));
   }
 }
 

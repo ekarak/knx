@@ -18,7 +18,7 @@ module.exports = machina.Fsm.extend({
     // set the local IP endpoint
     this.localAddress = null;
     this.ThreeLevelGroupAddressing = true;
-    this.sentTunnRequests = [];
+    this.sentTunnRequests = {};
     this.remoteEndpoint = { addr: options.ipAddr, port: options.ipPort || 3671 };
   },
 
@@ -185,7 +185,7 @@ module.exports = machina.Fsm.extend({
         }
       },
       "*": function ( data ) {
-        this.debugPrint(util.format('*** deferring Until Transition %j', data));
+        this.debugPrint(util.format('*** deferring %s until transition to idle', data.inputType));
         this.deferUntilTransition( 'idle' );
       },
     },
@@ -201,12 +201,16 @@ module.exports = machina.Fsm.extend({
         this.send( datagram, function(err) {
           // TODO: handle send err
           sm.sentTunnRequests[datagram.tunnstate.seqnum] = datagram;
-          // and then wait for the acknowledgement
-          sm.transition( 'sendTunnReq_waitACK', datagram );
         });
+        // and then wait for the acknowledgement
+        this.transition( 'sendTunnReq_waitACK', datagram );
+      },
+      inbound_TUNNELING_ACK: function ( datagram ) {
+        this.debugPrint(util.format('*** deferring %s until transition to sendTunnReq_waitACK', data.inputType));
+        this.deferUntilTransition( 'sendTunnReq_waitACK' );
       },
       "*": function ( data ) {
-        this.debugPrint(util.format('*** deferring until transition %j', data));
+        this.debugPrint(util.format('*** deferring %s until transition to idle', data.inputType));
         this.deferUntilTransition( 'idle' );
       }
     },
@@ -241,11 +245,12 @@ module.exports = machina.Fsm.extend({
             this.transition( 'idle' );
           }
         } else {
+          this.debugPrint(util.format('*** deferring %s until transition to idle', datagram));
           this.deferUntilTransition( 'idle' );
         }
       },
       "*": function ( data ) {
-        this.debugPrint(util.format('*** deferring until transition %j', data));
+        this.debugPrint(util.format('*** deferring %s until transition to idle', data.inputType));
         this.deferUntilTransition( 'idle' );
       },
     },
@@ -265,7 +270,7 @@ module.exports = machina.Fsm.extend({
         sm.transition( 'idle' );
       },
       "*": function ( data ) {
-        this.debugPrint(util.format('*** deferring until transition %j', data));
+        this.debugPrint(util.format('*** deferring %s until transition to idle', data.inputType));
         this.deferUntilTransition( 'idle' );
       }
     },
