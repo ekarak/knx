@@ -171,7 +171,7 @@ KnxConnection.prototype.send = function(datagram, callback) {
       case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
         // append the CEMI service type if this is a tunneling request...
         cemitype = KnxConstants.keyText('MESSAGECODES', datagram.cemi.msgcode);
-        datagram.tunnstate.seqnum = this.seqnumSend;
+        datagram.tunnstate.seqnum = (this.seqnum + 1) & 0xFF;
         break;
     }
     var packet = this.writer.KNXNetHeader(datagram);
@@ -277,7 +277,5 @@ KnxConnection.prototype.AddTunn = function (datagram) {
     tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
   };
 }
-KnxConnection.prototype.incSeqSend = function () {
-  this.seqnumSend = (this.seqnumSend + 1) & 0xFF;
-};
+
 module.exports = KnxConnection;

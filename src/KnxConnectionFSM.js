@@ -72,8 +72,7 @@ module.exports = machina.Fsm.extend({
           'Got connection state response, connstate: %s, channel ID: %d',
           str, datagram.connstate.channel_id));
         // ready to go! Reset sequence counters..
-        this.seqnumSend = 0;
-        this.seqnumRecv = 0;
+        this.seqnum = -1;
         this.conntime = Date.now();
         this.emit('connected');
         this.transition( 'idle');
@@ -139,15 +138,7 @@ module.exports = machina.Fsm.extend({
         sm.debugPrint(util.format(
           'Successful confirmation of seq %d!', datagram.tunnstate.seqnum));
         // TODO: sm.emit('confirmed', ??? )
-        var ack = sm.prepareDatagram(
-          KnxConstants.SERVICE_TYPE.TUNNELING_ACK,
-          datagram);
-        ack.tunnstate.seqnum = datagram.tunnstate.seqnum;
-        sm.send(ack, function(err) {
-          // TODO: handle send err
-          sm.emitEvent(datagram);
-          sm.transition( 'idle' );
-        });
+        sm.acknowledge(datagram);
       },
       inbound_DISCONNECT_REQUEST: function( datagram ) {
         this.transition( 'connecting' );
@@ -196,7 +187,7 @@ module.exports = machina.Fsm.extend({
     sendTunnReq:  {
       _onEnter: function ( datagram ) {
         var sm = this;
-        this.debugPrint(util.format('>>>>> seqnum: %d / %d', this.seqnumSend, this.seqnumRecv));
+        this.debugPrint(util.format('>>>>> seqnum: %d', this.seqnum));
         // send the telegram on the wire
         this.send( datagram, function(err) {
           // TODO: handle send err
@@ -233,9 +224,8 @@ module.exports = machina.Fsm.extend({
         var acked_dg = sm.sentTunnRequests[datagram.tunnstate.seqnum];
         if (acked_dg) {
           delete sm.sentTunnRequests[datagram.tunnstate.seqnum];
-          sm.seqnumRecv = datagram.tunnstate.seqnum;
-          sm.incSeqSend();
-          sm.debugPrint(util.format('===== seqnum: %d / %d', sm.seqnumSend, sm.seqnumRecv));
+          sm.seqnum = datagram.tunnstate.seqnum;
+          sm.debugPrint(util.format('===== seqnum: %d', sm.seqnum));
           if (acked_dg.cemi.ctrl.confirm) {
             // only wait for confirmation if the datagram has the 'confirm' flag
             // TODO: validate meaning of 'confirm' flag, we need to manually flag outgoing requests for confirmation by API call
@@ -267,6 +257,7 @@ module.exports = machina.Fsm.extend({
       'inbound_TUNNELING_REQUEST_L_Data.con': function ( datagram ) {
         var sm = this;
         sm.emit('acknowledged', datagram);
+        sm.acknowledge(datagram);
         sm.transition( 'idle' );
       },
       "*": function ( data ) {
@@ -286,19 +277,23 @@ module.exports = machina.Fsm.extend({
           datagram.total_length));
         sm.emitEvent(datagram);
         // check IF THIS IS NEEDED (maybe look at apdu control field for ack)
-        var ack = sm.prepareDatagram (KnxConstants.SERVICE_TYPE.TUNNELING_ACK, datagram);
-        ack.tunnstate.seqnum = datagram.tunnstate.seqnum;
-        sm.send(ack, function(err) {
-          // TODO: handle err
-          sm.seqnumRecv = datagram.tunnstate.seqnum;
-          sm.transition( 'idle' );
-        });
+        sm.acknowledge(datagram);
+        sm.transition( 'idle' );
       },
       "*": function ( data ) {
         this.debugPrint(util.format('*** deferring Until Transition %j', data));
         this.deferUntilTransition( 'idle' );
       },
     },
+  },
+  acknowledge: function(datagram) {
+    var ack = this.prepareDatagram(
+      KnxConstants.SERVICE_TYPE.TUNNELING_ACK,
+      datagram);
+    ack.tunnstate.seqnum = datagram.tunnstate.seqnum;
+    this.send(ack, function(err) {
+      // TODO: handle send err
+    });
   },
   emitEvent: function(datagram) {
     // emit events to our beloved subscribers in a multitude of targets
