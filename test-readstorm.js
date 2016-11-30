@@ -8,6 +8,7 @@ function setupDatapoint(groupadress, statusga) {
   dp.on('change', (oldvalue, newvalue) => {
     console.log("**** %s current value: %j", groupadress, newvalue);
   });
+  return dp;
 }
 Error.stackTraceLimit = Infinity;
 new Promise(function(resolve, reject) {
@@ -24,6 +25,12 @@ new Promise(function(resolve, reject) {
     setupDatapoint('1/1/5', '1/1/105');
     setupDatapoint('1/1/6', '1/1/106');
     setupDatapoint('1/1/7', '1/1/107');
-    setupDatapoint('1/1/8', '1/1/108');
+    dp8 = setupDatapoint('1/1/8', '1/1/108');
+    setTimeout(function () {
+      dp8.write(1);
+      setTimeout(function () {
+        dp8.write(0);
+      }, 3000);
+    }, 3000);
   }, function(error) { console.error(error);}
 );

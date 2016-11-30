@@ -2,14 +2,14 @@
 * knx.js - a pure Javascript library for KNX
 * (C) 2016 Elias Karakoulakis
 */
-const os = require('os');
-const dgram = require('dgram');
-const machina = require('machina');
-const util = require('util');
-const DPTLib = require('./dptlib');
-const KnxConstants = require('./KnxConstants.js');
-const KnxNetProtocol = require('./KnxProtocol.js');
-const KnxConnection = require('./KnxConnectionFSM.js');
+var os = require('os');
+var dgram = require('dgram');
+var machina = require('machina');
+var util = require('util');
+var DPTLib = require('./dptlib');
+var KnxConstants = require('./KnxConstants.js');
+var KnxNetProtocol = require('./KnxProtocol.js');
+var KnxConnection = require('./KnxConnectionFSM.js');
 
 // bind incoming UDP packet handler
 KnxConnection.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
@@ -53,7 +53,8 @@ KnxConnection.prototype.AddTunnState = function (datagram) {
   // add the remote IP router's endpoint
   datagram.tunnstate = {
     channel_id:      this.channel_id,
-    tunnel_endpoint: this.remoteEndpoint.addr + ':' + this.remoteEndpoint.port
+    tunnel_endpoint: this.remoteEndpoint.addr + ':' + this.remoteEndpoint.port,
+    seqnum:          (this.seqnum+1) & 0xFF
   }
 }
 
@@ -100,7 +101,7 @@ KnxConnection.prototype.AddCEMI = function(datagram, msgcode) {
 * datagram_template:
 *    if a datagram is passed, use this as
 *    if a function is passed, use this to DECORATE
-*    if NULL, then construct a new empty datagram. Look at AddXXX methods
+*    if NULL, then just make a new empty datagram. Look at AddXXX methods
 */
 KnxConnection.prototype.Request = function (type, datagram_template, callback) {
   var self = this;
@@ -171,21 +172,20 @@ KnxConnection.prototype.send = function(datagram, callback) {
       case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
         // append the CEMI service type if this is a tunneling request...
         cemitype = KnxConstants.keyText('MESSAGECODES', datagram.cemi.msgcode);
-        datagram.tunnstate.seqnum = this.seqnumSend;
         break;
     }
     var packet = this.writer.KNXNetHeader(datagram);
     var buf = packet.buffer;
     var svctype = KnxConstants.keyText('SERVICE_TYPE', datagram.service_type);
+    var descr = this.datagramDesc(datagram);
     this.debugPrint(util.format(
-      'Sending %s(/%s) %j (%d bytes) from port %d ==> %j',
-      svctype, cemitype, buf, buf.length, channel.address().port, datagram
+      'Sending %s from port %d ==> %j', descr, channel.address().port, datagram
     ));
     channel.send(
       buf, 0, buf.length, conn.remoteEndpoint.port, conn.remoteEndpoint.addr,
       function(err) {
-        conn.debugPrint(util.format('UDP sent %d bytes to %j: %s',
-          buf.length, conn.remoteEndpoint, (err ? err.toString() : 'OK')
+        conn.debugPrint(util.format('UDP send: %s to %j: %s',
+          descr, conn.remoteEndpoint, (err ? err.toString() : 'OK')
         ));
         if (typeof callback === 'function') callback(err);
       }
@@ -277,7 +277,5 @@ KnxConnection.prototype.AddTunn = function (datagram) {
     tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
   };
 }
-KnxConnection.prototype.incSeqSend = function () {
-  this.seqnumSend = (this.seqnumSend + 1) & 0xFF;
-};
+
 module.exports = KnxConnection;
