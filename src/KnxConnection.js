@@ -101,7 +101,7 @@ KnxConnection.prototype.AddCEMI = function(datagram, msgcode) {
 * datagram_template:
 *    if a datagram is passed, use this as
 *    if a function is passed, use this to DECORATE
-*    if NULL, then varruct a new empty datagram. Look at AddXXX methods
+*    if NULL, then just make a new empty datagram. Look at AddXXX methods
 */
 KnxConnection.prototype.Request = function (type, datagram_template, callback) {
   var self = this;
