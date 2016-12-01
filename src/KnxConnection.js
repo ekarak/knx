@@ -9,10 +9,11 @@ var util = require('util');
 var DPTLib = require('./dptlib');
 var KnxConstants = require('./KnxConstants.js');
 var KnxNetProtocol = require('./KnxProtocol.js');
-var KnxConnection = require('./KnxConnectionFSM.js');
+var KnxConnectionFSM = require('./KnxConnectionFSM.js');
+
 
 // bind incoming UDP packet handler
-KnxConnection.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
+KnxConnectionFSM.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
   // get the incoming packet's service type ...
   var reader = KnxNetProtocol.createReader(msg);
   reader.KNXNetHeader('tmp');
@@ -42,14 +43,14 @@ KnxConnection.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
   }
 };
 
-KnxConnection.prototype.AddConnState = function (datagram) {
+KnxConnectionFSM.prototype.AddConnState = function (datagram) {
   datagram.connstate = {
     channel_id:      this.channel_id,
     state:           0
   }
 }
 
-KnxConnection.prototype.AddTunnState = function (datagram) {
+KnxConnectionFSM.prototype.AddTunnState = function (datagram) {
   // add the remote IP router's endpoint
   datagram.tunnstate = {
     channel_id:      this.channel_id,
@@ -58,7 +59,7 @@ KnxConnection.prototype.AddTunnState = function (datagram) {
   }
 }
 
-KnxConnection.prototype.AddCRI = function (datagram) {
+KnxConnectionFSM.prototype.AddCRI = function (datagram) {
   // add the CRI
   datagram.cri = {
     connection_type: KnxConstants.CONNECTION_TYPE.TUNNEL_CONNECTION,
@@ -67,7 +68,7 @@ KnxConnection.prototype.AddCRI = function (datagram) {
   }
 }
 
-KnxConnection.prototype.AddCEMI = function(datagram, msgcode) {
+KnxConnectionFSM.prototype.AddCEMI = function(datagram, msgcode) {
   datagram.cemi = {
     msgcode: msgcode || 0x11, // default: L_Data.req
     ctrl: {
@@ -103,7 +104,7 @@ KnxConnection.prototype.AddCEMI = function(datagram, msgcode) {
 *    if a function is passed, use this to DECORATE
 *    if NULL, then just make a new empty datagram. Look at AddXXX methods
 */
-KnxConnection.prototype.Request = function (type, datagram_template, callback) {
+KnxConnectionFSM.prototype.Request = function (type, datagram_template, callback) {
   var self = this;
   var datagram;
   if (datagram_template != null) {
@@ -122,7 +123,7 @@ KnxConnection.prototype.Request = function (type, datagram_template, callback) {
 }
 
 // prepare a datagram for the given service type
-KnxConnection.prototype.prepareDatagram = function (svcType) {
+KnxConnectionFSM.prototype.prepareDatagram = function (svcType) {
   var datagram = {
     "header_length":    6,
     "protocol_version": 16, // 0x10 == version 1.0
@@ -157,7 +158,7 @@ KnxConnection.prototype.prepareDatagram = function (svcType) {
 /*
 send the datagram over the wire
 */
-KnxConnection.prototype.send = function(datagram, callback) {
+KnxConnectionFSM.prototype.send = function(datagram, callback) {
   var conn = this;
   // select which UDP channel we should use (control/tunnel)
   var channel = [
@@ -165,7 +166,7 @@ KnxConnection.prototype.send = function(datagram, callback) {
     KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST,
     KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST]
     .indexOf(datagram.service_type) > -1 ?  this.control : this.tunnel;
-  try {
+  //try {
     var cemitype;
     this.writer = KnxNetProtocol.createWriter();
     switch(datagram.service_type) {
@@ -179,10 +180,11 @@ KnxConnection.prototype.send = function(datagram, callback) {
     var svctype = KnxConstants.keyText('SERVICE_TYPE', datagram.service_type);
     var descr = this.datagramDesc(datagram);
     this.debugPrint(util.format(
-      'Sending %s from port %d ==> %j', descr, channel.address().port, datagram
+      'Sending %s from port %d ==> %j', descr, channel.address().port, conn.remoteEndpoint
     ));
     channel.send(
-      buf, 0, buf.length, conn.remoteEndpoint.port, conn.remoteEndpoint.addr,
+      buf, 0, buf.length,
+      conn.remoteEndpoint.port, conn.remoteEndpoint.addr.toString(),
       function(err) {
         conn.debugPrint(util.format('UDP send: %s to %j: %s',
           descr, conn.remoteEndpoint, (err ? err.toString() : 'OK')
@@ -190,13 +192,12 @@ KnxConnection.prototype.send = function(datagram, callback) {
         if (typeof callback === 'function') callback(err);
       }
     );
-  }
-  catch (e) {
+  /*} catch (e) {
     console.log(util.format("*** ERROR: %s", e));
-  }
+  }*/
 }
 
-KnxConnection.prototype.write = function(grpaddr, apdu_data, dptid, callback) {
+KnxConnectionFSM.prototype.write = function(grpaddr, apdu_data, dptid, callback) {
   if (grpaddr == null || apdu_data == null) {
     console.trace('must supply both grpaddr(%j) and apdu_data(%j)!', grpaddr, apdu_data);
     return;
@@ -215,7 +216,7 @@ KnxConnection.prototype.write = function(grpaddr, apdu_data, dptid, callback) {
 
 // send a READ request to the bus
 // you can pass a callback function which gets bound to the RESPONSE datagram event
-KnxConnection.prototype.read = function(grpaddr, callback) {
+KnxConnectionFSM.prototype.read = function(grpaddr, callback) {
   if (typeof callback == 'function') {
     var conn = this;
     // when the response arrives:
@@ -242,13 +243,13 @@ KnxConnection.prototype.read = function(grpaddr, callback) {
   });
 }
 
-KnxConnection.prototype.Disconnect = function(msg) {
+KnxConnectionFSM.prototype.Disconnect = function(msg) {
   this.transition("disconnecting");
   // machina.js removeAllListeners equivalent:
   // this.off();
 }
 
-KnxConnection.prototype.debugPrint = function(msg) {
+KnxConnectionFSM.prototype.debugPrint = function(msg) {
   if (this.debug) {
     var ts = new Date().toISOString().replace(/T/, ' ').replace(/Z$/, '');
     console.log('%s (%s):\t%s', ts, this.compositeState(), msg);
@@ -256,7 +257,7 @@ KnxConnection.prototype.debugPrint = function(msg) {
 }
 
 // return a descriptor for this datagram (TUNNELING_REQUEST_L_Data.ind)
-KnxConnection.prototype.datagramDesc = function (dg) {
+KnxConnectionFSM.prototype.datagramDesc = function (dg) {
   var blurb = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
   if (dg.service_type == KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST) {
     blurb += '_' + KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode);
@@ -264,18 +265,24 @@ KnxConnection.prototype.datagramDesc = function (dg) {
   return blurb;
 }
 // add the control udp local endpoint
-KnxConnection.prototype.AddHPAI = function (datagram) {
+KnxConnectionFSM.prototype.AddHPAI = function (datagram) {
   datagram.hpai = {
     protocol_type:1, // UDP
     tunnel_endpoint: this.localAddress + ":" + this.control.address().port
   };
 }
 // add the tunneling udp local endpoint
-KnxConnection.prototype.AddTunn = function (datagram) {
+KnxConnectionFSM.prototype.AddTunn = function (datagram) {
   datagram.tunn = {
     protocol_type:1, // UDP
     tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
   };
+}
+
+KnxConnection = function(options) {
+  return (new KnxConnectionFSM(options)).Connect(function(){
+    console.log('connected! hurray!');
+  });
 }
 
 module.exports = KnxConnection;

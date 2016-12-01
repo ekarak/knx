@@ -3,23 +3,41 @@
 * (C) 2016 Elias Karakoulakis
 */
 const os = require('os');
-const ipv4 = require('ipv4.js');
+const ipaddr = require('ipaddr.js');
 const dgram = require('dgram');
 const machina = require('machina');
 const util = require('util');
 const KnxConstants = require('./KnxConstants.js');
 const KnxNetProtocol = require('./KnxProtocol.js');
+const IpRoutingConnection = require('./IpRoutingConnection.js');
+const IpTunnelingConnection = require('./IpTunnelingConnection.js');
 
 module.exports = machina.Fsm.extend({
 
   initialize: function( options ) {
     //this.debugPrint( util.format('initialize connection: %j', options));
-    this.options = options;
+    this.options = options || {};
     // set the local IP endpoint
     this.localAddress = null;
     this.ThreeLevelGroupAddressing = true;
     this.sentTunnRequests = {};
-    this.remoteEndpoint = { addr: options.ipAddr, port: options.ipPort || 3671 };
+    this.remoteEndpoint = {
+      addr: ipaddr.parse(options.ipAddr || '224.0.23.12'),
+      port: options.ipPort || 3671 };
+    var instance;
+    var range = this.remoteEndpoint.addr.range();
+    switch (range) {
+      case 'multicast':
+        IpRoutingConnection(this, options);
+        break;
+      case 'unicast':
+      case 'private':
+      case 'loopback':
+        IpTunnelingConnection(this, options);
+        break;
+      default:
+        throw util.format("IP address % (%s) cannot be used for KNX", options.ipAddr, range);
+    }
   },
 
   namespace: "knxnet",

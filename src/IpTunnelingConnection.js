@@ -13,9 +13,7 @@ const KnxNetProtocol = require('./KnxProtocol');
 ///     Initializes a new KNX tunneling connection with provided values. Make sure the local system allows
 ///     UDP messages to the localIpAddress and localPort provided
 /// </summary>
-function IpTunnelingConnection(options) {
-
-  var instance = new KnxConnection(options);
+function IpTunnelingConnection(instance,  options) {
 
   instance.BindSocket = function( cb ) {
     instance.debugPrint('IpTunnelingConnection.BindSocket');
@@ -47,7 +45,7 @@ function IpTunnelingConnection(options) {
         });
         // start connection sequence
         sm.transition( 'connecting');
-        sm.on('connected', callback);
+        if (callback) sm.on('connected', callback);
       })
     });
   }

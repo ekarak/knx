@@ -4,7 +4,7 @@
 */
 
 const util = require('util');
-const ipv4 = require('ipv4.js');
+const ipaddr = require('ipaddr.js');
 const Parser = require('binary-parser').Parser;
 const BinaryProtocol = require('binary-protocol');
 const KnxProtocol = new BinaryProtocol();
@@ -24,10 +24,13 @@ function knxlen(objectName, context) {
 KnxProtocol.define('IPv4Endpoint', {
   read: function (propertyName) {
     this.pushStack({ addr: null, port: null})
-      .UInt32BE('addr')
+      .raw('addr', 4)
       .UInt16BE('port')
+      .tap(function (hdr) {
+        hdr.addr = ipaddr.fromByteArray(hdr.addr);
+      })
       .popStack(propertyName, function (data) {
-        return ipv4.ntoa(data.addr) + ':' + data.port;
+        return data.addr.toString() + ':' + data.port;
        });
      },
   write: function (value) {
@@ -37,7 +40,7 @@ KnxProtocol.define('IPv4Endpoint', {
         throw "Invalid IPv4 endpoint, please set a string as  'ip.add.re.ss:port'";
       }
       var arr = value.split(':');
-      this.UInt32BE(ipv4.aton(arr[0]));
+      this.raw(new Buffer(ipaddr.parse(arr[0]).toByteArray()), 4);
       this.UInt16BE(arr[1]);
     }
   }

@@ -12,13 +12,7 @@ const dgram = require('dgram');
   Initializes a new KNX routing connection with provided values. Make
  sure the local system allows UDP messages to the multicast group.
 **/
-function IpRoutingConnection(options) {
-
-  if (!options) options = {};
-  if (!options.ipAddr) options.ipAddr = '224.0.23.12';
-  if (!options.ipPort) options.ipPort = 3671;
-
-  var instance = new KnxConnection(options);
+function IpRoutingConnection(instance, options) {
 
   instance.BindSocket = function( cb ) {
     var conn = this;
@@ -52,7 +46,7 @@ function IpRoutingConnection(options) {
       // start connection sequence
       sm.transition( 'connecting' );
     });
-    this.on('connected', callback);
+    return this;
   }
 
   instance.disconnected = function() {
