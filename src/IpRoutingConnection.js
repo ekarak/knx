@@ -3,8 +3,6 @@
 * (C) 2016 Elias Karakoulakis
 */
 
-const KnxConnection = require('./KnxConnection');
-
 const util = require('util');
 const dgram = require('dgram');
 
@@ -12,13 +10,7 @@ const dgram = require('dgram');
   Initializes a new KNX routing connection with provided values. Make
  sure the local system allows UDP messages to the multicast group.
 **/
-function IpRoutingConnection(options) {
-
-  if (!options) options = {};
-  if (!options.ipAddr) options.ipAddr = '224.0.23.12';
-  if (!options.ipPort) options.ipPort = 3671;
-
-  var instance = new KnxConnection(options);
+function IpRoutingConnection(instance, options) {
 
   instance.BindSocket = function( cb ) {
     var conn = this;
@@ -41,9 +33,9 @@ function IpRoutingConnection(options) {
   // <summary>
   ///     Start the connection
   /// </summary>
-  instance.Connect = function (callback) {
+  instance.Connect = function () {
     var sm = this;
-    this.localAddress = this.getLocalAddress(this.options);
+    this.localAddress = this.getLocalAddress();
     this.control = this.tunnel = this.BindSocket( function(socket) {
       socket.on("message", function(msg, rinfo, callback)  {
         sm.debugPrint(util.format('Inbound multicast message %j: %j', rinfo, msg));
@@ -52,7 +44,7 @@ function IpRoutingConnection(options) {
       // start connection sequence
       sm.transition( 'connecting' );
     });
-    this.on('connected', callback);
+    return this;
   }
 
   instance.disconnected = function() {

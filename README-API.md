@@ -1,53 +1,25 @@
-### Connect to your KNX IP router via multicast
+### Connect to your KNX IP router
 
 ```js
-// create a multicast connection, no mandatory arguments.
-var connection = knx.IpRoutingConnection();
-// optionally specify the multicast address if its not the standard
-var connection = knx.IpRoutingConnection( {ipAddr: '224.0.23.12', ipPort: 3671} );
-// you'll need to specify the multicast interface if you have more than one interface
-// this is common in laptops that have both a wired AND a wireless interface
-var connection = knx.IpRoutingConnection( {interface: 'eth0'} );
-```
-
-### Connect to your KNX IP interface via tunneling
-
-Use this in case multicast doesn't work for you, this for example could be caused if:
-- you only have a "KNX IP Interface" (meaning its only capable of tunneling), or
-- your laptop is on wi-fi and your KNX IP router is on wired Ethernet, (most home routers don't route multicast traffic to the LAN segment), or
-- you're simply not in the same LAN as the KNX IP router
-
-```js
-// create a tunneling (UDP/unicast) connection to a KNX IP router
-var connection = knx.IpTunnelingConnection( {ipAddr: '192.168.2.222'} );
-// -- OR -- you can optionally specify the port number and the local interface:
-var connection = knx.IpTunnelingConnection( {ipAddr: '192.168.2.222', ipPort: 3671, interface: 'eth0'} );
-```
-
-### Send some raw telegrams
-
-```js
-// sending an arbitrary write request to a binary group address
-connection.write("1/0/0", 1);
-// you also can be explicit about the datapoint type, eg. DPT9.001 is temperature Celcius
-connection.write("2/1/0", 22.5, "DPT9.001");
-// send a Read request to get the current state of 1/0/1 group address
-// dont forget to register a GroupValue_Response handler!
-connection.read("1/0/1");
-// you can also pass a callback to capture the response sent by src
-connection.read("1/0/1", (src, responsevalue) => { ... });
-// you can send a Response telegram to an incoming GroupValue_Read request
-connection.response("2/1/0", 22.5, "DPT9.001");)
-//
-```
-
-Try writing a value to a group address.
-
-```js
-// switch on a light
-connection.write("1/0/0", true, "DPT1");
-// set the thermostat to 21.5 degrees Celcius
-connection.write("3/0/3", 21.5, "DPT9.001");
+// Create a multicast connection, no mandatory arguments.
+// Get a nice greeting when connected.
+var connection = new knx.Connection( {
+  handlers: {
+    connnected: function() {
+      console.log('Hurray, I can talk KNX!');
+      // WRITE an arbitrary write request to a binary group address
+      connection.write("1/0/0", 1);
+      // you also can be explicit about the datapoint type, eg. DPT9.001 is temperature Celcius
+      connection.write("2/1/0", 22.5, "DPT9.001");
+      // you can also issue a READ request and pass a callback to capture the response
+      connection.read("1/0/1", (src, responsevalue) => { ... });
+    }
+  }
+});  
+// optionally specify another address and port
+var connection = new knx.Connection( {ipAddr: '224.0.23.12', ipPort: 3671} );
+// in case you need to specify the multicast interface if you have more than one
+var connection = new knx.Connection( {interface: 'eth0'} );
 ```
 
 **Important**: connection.write() will only accept *raw APDU payloads* and a DPT.
@@ -82,20 +54,20 @@ you start defining datapoints (and devices as we'll see later), your code
 *needs to ensure that the connection has been established*, usually by using a Promise:
 
 ```js
-new Promise(function(resolve, reject) {
-  connection.Connect(function() {
-    console.log('----------');
-    console.log('Connected!');
-    console.log('----------');
-    resolve();
-  });
-}).then(function() {
-  var dp = new knx.Datapoint({ga: '1/1/1'}, connection);
-  // Now send off a couple of requests:
-  dp.read((src, value) => {
-    console.log("**** RESPONSE %j reports current value: %j", src, value);
-  });
-  dp.write(1);
+var connection = knx.Connection({
+  handlers: {
+    connected: function() {
+      console.log('----------');
+      console.log('Connected!');
+      console.log('----------');
+      var dp = new knx.Datapoint({ga: '1/1/1'}, connection);
+      // Now send off a couple of requests:
+      dp.read((src, value) => {
+        console.log("**** RESPONSE %j reports current value: %j", src, value);
+      });
+      dp.write(1);
+    }
+  }
 });
 ```
 
