@@ -1,12 +1,5 @@
 var knx = require('knx');
 
-function setupDatapoint(groupadress, statusga) {
-  var dp = new knx.Datapoint({ga: groupadress, status_ga: statusga, dpt: "DPT1.001"}, connection);
-  dp.on('change', (oldvalue, newvalue) => {
-    console.log("**** %s current value: %j", groupadress, newvalue);
-  });
-  return dp;
-}
 Error.stackTraceLimit = Infinity;
 
 var connection = knx.Connection({
@@ -38,3 +31,11 @@ var connection = knx.Connection({
     },
   }
 });
+
+function setupDatapoint(groupadress, statusga) {
+  var dp = new knx.Datapoint({ga: groupadress, status_ga: statusga, dpt: "DPT1.001"}, connection);
+  dp.on('change', (oldvalue, newvalue) => {
+    console.log("**** %s current value: %j", groupadress, newvalue);
+  });
+  return dp;
+}
