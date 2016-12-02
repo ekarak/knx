@@ -8,17 +8,17 @@ if (process.argv.length < 2) {
 function setupSwitch(groupaddress, statusga) {
   var sw = new knx.Devices.BinarySwitch({ga: groupaddress, status_ga: statusga}, connection);
   sw.on('change', (oldvalue, newvalue, ga) => {
-    console.log("**** %s current value: %j", ga, newvalue);
+    console.log(" %s: **** %s current value: %j", Date.now(), ga, newvalue);
   });
   return sw;
 }
 Error.stackTraceLimit = Infinity;
 var connection = knx.Connection({
-  debug: true,
-  minimumDelay: 10,
+  //debug: true,
+  //minimumDelay: 10,
   handlers: {
     connected: function() {
-      console.log('===========\nConnected!\n===========');
+      console.log('===========\nConnected! %s \n===========', Date.now());
       var v = parseInt(process.argv[2]);
       console.log('---- Writing %d ---', v);
       setupSwitch('1/1/0', '1/1/100').write(v);
