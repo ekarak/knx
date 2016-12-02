@@ -3,8 +3,6 @@
 * (C) 2016 Elias Karakoulakis
 */
 
-const KnxConnection = require('./KnxConnection');
-
 const util = require('util');
 const dgram = require('dgram');
 
@@ -35,9 +33,9 @@ function IpRoutingConnection(instance, options) {
   // <summary>
   ///     Start the connection
   /// </summary>
-  instance.Connect = function (callback) {
+  instance.Connect = function () {
     var sm = this;
-    this.localAddress = this.getLocalAddress(this.options);
+    this.localAddress = this.getLocalAddress();
     this.control = this.tunnel = this.BindSocket( function(socket) {
       socket.on("message", function(msg, rinfo, callback)  {
         sm.debugPrint(util.format('Inbound multicast message %j: %j', rinfo, msg));

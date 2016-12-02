@@ -3,11 +3,8 @@
 * (C) 2016 Elias Karakoulakis
 */
 
-const os = require('os');
 const util = require('util');
 const dgram = require('dgram');
-const KnxConnection = require('./KnxConnection');
-const KnxNetProtocol = require('./KnxProtocol');
 
 /// <summary>
 ///     Initializes a new KNX tunneling connection with provided values. Make sure the local system allows
@@ -28,9 +25,9 @@ function IpTunnelingConnection(instance,  options) {
   // <summry>
   ///     Start the connection
   /// </summary>
-  instance.Connect = function (callback) {
+  instance.Connect = function () {
     var sm = this;
-    this.localAddress = this.getLocalAddress(this.options);
+    this.localAddress = this.getLocalAddress();
     // create a control socket for CONNECT, CONNECTIONSTATE and DISCONNECT
     this.control = this.BindSocket( function(socket) {
       socket.on("message", function(msg, rinfo, callback)  {
@@ -45,9 +42,9 @@ function IpTunnelingConnection(instance,  options) {
         });
         // start connection sequence
         sm.transition( 'connecting');
-        if (callback) sm.on('connected', callback);
       })
     });
+    return this;
   }
 
   instance.disconnected = function() {
