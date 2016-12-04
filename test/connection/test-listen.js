@@ -4,6 +4,7 @@ var knx = require('../..');
 // just define a datapoint that should respond to a a GroupValue_Read request
 var connection = new knx.Connection({
   debug: true,
+  physAddr: "14.14.14",
   handlers: {
     connected: function() {
       console.log('----------');
