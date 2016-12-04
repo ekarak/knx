@@ -1,7 +1,7 @@
 /**
-* knx.js - a pure Javascript library for KNX
-* (C) 2016 Elias Karakoulakis
-*/
+ * knx.js - a pure Javascript library for KNX
+ * (C) 2016 Elias Karakoulakis
+ */
 
 const util = require('util');
 const DPTLib = require('./dptlib');
@@ -10,11 +10,11 @@ const KnxConstants = require('./KnxConstants');
 const EventEmitter = require('events').EventEmitter;
 
 /*
-* A Datapoint is always bound to:
-* - a group address (eg. '1/2/3')
-* - (optionally) a datapoint type (defaults to DPT1.001)
-* You can also supply a valid connection to skip calling bind()
-*/
+ * A Datapoint is always bound to:
+ * - a group address (eg. '1/2/3')
+ * - (optionally) a datapoint type (defaults to DPT1.001)
+ * You can also supply a valid connection to skip calling bind()
+ */
 function Datapoint(options, conn) {
   EventEmitter.call(this);
   // console.log('new datapoint: %j', options);
@@ -32,15 +32,15 @@ function Datapoint(options, conn) {
 util.inherits(Datapoint, EventEmitter);
 
 /*
-* Bind the datapoint to a bus connection
-*/
-Datapoint.prototype.bind = function (conn) {
+ * Bind the datapoint to a bus connection
+ */
+Datapoint.prototype.bind = function(conn) {
   var self = this;
   if (!conn) throw "must supply a valid KNX connection to bind to"
   this.conn = conn;
   // bind generic event handler for our group address
   var gaevent = util.format('event_%s', self.options.ga);
-  conn.on(gaevent, function (evt, src, buf) {
+  conn.on(gaevent, function(evt, src, buf) {
     //console.log('EVENT!!! %s %j', evt, buf);
     var jsvalue = buf;
     // get the Javascript value from the raw buffer, if the DPT defines fromBuffer()
@@ -62,24 +62,26 @@ Datapoint.prototype.bind = function (conn) {
     this.read();
   } else {
     // ... when the connection is established
-    conn.on('connected', function() { self.read(); });
+    conn.on('connected', function() {
+      self.read();
+    });
   }
 }
 
-Datapoint.prototype.update = function (jsvalue) {
+Datapoint.prototype.update = function(jsvalue) {
   //console.log('UPDATE %j', jsvalue);
   if (this.current_value != jsvalue) {
     var old_value = this.current_value;
     this.emit('change', this.current_value, jsvalue, this.options.ga);
     this.current_value = jsvalue;
-     var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
     //console.log("%s **** %s DATAPOINT CHANGE (was: %j)", ts, this.toString(), old_value );
   }
 }
 
 /* format a Javascript value into the APDU format dictated by the DPT
    and submit a GroupValue_Write to the connection */
-Datapoint.prototype.write = function (value) {
+Datapoint.prototype.write = function(value) {
   var self = this;
   // console.log('write %j', value)
   if (!this.conn) throw "must supply a valid KNX connection to bind to";
@@ -91,6 +93,8 @@ Datapoint.prototype.write = function (value) {
         value, (typeof value), range, this.dptid);
     }
   }
+  jsvalue = DPTLib.fromBuffer(buf, self.dpt);
+  self.update(jsvalue); // update internal state
   // get the raw APDU data for the given JS value
   var apdu_data = value;
   if (typeof this.dpt.formatAPDU == 'function') {
@@ -103,16 +107,21 @@ Datapoint.prototype.write = function (value) {
 }
 
 /*
-* Issue a GroupValue_Read request to the bus for this datapoint
-* use the optional callback() to get notified upon response
-*/
-Datapoint.prototype.read = function (callback) {
+ * Issue a GroupValue_Read request to the bus for this datapoint
+ * use the optional callback() to get notified upon response
+ */
+Datapoint.prototype.read = function(callback) {
   var self = this;
   if (!this.conn) throw "must supply a valid KNX connection to bind to";
-  this.conn.read(this.options.ga, callback);
+  this.conn.read(this.options.ga, function(src, buf) {
+    var jsvalue = DPTLib.fromBuffer(buf, self.dpt);
+    if (typeof callback == 'function') {
+      callback(src, jsvalue);
+    }
+  });
 }
 
-Datapoint.prototype.toString = function () {
+Datapoint.prototype.toString = function() {
   return util.format('(%s) %s %s',
     this.options.ga,
     this.current_value,
