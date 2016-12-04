@@ -5,6 +5,7 @@
 var connection = new knx.Connection( {
   ipAddr: '127.0.0.1', // ip address of the KNX router or interface
   ipPort: 3671, // the UDP port of the router or interface
+  physAddr: '15.15.15', // the KNX physical address we want to use
   debug: true, // print lots of debug output to the console
   manualConnect: true, // do not automatically connect, but use connection.Connect() to establish connection
   minimumDelay: 10, // wait at least 10 millisec between each datagram
