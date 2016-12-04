@@ -2,17 +2,33 @@
 
 ```js
 // Create a multicast connection, no mandatory arguments.
-// Get a nice greeting when connected.
 var connection = new knx.Connection( {
+  ipAddr: '127.0.0.1', // ip address of the KNX router or interface
+  ipPort: 3671, // the UDP port of the router or interface
+  debug: true, // print lots of debug output to the console
+  manualConnect: true, // do not automatically connect, but use connection.Connect() to establish connection
+  minimumDelay: 10, // wait at least 10 millisec between each datagram
   handlers: {
+    // wait for connection establishment before doing anything
     connnected: function() {
+      // Get a nice greeting when connected.
       console.log('Hurray, I can talk KNX!');
       // WRITE an arbitrary write request to a binary group address
       connection.write("1/0/0", 1);
-      // you also can be explicit about the datapoint type, eg. DPT9.001 is temperature Celcius
+      // you also WRITE to an explicit datapoint type, eg. DPT9.001 is temperature Celcius
       connection.write("2/1/0", 22.5, "DPT9.001");
       // you can also issue a READ request and pass a callback to capture the response
       connection.read("1/0/1", (src, responsevalue) => { ... });
+    },
+    // get notified for all KNX events:
+    event: function(evt, src, dest, value) { console.log(
+        "event: %s, src: %j, dest: %j, value: %j",
+        evt, src, dest, value
+      );
+    },
+    // get notified on connection errors
+    error: function(connstatus) {
+      console.log("**** ERROR: %j", connstatus);
     }
   }
 });  
@@ -51,7 +67,7 @@ var dimmer_control = new knx.Datapoint({ga: '1/2/33', dpt: 'DPT3.007'});
 Datapoints need to be bound to a connection. This can be done either at their
 creation, *or* using their `bind()` call. Its important to highlight that before
 you start defining datapoints (and devices as we'll see later), your code
-*needs to ensure that the connection has been established*, usually by using a Promise:
+*needs to ensure that the connection has been established*, usually by declaring them in the 'connected' handler:
 
 ```js
 var connection = knx.Connection({
