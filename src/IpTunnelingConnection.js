@@ -27,7 +27,7 @@ function IpTunnelingConnection(instance,  options) {
   /// </summary>
   instance.Connect = function () {
     var sm = this;
-    this.localAddress = this.getLocalAddress();
+    this.localAddress = options.natAddress || this.getLocalAddress();
     // create a control socket for CONNECT, CONNECTIONSTATE and DISCONNECT
     this.control = this.BindSocket( function(socket) {
       socket.on("message", function(msg, rinfo, callback)  {
@@ -36,6 +36,7 @@ function IpTunnelingConnection(instance,  options) {
       });
       // create a tunnel socket for TUNNELING_REQUEST and friends
       sm.tunnel = sm.BindSocket( function(socket) {
+        socket.send('DUMMY', 0, 5, options.ipPort, options.ipAddr);
         socket.on("message", function(msg, rinfo, callback)  {
           sm.debugPrint('Inbound message in TUNNEL channel');
           sm.onUdpSocketMessage(msg, rinfo, callback);
