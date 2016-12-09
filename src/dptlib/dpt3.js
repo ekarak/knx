@@ -1,7 +1,7 @@
 /**
-* knx.js - a pure Javascript library for KNX
-* (C) 2016 Elias Karakoulakis
-*/
+ * knx.js - a pure Javascript library for KNX
+ * (C) 2016 Elias Karakoulakis
+ */
 
 //
 // DPT3.*: 4-bit dimming/blinds control
@@ -13,7 +13,7 @@ exports.formatAPDU = function(value) {
     if (typeof value == 'object' &&
       value.hasOwnProperty('decr_incr') &&
       value.hasOwnProperty('data')) {
-        apdu_data = (value.decr_incr << 4) + (value.data & 0b00000111);
+      apdu_data = (value.decr_incr << 4) + (value.data & 0 b00000111);
     } else {
       console.trace("Must supply a value object of {decr_incr, data}");
     }
@@ -25,29 +25,29 @@ exports.fromBuffer = function(buf) {
   if (buf.length != 1) {
     console.trace("DPT3: Buffer should be 1 byte long");
   } else return {
-    decr_incr:(buf & 0b00001000) >> 3,
-    data:     (buf & 0b00000111)
+    decr_incr: (buf & 0 b00001000) >> 3,
+    data: (buf & 0 b00000111)
   };
 }
 
 exports.basetype = {
-    "bitlength" : 4,
-    "valuetype" : "composite",
-    "desc" : "4-bit relative dimming control"
+  "bitlength": 4,
+  "valuetype": "composite",
+  "desc": "4-bit relative dimming control"
 }
 
 exports.subtypes = {
-    // 3.007 dimming control
-    "3.007" : {
-        "name" : "DPT_Control_Dimming",
-        "desc" : "dimming control"
-    },
+  // 3.007 dimming control
+  "007": {
+    "name": "DPT_Control_Dimming",
+    "desc": "dimming control"
+  },
 
-    // 3.008 blind control
-    "3.008" : {
-        "name" : "DPT_Control_Blinds",
-        "desc" : "blinds control"
-    }
+  // 3.008 blind control
+  "008": {
+    "name": "DPT_Control_Blinds",
+    "desc": "blinds control"
+  }
 }
 
 /*
