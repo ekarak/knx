@@ -93,10 +93,8 @@ Datapoint.prototype.write = function(value) {
         value, (typeof value), range, this.dptid);
     }
   }
-  jsvalue = DPTLib.fromBuffer(buf, self.dpt);
-  self.update(jsvalue); // update internal state
-  // get the raw APDU data for the given JS value
   var apdu_data = value;
+  // get the raw APDU data for the given JS value
   if (typeof this.dpt.formatAPDU == 'function') {
     apdu_data = this.dpt.formatAPDU(value);
   }
