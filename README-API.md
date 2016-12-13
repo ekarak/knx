@@ -11,7 +11,7 @@ var connection = new knx.Connection( {
   minimumDelay: 10, // wait at least 10 millisec between each datagram
   handlers: {
     // wait for connection establishment before doing anything
-    connnected: function() {
+    connected: function() {
       // Get a nice greeting when connected.
       console.log('Hurray, I can talk KNX!');
       // WRITE an arbitrary write request to a binary group address
