@@ -29,30 +29,20 @@ function IpTunnelingConnection(instance, options) {
   instance.Connect = function() {
     var sm = this;
     this.localAddress = options.natAddress || this.getLocalAddress();
-    // create a control socket for CONNECT, CONNECTIONSTATE and DISCONNECT
-    this.control = this.BindSocket(function(socket) {
+    // create the socket
+    this.socket = this.BindSocket(function(socket) {
       socket.on("message", function(msg, rinfo, callback) {
-        sm.debugPrint('Inbound message in CONTROL channel');
+        sm.debugPrint(util.format('Inbound message: %j', msg));
         sm.onUdpSocketMessage(msg, rinfo, callback);
       });
-      // create a tunnel socket for TUNNELING_REQUEST and friends
-      sm.tunnel = sm.BindSocket(function(socket) {
-        socket.send('DUMMY', 0, 5, sm.remoteEndpoint.port, sm.remoteEndpoint
-          .addrstring);
-        socket.on("message", function(msg, rinfo, callback) {
-          sm.debugPrint('Inbound message in TUNNEL channel');
-          sm.onUdpSocketMessage(msg, rinfo, callback);
-        });
-        // start connection sequence
-        sm.transition('connecting');
-      })
+      // start connection sequence
+      sm.transition('connecting');
     });
     return this;
   }
 
   instance.disconnected = function() {
-    this.control.close();
-    this.tunnel.close();
+    this.socket.close();
   }
 
   return instance;
