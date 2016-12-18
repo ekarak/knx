@@ -160,13 +160,6 @@ send the datagram over the wire
 */
 FSM.prototype.send = function(datagram, callback) {
   var conn = this;
-  // select which UDP channel we should use (control/tunnel)
-  var channel = [
-      KnxConstants.SERVICE_TYPE.CONNECT_REQUEST,
-      KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST,
-      KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST
-    ]
-    .indexOf(datagram.service_type) > -1 ? this.control : this.tunnel;
   //try {
   var cemitype;
   this.writer = KnxNetProtocol.createWriter();
@@ -182,9 +175,9 @@ FSM.prototype.send = function(datagram, callback) {
   var descr = this.datagramDesc(datagram);
   this.debugPrint(util.format(
     'Sending %s from port %d to %s ==> %j',
-    descr, channel.address().port, conn.remoteEndpoint, datagram
+    descr, conn.socket.address().port, conn.remoteEndpoint, datagram
   ));
-  channel.send(
+  this.socket.send(
     buf, 0, buf.length,
     conn.remoteEndpoint.port, conn.remoteEndpoint.addr.toString(),
     function(err) {
@@ -268,19 +261,21 @@ FSM.prototype.datagramDesc = function(dg) {
   return blurb;
 }
 
-// add the control udp local endpoint
+// add the control udp local endpoint. UPDATE: not needed apparnently?
 FSM.prototype.AddHPAI = function(datagram) {
   datagram.hpai = {
     protocol_type: 1, // UDP
-    tunnel_endpoint: this.localAddress + ":" + this.control.address().port
+    //tunnel_endpoint: this.localAddress + ":" + this.control.address().port
+    tunnel_endpoint: '0.0.0.0:0'
   };
 }
 
-// add the tunneling udp local endpoint
+// add the tunneling udp local endpoint UPDATE: not needed apparently?
 FSM.prototype.AddTunn = function(datagram) {
   datagram.tunn = {
     protocol_type: 1, // UDP
-    tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
+    tunnel_endpoint: '0.0.0.0:0'
+      //tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
   };
 }
 
