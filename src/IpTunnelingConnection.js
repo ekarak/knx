@@ -28,7 +28,7 @@ function IpTunnelingConnection(instance, options) {
   /// </summary>
   instance.Connect = function() {
     var sm = this;
-    this.localAddress = options.natAddress || this.getLocalAddress();
+    this.localAddress = this.getLocalAddress();
     // create the socket
     this.socket = this.BindSocket(function(socket) {
       socket.on("message", function(msg, rinfo, callback) {
