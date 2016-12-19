@@ -7,6 +7,7 @@
 // Bitstruct to parse a DPT6 frame (8-bit signed integer)
 // Always 8-bit aligned.
 
+
 // DPT Basetype info
 exports.basetype = {
     "bitlength" : 8,
@@ -24,9 +25,10 @@ exports.subtypes = {
     },
 
     // 6.002 counter pulses (-128..127)
-    "002" : {
+    "010" : {
         "name" : "DPT_Bool", "desc" : "counter pulses",
         "unit" : "pulses"
     },
+
     //
 }

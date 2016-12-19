@@ -23,6 +23,11 @@ exports.subtypes = {
     "unit" : "pulses"
   },
 
+  "002" : {
+    "name" : "DPT_Value_Activation_Energy", "desc" : "activation energy (J/mol)" ,
+    "unit" : "J/mol"
+  },
+
   // 13.010 active energy (Wh)
   "010" : {
     "name" : "DPT_ActiveEnergy", "desc" : "active energy (Wh)",
