@@ -28,150 +28,136 @@ exports.fromBuffer = function(buf) {
 exports.basetype = {
   "bitlength" : 32,
   "valuetype" : "basic",
+  "range" : [0, Math.pow(2, 32)],
   "desc" : "32-bit floating point value"
 }
 
 // DPT14 subtypes info
 exports.subtypes = {
   // TODO
-  /*
-14.007
-DPT_Value_AngleDeg°
-1 °
-angle, degree
+  "007" : {
+    "name" : "DPT_Value_AngleDeg°",
+    "desc" : "angle, degree",
+    "unit" : "°"
+  },
 
-14.019
-DPT_Value_Electric_Current
-A
-1 A
-electric current
+  "019" : {
+    "name" : "DPT_Value_Electric_Current",
+    "desc" : "electric current",
+    "unit" : "A"
+  },
 
-14.027
-DPT_Value_Electric_Potential
-V
-1 V
-electric potential
+  "027" : {
+    "name" : "DPT_Value_Electric_Potential",
+    "desc" : "electric potential",
+    "unit" : "V"
+  },
 
-14.028
-DPT_Value_Electric_PotentialDifference
-V
-1 V
-electric potential difference
+  "028" : {
+    "name" : "DPT_Value_Electric_PotentialDifference",
+    "desc" : "electric potential difference",
+    "unit" : "V"
+  },
 
-14.031
-DPT_Value_Energ
-y
-J
-1 J
-energy
+  "031" : {
+    "name" : "DPT_Value_Energ",
+    "desc" : "energy",
+    "unit" : "J"
+  },
 
-14.032
-DPT_Value_Force
-N
-1 N
-force
+  "032" : {
+    "name" : "DPT_Value_Force",
+    "desc" : "force",
+    "unit" : "N"
+  },
 
-14.033
-DPT_Value_Frequency
-Hz = s
--
-1
-1 Hz
-frequency
+  "033" : {
+    "name" : "DPT_Value_Frequency",
+    "desc" : "frequency",
+    "unit" : "Hz"
+  },
 
-14.036
-DPT_Value_Heat_FlowRate
-W
-1 W
-heat flow rate
+  "036" : {
+    "name" : "DPT_Value_Heat_FlowRate",
+    "desc" : "heat flow rate",
+    "unit" : "W"
+  },
 
-14.037
-DPT_Value_Heat_Quantity
-J
-1 J
-heat, quantity of
+  "037" : {
+    "name" : "DPT_Value_Heat_Quantity",
+    "desc" : "heat, quantity of",
+    "unit" : "J"
+  },
 
-14.038
-DPT_Value_Impedance
-Ω
-1
-Ω
-impedance
+  "038" : {
+    "name" : "DPT_Value_Impedance",
+    "desc" : "impedance",
+    "unit" : "Ω"
+  },
 
-14.039
-DPT_Value_Length
-m
-1 m
-length
+  "039" : {
+    "name" : "DPT_Value_Length",
+    "desc" : "length",
+    "unit" : "m"
+  },
 
-14.051
-DPT_Value_Mass
-kg
-1 kg
-mass
+  "051" : {
+    "name" : "DPT_Value_Mass",
+    "desc" : "mass",
+    "unit" : "kg"
+  },
 
-14.056
-DPT_Value_Power
-W
-1 W
-power
+  "056" : {
+    "name" : "DPT_Value_Power",
+    "desc" : "power",
+    "unit" : "W"
+  },
 
-14.065
-DPT_Value_Speed
-m s
--
-1
-1 m s
--
-1
-speed
+  "065" : {
+    "name" : "DPT_Value_Speed",
+    "desc" : "speed",
+    "unit" : "m/s"
+  },
 
-14.066
-DPT_Value_Stress
-Pa = N m
--
-2
-1 Pa
-stress
+  "066" : {
+    "name" : "DPT_Value_Stress",
+    "desc" : "stress",
+    "unit" : "Pa"
+  },
 
-14.067
-DPT_Value_Surface_Tension
-N m
--
-1
-1 N m
--
-1
-surface tension
+  "067" : {
+    "name" : "DPT_Value_Surface_Tension",
+    "desc" : "surface tension",
+    "unit" : "1/Nm"
+  },
 
-14.068
-DPT_Value_Common_Temperature
-°C
-1°C
-temperature, common
+  "068" : {
+    "name" : "DPT_Value_Common_Temperature",
+    "desc" : "temperature, common",
+    "unit" : "°C"
+  },
 
-14.069
-DPT_Value_Absolute_Temperature
-K
-vK
-temperature (absolute)
+  "069" : {
+    "name" : "DPT_Value_Absolute_Temperature",
+    "desc" : "temperature (absolute)",
+    "unit" : "K"
+  },
 
-14.070
-DPT_Value_TemperatureDifference
-K
-1 K
-temperature difference
+  "070" : {
+    "name" : "DPT_Value_TemperatureDifference",
+    "desc" : "temperature difference",
+    "unit" : "K"
+  },
 
-14.078
-DPT_Value_Weight
-N
-1 N
-weight
+  "078" : {
+    "name" : "DPT_Value_Weight",
+    "desc" : "weight",
+    "unit" : "N"
+  },
 
-14.079
-DPT_Value_Work
-J
-1 J
-work
-*/
+  "079" : {
+    "name" : "DPT_Value_Work",
+    "desc" : "work",
+    "unit" : "J"
+  }
 }

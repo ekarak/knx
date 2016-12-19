@@ -149,7 +149,7 @@ dpts.fromBuffer = function(buf, dpt) {
       value += Math.pow(2, i) * buf[i];
     }
     //console.log('%s %j == %j', dpt.id, dpt.basetype, value);
-
+ // console.log(' ../knx/src/index.js : DPT : ' + JSON.stringify(dpt));   // for exploring dpt and implementing description
     if (dpt.hasOwnProperty('subtype') && dpt.subtype.hasOwnProperty(
         'scalar_range')) {
       var range = (dpt.basetype.hasOwnProperty('range')) ?

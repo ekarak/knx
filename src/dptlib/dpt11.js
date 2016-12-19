@@ -38,9 +38,9 @@ exports.formatAPDU = function(value) {
 exports.fromBuffer = function(buf) {
   if (buf.length != 3) console.trace("Buffer should be 3 bytes long")
   else {
-    var day   = (buf[0] & 0b00011111);
-    var month = (buf[1] & 0b00001111)-1;
-    var year  = (buf[2] & 0b01111111);
+    var day   = (buf[0] & 31);      //0b00011111);
+    var month = (buf[1] & 15) -1 ;  //0b00001111)-1;
+    var year  = (buf[2] & 127);     //0b01111111);
     year = year + (year > 89 ? 1900 : 2000)
     if (day >= 1 & day <= 31 &
       month >= 1 & month <= 12 &
@@ -50,6 +50,8 @@ exports.fromBuffer = function(buf) {
       console.trace(
         "%j => %d/%d/%d is not valid date according to DPT11",
         buf, day, month, year);
+      console.log('setting to 1990/01/01');
+        return new Date(1990, 01, 01);
     }
   }
 }
