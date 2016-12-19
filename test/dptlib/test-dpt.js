@@ -5,7 +5,7 @@ const DPTLib = require('../../src/dptlib');
 const assert = require('assert');
 
 test('resolve', function(t) {
-  t.throws( () => {
+  t.throws(() => {
     DPTLib.resolve('invalid input')
   })
 
@@ -36,9 +36,35 @@ test('resolve', function(t) {
   t.end()
 })
 
+test('DPT1 basic tests', function(t) {
+  var tests = {
+    [0x00]: [false, 0, "false"], [0x01]: [true, 1, "true"],
+  };
+  let dpt = DPTLib.resolve(1);
+  for (var apdu in Object.keys(tests)) {
+    for (var i in tests[apdu]) {
+      var jsval = tests[apdu][i];
+      // backward test (JS value to APDU)
+      converted = DPTLib.formatAPDU(jsval, dpt);
+      //console.log('%s: %j --> %j', dpt.id, rhs, converted)
+      t.ok(apdu == converted,
+        `DPT1.formatAPDU(${jsval}:${typeof jsval}) => ${apdu}, got: ${converted}`
+      )
+    }
+    // forward test (raw data to value)
+    var converted = DPTLib.fromBuffer(apdu, dpt);
+    //console.log('%s: %j --> %j', dpt.id, rhs, converted);
+    t.ok(converted == tests[apdu][0],
+      `DPT1.fromBuffer(${apdu}) => ${tests[apdu][0]}(${typeof tests[apdu][0]})`
+    )
+  }
+
+  t.end()
+})
+
 test('DPT5 scalar conversion', function(t) {
   var tests = [
-    ['DPT5',     [0x00], 0.00],
+    ['DPT5', [0x00], 0.00],
     // 5.001 percentage (0=0..ff=100%)
     ['DPT5.001', [0x00], 0],
     ['DPT5.001', [0x80], 50],
@@ -57,12 +83,14 @@ test('DPT5 scalar conversion', function(t) {
     // forward test (raw data to value)
     let converted = DPTLib.fromBuffer(buf, dpt);
     //console.log('%s: %j --> %j',dpt.id, val, converted);
-    t.ok( Math.abs(converted - val) < 0.0001, `${tests[i][0]} fromBuffer value ${val}`)
+    t.ok(Math.abs(converted - val) < 0.0001,
+      `${tests[i][0]} fromBuffer value ${val}`)
 
     // backward test (value to raw data)
     converted = DPTLib.formatAPDU(val, dpt);
     //console.log('%j --> %j', val, converted)
-    t.ok(Buffer.compare(buf, converted) == 0,  `${tests[i][0]} formatAPDU value ${val}`)
+    t.ok(Buffer.compare(buf, converted) == 0,
+      `${tests[i][0]} formatAPDU value ${val}`)
   }
 
   t.end()
@@ -85,10 +113,12 @@ test('DPT9 floating point conversion', function(t) {
     let val = tests[i][2];
     // forward test (raw data to value)
     let converted = DPTLib.fromBuffer(buf, dpt);
-    t.ok( Math.abs(converted - val) < 0.0001, `${tests[i][0]} fromBuffer value ${val}`)
-    // backward test (value to raw data)
+    t.ok(Math.abs(converted - val) < 0.0001,
+        `${tests[i][0]} fromBuffer value ${val}`)
+      // backward test (value to raw data)
     converted = DPTLib.formatAPDU(val, dpt);
-    t.ok(Buffer.compare(buf, converted) == 0,  `${tests[i][0]} formatAPDU value ${val}`)
+    t.ok(Buffer.compare(buf, converted) == 0,
+      `${tests[i][0]} formatAPDU value ${val}`)
   }
   t.end()
 })
@@ -103,8 +133,7 @@ function timecompare(date1, sign, date2) {
   if (sign === '===') {
     if (hour1 === hour2 && min1 === min2 && sec1 === sec2) return true;
     else return false;
-  }
-  else if (sign === '>') {
+  } else if (sign === '>') {
     if (hour1 > hour2) return true;
     else if (hour1 === hour2 && min1 > min2) return true;
     else if (hour1 === hour2 && min1 === min2 && sec1 > sec2) return true;
@@ -114,8 +143,8 @@ function timecompare(date1, sign, date2) {
 
 test('DPT10 time conversion', function(t) {
   var tests = [
-    ['DPT10', [12,23,34], '12:23:34'],
-    ['DPT10', [15,45,56], '15:45:56']
+    ['DPT10', [12, 23, 34], '12:23:34'],
+    ['DPT10', [15, 45, 56], '15:45:56']
   ]
   for (var i = 0; i < tests.length; i++) {
     let dpt = DPTLib.resolve(tests[i][0]);
@@ -123,10 +152,12 @@ test('DPT10 time conversion', function(t) {
     let val = tests[i][2];
     // forward test (raw data to value)
     let converted = DPTLib.fromBuffer(buf, dpt);
-    t.ok( converted == val, `${tests[i][0]} fromBuffer value ${val} => ${converted}`);
+    t.ok(converted == val,
+      `${tests[i][0]} fromBuffer value ${val} => ${converted}`);
     // backward test (value to raw data)
     converted = DPTLib.formatAPDU(val, dpt);
-    t.ok( Buffer.compare(buf, converted) == 0, `${tests[i][0]} formatAPDU value ${val} => ${converted}`);
+    t.ok(Buffer.compare(buf, converted) == 0,
+      `${tests[i][0]} formatAPDU value ${val} => ${converted}`);
   }
   t.end()
 })
@@ -139,8 +170,8 @@ function dateequals(d1, d2) {
 }
 test('DPT11 date conversion', function(t) {
   var tests = [
-    ['DPT11', [25,12,95], new Date('1995-12-25')],
-    ['DPT11', [0x16,0x0B,0x10], new Date('2016-11-22')]
+    ['DPT11', [25, 12, 95], new Date('1995-12-25')],
+    ['DPT11', [0x16, 0x0B, 0x10], new Date('2016-11-22')]
   ]
   for (var i = 0; i < tests.length; i++) {
     var dpt = DPTLib.resolve(tests[i][0]);
@@ -148,10 +179,14 @@ test('DPT11 date conversion', function(t) {
     var val = tests[i][2];
     // forward test (raw data to value)
     var converted = DPTLib.fromBuffer(buf, dpt);
-    t.ok( dateequals(val, converted), `${tests[i][0]} fromBuffer value ${val} => ${JSON.stringify(converted)}`);
+    t.ok(dateequals(val, converted),
+      `${tests[i][0]} fromBuffer value ${val} => ${JSON.stringify(converted)}`
+    );
     // backward test (value to raw data)
     converted = DPTLib.formatAPDU(val, dpt);
-    t.ok( Buffer.compare(buf, converted) == 0, `${tests[i][0]} formatAPDU value ${val} => ${JSON.stringify(converted)}`);
+    t.ok(Buffer.compare(buf, converted) == 0,
+      `${tests[i][0]} formatAPDU value ${val} => ${JSON.stringify(converted)}`
+    );
   }
   t.end()
 })
