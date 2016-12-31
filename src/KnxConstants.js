@@ -79,6 +79,7 @@ KnxConstants.MESSAGECODES = {
   "L_Raw.ind":       0x2D,
   "L_Data.con":      0x2E,
   "L_Raw.con":       0x2F
+// ETS5 decimal 197 == ???,
 };
 
 KnxConstants.APCICODES =
