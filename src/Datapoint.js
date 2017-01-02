@@ -56,15 +56,17 @@ Datapoint.prototype.bind = function(conn) {
         // TODO: add default handler; maybe emit warning?
     }
   });
-  // issue a GroupValue_Read request to try to get the initial state from the bus (if any)
-  if (conn.conntime) {
-    // immediately or...
-    this.read();
-  } else {
-    // ... when the connection is established
-    conn.on('connected', function() {
-      self.read();
-    });
+  if (this.options.autoread) {
+    // issue a GroupValue_Read request to try to get the initial state from the bus (if any)
+    if (conn.conntime) {
+      // immediately or...
+      this.read();
+    } else {
+      // ... when the connection is established
+      conn.on('connected', function() {
+        self.read();
+      });
+    }
   }
 }
 

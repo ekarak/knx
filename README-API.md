@@ -51,7 +51,7 @@ works correctly (eg. temperatures as 16bit floats), and values are being transla
 to Javascript objects and back.
 
 ```js
-// declare a simple binary control
+// declare a simple binary control datapoint
 var binary_control = new knx.Datapoint({ga: '1/0/1', dpt: 'DPT1.001'});
 // bind it to the active connection
 binary_control.bind(connection);
@@ -63,6 +63,8 @@ binary_control.read( function (response) {
   };
 // or declare a dimmer control
 var dimmer_control = new knx.Datapoint({ga: '1/2/33', dpt: 'DPT3.007'});
+// declare a binary STATUS datapoint, which will automatically read off its value
+var binary_status = new knx.Datapoint({ga: '1/0/1', dpt: 'DPT1.001', autoread: true});
 ```
 
 Datapoints need to be bound to a connection. This can be done either at their
