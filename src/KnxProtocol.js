@@ -371,14 +371,16 @@ KnxProtocol.define('APDU', {
     }).tap(function (hdr) {
       // Parse the APDU. tcpi/apci bits split across byte boundary.
       // Typical example of protocol designed by committee.
-      if (KnxProtocol.debug) console.log('%j', hdr);
-      var apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
-      hdr.tpci = apdu.tpci;
-      hdr.apci = KnxConstants.APCICODES[apdu.apci];
-      // APDU data should ALWAYS be a buffer, even for 1-bit payloads
-      hdr.data = (hdr.apdu_length > 1) ?
-        hdr.apdu_raw.slice(2) :
-        new Buffer([apdu.data]);
+      if (KnxProtocol.debug) console.log(' APDU read: %j', hdr);
+      if (hdr.apdu_length > 0) {
+        var apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
+        hdr.tpci = apdu.tpci;
+        hdr.apci = KnxConstants.APCICODES[apdu.apci];
+        // APDU data should ALWAYS be a buffer, even for 1-bit payloads
+        hdr.data = (hdr.apdu_length > 1) ?
+          hdr.apdu_raw.slice(2) :
+          new Buffer([apdu.data]);
+      }
     })
     .popStack(propertyName, function (data) {
       return data;
@@ -386,26 +388,32 @@ KnxProtocol.define('APDU', {
   },
   write: function (value) {
     if (!value)      throw "cannot write null APDU value";
-    if (KnxConstants.APCICODES.indexOf(value.apci) == -1) throw "invalid APCI code: "+value.apci;
     var total_length = knxlen('APDU', value);
     if (KnxProtocol.debug) console.log('APDU.write: \t%j (total %d bytes)', value, total_length);
-    if (total_length < 3) throw util.format("APDU is too small (%d bytes)", total_length);
-    if (total_length > 17) throw util.format("APDU is too big (%d bytes)", total_length);
-    // camel designed by committee: total length MIGHT or MIGHT NOT include the payload
-    //     APDU length (1 byte) + TPCI/APCI: 6+4 bits + DATA: 6 bits (2 bytes)
-    // OR: APDU length (1 byte) + TPCI/APCI: 6+4(+6 unused) bits (2bytes) + DATA: (1 to 14 bytes))
-    this.UInt8(total_length - 2);
-    var word =
-      value.tpci * 0x400 +
-      KnxConstants.APCICODES.indexOf(value.apci) * 0x40;
-    //
-    if (total_length == 3) {
-      word += parseInt(isFinite(value.data) ? value.data : value.data[0]);
-      this.UInt16BE(word);
+    if (KnxConstants.APCICODES.indexOf(value.apci) == -1) {
+      //throw util.format("invalid APCI code: %j", value);
+      this.UInt8(value.apdu_raw.length-1);
+      this.raw(value.apdu_raw)
     } else {
-      this.UInt16BE(word);
-      // payload follows TPCI+APCI word
-      this.raw(value.data, value.data.length);
+
+      if (total_length < 3) throw util.format("APDU is too small (%d bytes)", total_length);
+      if (total_length > 17) throw util.format("APDU is too big (%d bytes)", total_length);
+      // camel designed by committee: total length MIGHT or MIGHT NOT include the payload
+      //     APDU length (1 byte) + TPCI/APCI: 6+4 bits + DATA: 6 bits (2 bytes)
+      // OR: APDU length (1 byte) + TPCI/APCI: 6+4(+6 unused) bits (2bytes) + DATA: (1 to 14 bytes))
+      this.UInt8(total_length - 2);
+      var word =
+        value.tpci * 0x400 +
+        KnxConstants.APCICODES.indexOf(value.apci) * 0x40;
+      //
+      if (total_length == 3) {
+        word += parseInt(isFinite(value.data) ? value.data : value.data[0]);
+        this.UInt16BE(word);
+      } else {
+        this.UInt16BE(word);
+        // payload follows TPCI+APCI word
+        this.raw(value.data, value.data.length);
+      }
     }
   }
 });
@@ -413,6 +421,8 @@ KnxProtocol.define('APDU', {
 /* APDU length is truly chaotic: header and data can be interleaved (but
 not always!), so that apdu_length=1 means _2_ bytes following the apdu_length */
 KnxProtocol.lengths['APDU'] = function(value) {
+  // if we have the APDU raw buffer, then simply use its length
+  if (value.apdu_raw && value.apdu_raw.length) return value.apdu_raw.length+1;
   // not all requests carry a value; eg read requests
   if (!value.data) value.data = 0;
   if (value.data.length) {
