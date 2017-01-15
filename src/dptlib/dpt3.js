@@ -9,14 +9,15 @@
 exports.formatAPDU = function(value) {
   if (!value) console.trace("DPT3: cannot write null value");
   else {
-    var apdu_data;
+    var apdu_data = new Buffer(1);
     if (typeof value == 'object' &&
       value.hasOwnProperty('decr_incr') &&
       value.hasOwnProperty('data')) {
-      apdu_data = (value.decr_incr << 4) + (value.data & 0xb00000111);
+      apdu_data[0] = (value.decr_incr << 3) + (value.data & 0b00000111);
     } else {
       console.trace("Must supply a value object of {decr_incr, data}");
     }
+    //console.log('formatAPU returns %j', apdu_data);
     return apdu_data;
   }
 }
@@ -24,9 +25,11 @@ exports.formatAPDU = function(value) {
 exports.fromBuffer = function(buf) {
   if (buf.length != 1) {
     console.trace("DPT3: Buffer should be 1 byte long");
-  } else return {
-    decr_incr: (buf & 0xb00001000) >> 3,
-    data: (buf & 0xb00000111)
+  } else {
+    return {
+      decr_incr: (buf[0] & 0b00001000) >> 3,
+      data:      (buf[0] & 0b00000111)
+    }
   };
 }
 
