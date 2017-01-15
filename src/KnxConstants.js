@@ -78,8 +78,8 @@ KnxConstants.MESSAGECODES = {
   "L_Busmon.ind":    0x2B,
   "L_Raw.ind":       0x2D,
   "L_Data.con":      0x2E,
-  "L_Raw.con":       0x2F
-// ETS5 decimal 197 == ???,
+  "L_Raw.con":       0x2F,
+  "ETS.Dummy1":      0xC1 // UNKNOWN: see https://bitbucket.org/ekarak/knx.js/issues/23
 };
 
 KnxConstants.APCICODES =
@@ -89,7 +89,6 @@ KnxConstants.APCICODES =
   "Memory_Read", "Memory_Response", "Memory_Write",
   "UserMemory", "DeviceDescriptor_Read", "DeviceDescriptor_Response",
   "Restart", "OTHER"]
-
 
   /* TODO helper function to print enum keys */
 KnxConstants.keyText = function(mapref, value) {
