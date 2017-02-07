@@ -16,12 +16,12 @@ var connection = knx.Connection({
       setupDatapoint('1/1/6', '1/1/106');
       setupDatapoint('1/1/7', '1/1/107');
       dp8 = setupDatapoint('1/1/8', '1/1/108');
-      setTimeout(function () {
+/*      setTimeout(function () {
         dp8.write(1);
         setTimeout(function () {
           dp8.write(0);
         }, 3000);
-      }, 3000);
+      }, 3000); */
     },
     event: function (evt, src, dest, value) {
       console.log("%s ===> %s <===, src: %j, dest: %j, value: %j",
@@ -33,9 +33,14 @@ var connection = knx.Connection({
 });
 
 function setupDatapoint(groupadress, statusga) {
-  var dp = new knx.Datapoint({ga: groupadress, status_ga: statusga, dpt: "DPT1.001"}, connection);
+  var dp = new knx.Datapoint({
+    ga: groupadress,
+    status_ga: statusga,
+    dpt: "DPT1.001",
+    autoread: true}, connection);
   dp.on('change', (oldvalue, newvalue) => {
     console.log("**** %s current value: %j", groupadress, newvalue);
+    console.log("options.ga==%s", dp.options.ga);
   });
   return dp;
 }
