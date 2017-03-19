@@ -126,8 +126,8 @@ module.exports = machina.Fsm.extend({
       inbound_DISCONNECT_RESPONSE: function (datagram) {
         this.debugPrint(util.format('got disconnect response'));
         this.disconnected();
-        this.emit( 'disconnected' );
         this.transition( 'uninitialized');
+        this.emit( 'disconnected' );
       },
     },
 
@@ -197,9 +197,9 @@ module.exports = machina.Fsm.extend({
         //
         this.connstatetimer = setTimeout( function() {
           var msg = 'timed out waiting for CONNECTIONSTATE_RESPONSE';
-          sm.emit('error', msg);
           sm.debugPrint(msg);
           sm.transition( 'connecting' );
+          sm.emit('error', msg);
         }.bind( this ), 1000 );
       },
       _onExit: function() {
@@ -214,8 +214,8 @@ module.exports = machina.Fsm.extend({
           default:
             this.debugPrint(util.format(
               '*** error: %s *** (connstate.code: %d)', state, datagram.connstate.status));
-            this.emit('error', state);
             this.transition( 'connecting' );
+            this.emit('error', state);
         }
       },
       "*": function ( data ) {
@@ -258,8 +258,8 @@ module.exports = machina.Fsm.extend({
         this.tunnelingAckTimer = setTimeout( function() {
           sm.debugPrint('timed out waiting for TUNNELING_ACK');
           // TODO: resend datagram, up to 3 times
-          sm.emit('tunnelreqfailed', datagram);
           sm.transition( 'idle' );
+          sm.emit('tunnelreqfailed', datagram);
         }.bind( this ), 2000 );
       },
       _onExit: function () {
@@ -283,8 +283,8 @@ module.exports = machina.Fsm.extend({
         var sm = this;
         sm.seqnumRecv = datagram.tunnstate.seqnum;
         sm.acknowledge(datagram);
-        sm.emitEvent(datagram);
         sm.transition( 'idle' );
+        sm.emitEvent(datagram);
       },
       "*": function ( data ) {
         this.debugPrint(util.format('*** deferring Until Transition %j', data));

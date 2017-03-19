@@ -59,7 +59,7 @@ for (var i = 0; i < dirEntries.length; i++) {
 // DPTs might come in as 9/"9"/"9.001"/"DPT9.001"
 dpts.resolve = function(dptid) {
   if (typeof dptid == 'string') {
-    var m = dptid.toUpperCase().match(/(\d+)(\.(\d+))?/);
+    var m = dptid.toUpperCase().match(/(?:DPT)?(\d+)(\.(\d+))?/);
     var dpt = cloneDpt(dpts[util.format('DPT%s', m[1])]);
     if (!dpt) throw "no such DPT: " + dpt;
     if (m[3]) {
