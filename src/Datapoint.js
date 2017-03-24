@@ -100,7 +100,7 @@ Datapoint.prototype.write = function(value) {
   if (typeof this.dpt.formatAPDU == 'function') {
     apdu_data = this.dpt.formatAPDU(value);
   }
-  this.conn.write(this.options.ga, apdu_data, this.dptid, function() {
+  this.conn.write(this.options.ga, apdu_data, undefined, function() {
     // once we've written to the bus, update internal state
     self.update(value);
   });
