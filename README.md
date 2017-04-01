@@ -46,7 +46,7 @@ KNX events, what a joy:
 
 ## And why should I bother?
 
-The main cause for writing my own KNX access layer is that I couldn't find a *robust* access layer that properly handles state management.
+The main cause for writing my own KNX protocol stack is that I couldn't find a *robust* access layer that properly handles state management.
 Connections tend to fail all the time; consider flakey Wi-Fi, RRR's (Recalcitrant Rebooting Routers), bad karma, it happens all the time. A KNX access layer should be *resilient* and be able to recover if needed.
 
 Also, although seemingly innocent, the consecutive calls to *read()* and then *write()* on the same group address will either *confuse* your KNX IP router, or *return incoherent results*.

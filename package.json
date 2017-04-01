@@ -1,7 +1,7 @@
 {
   "name": "knx",
   "description": "KNXnet/IP protocol implementation for Node(>=4.x)",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "engines": {
     "node": ">=4"
   },
@@ -30,8 +30,8 @@
   }],
   "keywords": [
     "knx",
-    "eibd",
-    "house automation"
+    "smart home",
+    "building automation"
   ],
   "dependencies": {
     "binary-parser": "1.1.5",

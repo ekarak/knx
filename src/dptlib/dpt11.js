@@ -1,7 +1,8 @@
 /**
-* knx.js - a pure Javascript library for KNX
-* (C) 2016 Elias Karakoulakis
+* knx.js - a KNX protocol stack in pure Javascript
+* (C) 2016-2017 Elias Karakoulakis
 */
+
 const util = require('util');
 //
 // DPT11.*: date

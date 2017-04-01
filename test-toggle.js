@@ -1,3 +1,8 @@
+/**
+* knx.js - a KNX protocol stack in pure Javascript
+* (C) 2016-2017 Elias Karakoulakis
+*/
+
 var knx = require('knx');
 
 if (process.argv.length < 3) {

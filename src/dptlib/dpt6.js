@@ -1,8 +1,7 @@
 /**
-* knx.js - a pure Javascript library for KNX
-* (C) 2016 Elias Karakoulakis
+* knx.js - a KNX protocol stack in pure Javascript
+* (C) 2016-2017 Elias Karakoulakis
 */
-
 
 // Bitstruct to parse a DPT6 frame (8-bit signed integer)
 // Always 8-bit aligned.

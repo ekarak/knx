@@ -1,15 +1,11 @@
 /**
- * knx.js - a pure Javascript library for KNX
- * (C) 2016 Elias Karakoulakis
- */
+* knx.js - a KNX protocol stack in pure Javascript
+* (C) 2016-2017 Elias Karakoulakis
+*/
 
 const util = require('util');
 const dgram = require('dgram');
 
-/// <summary>
-///     Initializes a new KNX tunneling connection with provided values. Make sure the local system allows
-///     UDP messages to the localIpAddress and localPort provided
-/// </summary>
 function IpTunnelingConnection(instance, options) {
 
   instance.BindSocket = function(cb) {
@@ -23,9 +19,6 @@ function IpTunnelingConnection(instance, options) {
     return udpSocket;
   }
 
-  // <summry>
-  ///     Start the connection
-  /// </summary>
   instance.Connect = function() {
     var sm = this;
     this.localAddress = this.getLocalAddress();

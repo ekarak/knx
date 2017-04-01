@@ -1,4 +1,8 @@
-'use strict';
+/**
+* knx.js - a KNX protocol stack in pure Javascript
+* (C) 2016-2017 Elias Karakoulakis
+*/
+
 const knxnetprotocol = require('../../src/KnxProtocol.js');
 const assert = require('assert');
 const test = require('tape');
