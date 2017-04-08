@@ -82,8 +82,8 @@ dpts.resolve = function(dptid) {
  * --  1) checks if the value adheres to the range set from the DPT's bitlength
  */
 dpts.formatAPDU = function(value, dpt) {
-  var nbytes = Math.ceil(dpt.basetype.bitlength / 8);
-  //console.log('%s: %d bytes', dpt.id, nbytes);
+  var nbytes = 1 + Math.floor(dpt.basetype.bitlength / 8);
+  console.log('*** dptlib.formatAPDU %s: %d bytes', dpt.id, nbytes);
   var apdu_data = new Buffer(nbytes);
   var tgtvalue;
   // get the raw APDU data for the given JS value
@@ -122,11 +122,11 @@ dpts.formatAPDU = function(value, dpt) {
     }
     for (var i = 0; i < nbytes; i++) {
       apdu_data[i] = tgtvalue % 256;
-      //console.log('apdu_data[%d] == %j', i, apdu_data[i]);
+      console.log('apdu_data[%d] == %j', i, apdu_data[i]);
       tgtvalue = tgtvalue >> 8;
     }
   }
-  //  console.log('generic formatAPDU value=%j => apdu=%j', value, apdu_data);
+    console.log('generic formatAPDU value=%j => apdu=%j', value, apdu_data);
   return apdu_data;
 }
 
