@@ -30,17 +30,17 @@ test('DPT5 scalar conversion', function(t) {
     let buf = new Buffer(tests[i][1]);
     let val = tests[i][2];
 
-    // forward test (raw data to value)
+    // unmarshalling test (raw data to value)
     let converted = DPTLib.fromBuffer(buf, dpt);
     //console.log('%s: %j --> %j',dpt.id, val, converted);
     t.ok(Math.abs(converted - val) < 0.0001,
-      `${tests[i][0]} fromBuffer value ${val}`)
+      `${tests[i][0]} unmarshalling fromBuffer ${val}`)
 
-    // backward test (value to raw data)
+    // marshalling test (value to raw data)
     converted = DPTLib.formatAPDU(val, dpt);
-    //console.log('%j --> %j', val, converted)
-    t.ok(Buffer.compare(buf, converted) == 0,
-      `${tests[i][0]} formatAPDU value ${val}`)
+    console.log('%j --> %j', val, converted)
+    t.ok(Buffer.compare(buf, converted.data) == 0,
+      `${tests[i][0]} marshalling formatAPDU ${val}`)
   }
 
   t.end()

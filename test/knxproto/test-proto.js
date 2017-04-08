@@ -8,6 +8,28 @@ const assert = require('assert');
 const test = require('tape');
 knxnetprotocol.debug = true;
 
+//
+test('KNX protocol reader', function(t) {
+  var tests = {
+    "ETS5 programming request": new Buffer([
+      6, 16,   4,  32,  0,  20,  4,  34,
+      1,  0, 197,   0, 17, 252, 17, 253,
+      17, 1,   0, 238
+    ])
+  };
+  Object.keys(tests).forEach((key, idx) => {
+    var buf = tests[key];
+    // unmarshal from a buffer...
+    var reader = knxnetprotocol.createReader(buf);
+    var writer = knxnetprotocol.createWriter();
+    reader.KNXNetHeader('tmp');
+    var decoded = reader.next()['tmp'];
+    console.log("\n=== %s: %j ===> %j", key, buf, decoded);
+    t.ok(decoded != undefined, `${key}: unmarshaled KNX datagram`);
+  });
+  t.end();
+});
+
 test('KNX protocol reader/writer', function(t) {
   var tests = {
     CONNECT_REQUEST: new Buffer(
@@ -22,12 +44,10 @@ test('KNX protocol reader/writer', function(t) {
       "061004200015040200002e00bce000000832010081", 'hex'),
     "tunneling request (GroupValue_Write) apdu=2byte": new Buffer(
       "061004200016040201002900bce00000083b0200804a", 'hex'),
-    DISCONNECT_REQUEST: new Buffer([6, 16, 2, 9, 0, 16, 142, 142, 8, 1,
-      192, 168, 2, 222, 14, 87
+    DISCONNECT_REQUEST: new Buffer([
+      6,  16,   2, 9, 0, 16, 142, 142,
+      8, 1,  192, 168, 2, 222, 14, 87
     ]),
-    "ETS5 programming request": new Buffer([6, 16, 4, 32, 0, 20, 4, 34, 1,
-      0, 197, 0, 17, 252, 17, 253, 17, 1, 0, 238
-    ])
   };
   Object.keys(tests).forEach((key, idx) => {
     var buf = tests[key];
@@ -37,15 +57,14 @@ test('KNX protocol reader/writer', function(t) {
     reader.KNXNetHeader('tmp');
     var decoded = reader.next()['tmp'];
     console.log("\n=== %s: %j ===> %j", key, buf, decoded);
-    t.ok(decoded != undefined, `${key}: could not decode packet`);
+    t.ok(decoded != undefined, `${key}: unmarshaled KNX datagram`);
     // then marshal the datagram again into a buffer...
     writer.KNXNetHeader(decoded);
     if (Buffer.compare(buf, writer.buffer) != 0) {
-      console.log(
-        "\n\n========\n  OOPS: %s\n========\nbuffer is different: %s",
-        key, JSON.stringify(decoded, null, 4));
-      console.log(buf);
-      console.log(writer.buffer);
+      console.log("\n\n========\n  FAIL: %s\n========\nbuffer is different:\n", key);
+      console.log('             0 1 2 3 4 5|6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9')
+      console.log('expected   : %s', buf.toString('hex'));
+      console.log('got instead: %s', writer.buffer.toString('hex'));
     }
     t.ok(Buffer.compare(buf, writer.buffer) == 0);
   });
@@ -133,7 +152,7 @@ test('KNX protocol composer', function(t) {
     },
 
     "compose tunneling request (write) apdu=2byte - DIMMING a light to 10%": {
-      hexbuf: "061004200015040200002e00bce0000008320200800a",
+      hexbuf: "061004200016040200002e00bce0000008320200800a",
       dgram: {
         header_length: 6,
         protocol_version: 16,
@@ -163,6 +182,7 @@ test('KNX protocol composer', function(t) {
           src_addr: '0.0.0',
           dest_addr: '1/0/50',
           apdu: {
+            bitlength: 8,
             tpci: 0,
             apci: 'GroupValue_Write',
             data: [10]

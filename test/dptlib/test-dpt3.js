@@ -21,16 +21,16 @@ test('DPT3 4-bit dimming and blinds control', function(t) {
     let buf = new Buffer(tests[i][1]);
     let val = tests[i][2];
 
-    // forward test (raw data to value)
+    // unmarshalling test (binary data to value)
     let converted = DPTLib.fromBuffer(buf, dpt);
     //console.log('%s: %j --> %j',dpt.id, val, converted);
     t.deepEqual(converted, val,
       `${tests[i][0]} fromBuffer value ${JSON.stringify(val)}`)
 
-    // backward test (value to raw data)
+    // marshalling test (value to binary data)
     converted = DPTLib.formatAPDU(val, dpt);
     //console.log('%j --> %j', val, converted);
-    t.ok(Buffer.compare(buf, converted) == 0,
+    t.ok(Buffer.compare(buf, converted.data) == 0,
       `formatAPDU(${JSON.stringify(val)})`)
   }
 

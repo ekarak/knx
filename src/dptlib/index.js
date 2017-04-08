@@ -76,20 +76,23 @@ dpts.resolve = function(dptid) {
   throw "no such DPT: " + dpt;
 }
 
-/* format an APDU from a given Javascript value for the given DPT
+/* format an APDU object from a given Javascript value for the given DPT
  * - either by a custom DPT formatAPDU function
  * - or by this generic version, which:
  * --  1) checks if the value adheres to the range set from the DPT's bitlength
  */
 dpts.formatAPDU = function(value, dpt) {
-  var nbytes = 1 + Math.floor(dpt.basetype.bitlength / 8);
+  var nbytes = Math.ceil(dpt.basetype.bitlength / 8);
   console.log('*** dptlib.formatAPDU %s: %d bytes', dpt.id, nbytes);
-  var apdu_data = new Buffer(nbytes);
+  var apdu = {
+    data: new Buffer(nbytes),
+    bitlength: dpt.basetype.bitlength || 1
+  };
   var tgtvalue;
   // get the raw APDU data for the given JS value
   if (typeof dpt.formatAPDU == 'function') {
     // nothing to do here, DPT-specific formatAPDU implementation will handle everything
-    apdu_data = dpt.formatAPDU(value);
+    apdu.data = dpt.formatAPDU(value);
   } else {
     if (!isFinite(value)) throw util.format("Invalid value, expected a %s",
       dpt.desc);
@@ -121,13 +124,13 @@ dpts.formatAPDU = function(value, dpt) {
       }
     }
     for (var i = 0; i < nbytes; i++) {
-      apdu_data[i] = tgtvalue % 256;
-      console.log('apdu_data[%d] == %j', i, apdu_data[i]);
+      apdu.data[i] = tgtvalue % 256;
+      //console.log('apdu.data[%d] == %j', i, apdu.data[i]);
       tgtvalue = tgtvalue >> 8;
     }
   }
-    console.log('generic formatAPDU value=%j => apdu=%j', value, apdu_data);
-  return apdu_data;
+  console.log('generic formatAPDU value=%j => apdu=%j', value, apdu);
+  return apdu;
 }
 
 /* get the correct Javascript value from a APDU buffer for the given DPT

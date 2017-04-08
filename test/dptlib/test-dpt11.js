@@ -13,6 +13,7 @@ function dateequals(d1, d2) {
   var y = d1.getFullYear();
   return (d == d2.getDate() && m == d2.getMonth() && y == d2.getFullYear());
 }
+
 test('DPT11 date conversion', function(t) {
   var tests = [
     ['DPT11', [25, 12, 95], new Date('1995-12-25')],
@@ -22,14 +23,16 @@ test('DPT11 date conversion', function(t) {
     var dpt = DPTLib.resolve(tests[i][0]);
     var buf = new Buffer(tests[i][1]);
     var val = tests[i][2];
-    // forward test (raw data to value)
+
+    // unmarshalling test (raw data to value)
     var converted = DPTLib.fromBuffer(buf, dpt);
     t.ok(dateequals(val, converted),
       `${tests[i][0]} fromBuffer value ${val} => ${JSON.stringify(converted)}`
     );
-    // backward test (value to raw data)
+
+    // marshalling test (value to raw data)
     converted = DPTLib.formatAPDU(val, dpt);
-    t.ok(Buffer.compare(buf, converted) == 0,
+    t.ok(Buffer.compare(buf, converted.data) == 0,
       `${tests[i][0]} formatAPDU value ${val} => ${JSON.stringify(converted)}`
     );
   }
