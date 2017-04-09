@@ -498,11 +498,15 @@ KnxProtocol.define('CEMI', {
       .UInt8(ctrlField2)
       .raw(KnxAddress.parse(value.src_addr, KnxAddress.TYPE.PHYSICAL), 2)
       .raw(KnxAddress.parse(value.dest_addr, value.ctrl.destAddrType), 2);
-    // only need to marshal an APDU if this is a L_Data indication/confirmation
-    if (value.msgcode == KnxConstants.MESSAGECODES['L_Data.ind'] ||
-        value.msgcode == KnxConstants.MESSAGECODES['L_Data.con']) {
-      if (value.apdu === null) throw "no APDU supplied";
-      this.APDU(value.apdu);
+    // only need to marshal an APDU if this is a
+    // L_Data.* (requet/indication/confirmation)
+    switch (value.msgcode) {
+      case KnxConstants.MESSAGECODES['L_Data.req']:
+      case KnxConstants.MESSAGECODES['L_Data.ind']:
+      case KnxConstants.MESSAGECODES['L_Data.con']: {
+        if (value.apdu === null) throw "no APDU supplied";
+        this.APDU(value.apdu);
+      }
     }
   }
 });
