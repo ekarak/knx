@@ -9,7 +9,7 @@ const test = require('tape');
 knxnetprotocol.debug = true;
 
 //
-test('KNX protocol reader', function(t) {
+test('KNX protocol unmarshaller', function(t) {
   var tests = {
     "ETS5 programming request": new Buffer([
       6, 16,   4,  32,  0,  20,  4,  34,
@@ -30,7 +30,7 @@ test('KNX protocol reader', function(t) {
   t.end();
 });
 
-test('KNX protocol reader/writer', function(t) {
+test('KNX protocol marshal+unmarshal', function(t) {
   var tests = {
     CONNECT_REQUEST: new Buffer(
       "06100205001a0801c0a80ab3d96d0801c0a80ab3d83604040200", 'hex'),
@@ -71,7 +71,7 @@ test('KNX protocol reader/writer', function(t) {
   t.end();
 });
 
-test('KNX protocol composer', function(t) {
+test('KNX protocol marshaller', function(t) {
   var tests = {
     "compose tunneling request (write) apdu=1byte - turn ON a light": {
       hexbuf: "061004200015040200002e00bce000000832010081",
@@ -192,12 +192,12 @@ test('KNX protocol composer', function(t) {
     },
 
     "temperature response, apdu=2-byte": {
-      hexbuf: "2900BCD0110B000F0300400730",
+      hexbuf: "061004200017040200002e00BCD0110B000F0300400730",
       dgram: {
         header_length: 6,
         protocol_version: 16,
         service_type: 1056,
-        total_length: 21,
+        total_length: 22,
         tunnstate: {
           header_length: 4,
           channel_id: 2,
@@ -216,10 +216,10 @@ test('KNX protocol composer', function(t) {
             acknowledge: 0,
             confirm: 0,
             destAddrType: 1,
-            hopCount: 6,
+            hopCount: 5,
             extendedFrame: 0
           },
-          src_addr: '0.0.0',
+          src_addr: '1.1.11',
           dest_addr: '0/0/15',
           apdu: {
             bitlength: 16,
@@ -238,7 +238,7 @@ test('KNX protocol composer', function(t) {
     var buf = typeof testcase.hexbuf == 'string' ?
         new Buffer(testcase.hexbuf.replace(/\s/g, ''), 'hex') : hexbuf;
     console.log("\n=== %s", key);
-    // serialize the test datagram
+    // marshal the test datagram
     var writer = knxnetprotocol.createWriter();
     writer.KNXNetHeader(testcase.dgram);
     if (Buffer.compare(buf, writer.buffer) != 0) {

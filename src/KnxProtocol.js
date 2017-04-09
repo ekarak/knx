@@ -371,16 +371,14 @@ KnxProtocol.define('APDU', {
     }).tap(function (hdr) {
       // Parse the APDU. tcpi/apci bits split across byte boundary.
       // Typical example of protocol designed by committee.
-      if (KnxProtocol.debug) console.log(' APDU read: %j', hdr);
-//      if (hdr.apdu_length > 0) {
-        var apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
-        hdr.tpci = apdu.tpci;
-        hdr.apci = KnxConstants.APCICODES[apdu.apci];
-        // APDU data should ALWAYS be a buffer, even for 1-bit payloads
-        hdr.data = (hdr.apdu_length > 1) ?
-          hdr.apdu_raw.slice(2) :
-          new Buffer([apdu.data]);
-//      }
+      var apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
+      hdr.tpci = apdu.tpci;
+      hdr.apci = KnxConstants.APCICODES[apdu.apci];
+      // APDU data should ALWAYS be a buffer, even for 1-bit payloads
+      hdr.data = (hdr.apdu_length > 1) ?
+        hdr.apdu_raw.slice(2) :
+        new Buffer([apdu.data]);
+      if (KnxProtocol.debug) console.log(' unmarshalled APDU: %j', hdr);
     })
     .popStack(propertyName, function (data) {
       return data;
@@ -421,10 +419,11 @@ KnxProtocol.define('APDU', {
 not always!), so that apdu_length=1 means _2_ bytes following the apdu_length */
 KnxProtocol.lengths['APDU'] = function(value) {
   if (!value) return 0;
-  // if we have the APDU bitlength, then simply use it
+  // if we have the APDU bitlength, usually by the DPT, then simply use it
   if (value.bitlength) {
-    console.log('+++ bitlength override=%d', 3 + Math.floor(value.bitlength / 8));
-    return 3 + Math.ceil(value.bitlength / 8);
+    // KNX spec states that up to 6 bits of payload must fit into the TPCI
+    // if payload larger than 6 bits, than append it AFTER the TPCI
+    return 3 + (value.bitlength > 6 ? Math.ceil(value.bitlength / 8) : 0);
   }
   // not all requests carry a value; eg read requests
   if (!value.data) value.data = 0;
@@ -464,10 +463,13 @@ KnxProtocol.define('CEMI', {
       // KNX source addresses are always physical
       hdr.src_addr  = KnxAddress.toString(hdr.src_addr, KnxAddress.TYPE.PHYSICAL);
       hdr.dest_addr = KnxAddress.toString(hdr.dest_addr, hdr.ctrl.destAddrType);
-      if (hdr.msgcode == KnxConstants.MESSAGECODES['L_Data.ind'] ||
-          hdr.msgcode == KnxConstants.MESSAGECODES['L_Data.con']) {
-        this.APDU('apdu');
-        if (KnxProtocol.debug) console.log('--- read APDU from CEMI==%s', hdr.apdu);
+      switch (hdr.msgcode) {
+        case KnxConstants.MESSAGECODES['L_Data.req']:
+        case KnxConstants.MESSAGECODES['L_Data.ind']:
+        case KnxConstants.MESSAGECODES['L_Data.con']: {
+          this.APDU('apdu');
+          if (KnxProtocol.debug) console.log('--- unmarshalled APDU ==> %j', hdr.apdu);
+        }
       }
       return hdr;
     })
