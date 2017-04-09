@@ -31,8 +31,9 @@ test('DPT11 date conversion', function(t) {
     );
 
     // marshalling test (value to raw data)
-    converted = DPTLib.formatAPDU(val, dpt);
-    t.ok(Buffer.compare(buf, converted.data) == 0,
+    var apdu = {};
+    DPTLib.populateAPDU(val, apdu, 'dpt11');
+    t.ok(Buffer.compare(buf, apdu.data) == 0,
       `${tests[i][0]} formatAPDU value ${val} => ${JSON.stringify(converted)}`
     );
   }

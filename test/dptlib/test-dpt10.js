@@ -41,8 +41,9 @@ test('DPT10 time conversion', function(t) {
       `${tests[i][0]} fromBuffer value ${val} => ${converted}`);
 
     // marshalling test (value to raw data)
-    converted = DPTLib.formatAPDU(val, dpt);
-    t.ok(Buffer.compare(buf, converted.data) == 0,
+    var apdu = {};
+    DPTLib.populateAPDU(val, apdu, 'dpt10');
+    t.ok(Buffer.compare(buf, apdu.data) == 0,
       `${tests[i][0]} formatAPDU value ${val} => ${converted}`);
   }
   t.end()

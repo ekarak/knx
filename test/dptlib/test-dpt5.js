@@ -37,9 +37,10 @@ test('DPT5 scalar conversion', function(t) {
       `${tests[i][0]} unmarshalling fromBuffer ${val}`)
 
     // marshalling test (value to raw data)
-    converted = DPTLib.formatAPDU(val, dpt);
-    console.log('%j --> %j', val, converted)
-    t.ok(Buffer.compare(buf, converted.data) == 0,
+    var apdu = {};
+    DPTLib.populateAPDU(val, apdu, tests[i][0]);
+    console.log('%j --> %j', val, apdu)
+    t.ok(Buffer.compare(buf, apdu.data) == 0,
       `${tests[i][0]} marshalling formatAPDU ${val}`)
   }
 

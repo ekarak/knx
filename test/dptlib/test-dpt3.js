@@ -28,10 +28,11 @@ test('DPT3 4-bit dimming and blinds control', function(t) {
       `${tests[i][0]} fromBuffer value ${JSON.stringify(val)}`)
 
     // marshalling test (value to binary data)
-    converted = DPTLib.formatAPDU(val, dpt);
+    var apdu = {};
+    DPTLib.populateAPDU(val, apdu, 'dpt3');
     //console.log('%j --> %j', val, converted);
-    t.ok(Buffer.compare(buf, converted.data) == 0,
-      `formatAPDU(${JSON.stringify(val)})`)
+    t.ok(Buffer.compare(buf, apdu.data) == 0,
+      `populateAPDU(${JSON.stringify(val)})`)
   }
 
   t.end()

@@ -29,8 +29,9 @@ test('DPT9 floating point conversion', function(t) {
         `${tests[i][0]} fromBuffer value ${val}`)
 
     // marshalling test (value to raw data)
-    converted = DPTLib.formatAPDU(val, dpt);
-    t.ok(Buffer.compare(buf, converted.data) == 0,
+    var apdu = {};
+    DPTLib.populateAPDU(val, apdu, 'dpt9');
+    t.ok(Buffer.compare(buf, apdu.data) == 0,
       `${tests[i][0]} formatAPDU value ${val}`)
   }
   t.end()
