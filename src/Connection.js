@@ -107,13 +107,11 @@ FSM.prototype.AddCEMI = function(datagram, msgcode) {
  */
 FSM.prototype.Request = function(type, datagram_template, callback) {
   var self = this;
-  var datagram;
-  if (datagram_template != null) {
-    datagram = (typeof datagram_template == 'function') ?
-      datagram_template(this.prepareDatagram(type)) :
-      datagram_template;
-  } else {
-    datagram = this.prepareDatagram(type);
+  // populate skeleton datagram
+  var datagram = this.prepareDatagram(type);
+  // decorate the datagram, if a function is passed
+  if (typeof datagram_template == 'function') {
+    datagram_template(datagram);
   }
   // make sure that we override the datagram service type!
   datagram.service_type = type;
@@ -142,6 +140,7 @@ FSM.prototype.prepareDatagram = function(svcType) {
     case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST:
       this.AddConnState(datagram);
       break;
+    case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
     case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
       this.AddTunn(datagram);
       this.AddTunnState(datagram);
@@ -153,6 +152,7 @@ FSM.prototype.prepareDatagram = function(svcType) {
     default:
       console.trace('Do not know how to deal with svc type %d', svcType);
   }
+  //console.log(datagram);
   return datagram;
 }
 
@@ -165,6 +165,7 @@ FSM.prototype.send = function(datagram, callback) {
   var cemitype;
   this.writer = KnxNetProtocol.createWriter();
   switch (datagram.service_type) {
+    case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
     case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
       // append the CEMI service type if this is a tunneling request...
       cemitype = KnxConstants.keyText('MESSAGECODES', datagram.cemi.msgcode);
@@ -190,21 +191,16 @@ FSM.prototype.send = function(datagram, callback) {
   }*/
 }
 
-FSM.prototype.write = function(grpaddr, apdu_data, dptid, callback) {
-  if (grpaddr == null || apdu_data == null) {
-    console.trace('must supply both grpaddr(%j) and apdu_data(%j)!', grpaddr,
-      apdu_data);
+FSM.prototype.write = function(grpaddr, value, dptid, callback) {
+  if (grpaddr == null || value == null) {
+    console.trace('You must supply both grpaddr and value!');
     return;
-  }
-  if (dptid) {
-    var dpt = DPTLib.resolve(dptid);
-    apdu_data = DPTLib.formatAPDU(apdu_data, dpt);
   }
   // outbound request onto the state machine
   this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
+    DPTLib.populateAPDU(value, datagram.cemi.apdu, dptid);
     datagram.cemi.dest_addr = grpaddr;
-    datagram.cemi.apdu.data = apdu_data;
-    return datagram;
+    //console.log(datagram.cemi);
   }, callback);
 }
 

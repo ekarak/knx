@@ -76,17 +76,17 @@ dpts.resolve = function(dptid) {
   throw "no such DPT: " + dpt;
 }
 
-/* format an APDU object from a given Javascript value for the given DPT
+/* POPULATE an APDU object from a given Javascript value for the given DPT
  * - either by a custom DPT formatAPDU function
  * - or by this generic version, which:
  * --  1) checks if the value adheres to the range set from the DPT's bitlength
+ *
  */
-dpts.formatAPDU = function(value, dpt) {
+dpts.populateAPDU = function(value, apdu, dptid) {
+  var dpt = dpts.resolve(dptid || 'DPT1');
   var nbytes = Math.ceil(dpt.basetype.bitlength / 8);
-  var apdu = {
-    data: new Buffer(nbytes),
-    bitlength: dpt.basetype && dpt.basetype.bitlength || 1
-  };
+  apdu.data = new Buffer(nbytes);
+  apdu.bitlength = dpt.basetype && dpt.basetype.bitlength || 1;
   var tgtvalue;
   // get the raw APDU data for the given JS value
   if (typeof dpt.formatAPDU == 'function') {
@@ -128,7 +128,7 @@ dpts.formatAPDU = function(value, dpt) {
       tgtvalue = tgtvalue >> 8;
     }
   }
-  console.log('generic formatAPDU value=%j => apdu=%j', value, apdu);
+  //console.log('generic formatAPDU value=%j => apdu=%j', value, apdu);
   return apdu;
 }
 

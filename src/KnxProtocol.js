@@ -386,9 +386,9 @@ KnxProtocol.define('APDU', {
   write: function (value) {
     if (!value)      throw "cannot write null APDU value";
     var total_length = knxlen('APDU', value);
-    if (KnxProtocol.debug) console.log('APDU.write: \t%j (total %d bytes)', value, total_length);
+    console.log('APDU.write: \t%j (total %d bytes)', value, total_length);
     if (KnxConstants.APCICODES.indexOf(value.apci) == -1) {
-      console.log("invalid APCI code: %j", value);
+      console.trace("invalid APCI code: %j", value);
     } else {
       if (total_length < 3) throw util.format("APDU is too small (%d bytes)", total_length);
       if (total_length > 17) throw util.format("APDU is too big (%d bytes)", total_length);
@@ -419,10 +419,11 @@ not always!), so that apdu_length=1 means _2_ bytes following the apdu_length */
 KnxProtocol.lengths['APDU'] = function(value) {
   if (!value) return 0;
   // if we have the APDU bitlength, usually by the DPT, then simply use it
-  if (value.bitlength) {
+  if (value.bitlength || (value.data && value.data.bitlength)) {
+    var bitlen = value.bitlength || value.data.bitlength;
     // KNX spec states that up to 6 bits of payload must fit into the TPCI
     // if payload larger than 6 bits, than append it AFTER the TPCI
-    return 3 + (value.bitlength > 6 ? Math.ceil(value.bitlength / 8) : 0);
+    return 3 + (bitlen > 6 ? Math.ceil(bitlen / 8) : 0);
   }
   // not all requests carry a value; eg read requests
   if (!value.data) value.data = 0;
@@ -554,6 +555,7 @@ KnxProtocol.define('KNXNetHeader', {
           break;
         }
         // most common case:
+        case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
         case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
           this.TunnState('tunnstate');
           this.CEMI('cemi');
@@ -598,6 +600,7 @@ KnxProtocol.define('KNXNetHeader', {
         break;
       }
       // most common case:
+      case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
       case KnxConstants.SERVICE_TYPE.TUNNELING_ACK:
       case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST: {
         if (value.tunnstate) this.TunnState(value.tunnstate);
@@ -630,6 +633,7 @@ KnxProtocol.lengths['KNXNetHeader'] = function(value) {
         + knxlen('ConnState', value.connstate)
         + knxlen('HPAI', value.hpai)
         + knxlen('CRI', value.cri);
+    case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
     case KnxConstants.SERVICE_TYPE.TUNNELING_ACK:
     case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
       return 6

@@ -146,7 +146,24 @@ module.exports = machina.Fsm.extend({
         clearTimeout( this.idletimer );
       },
       // while idle we can either...
-      // 1) queue an OUTGOING tunelling request...
+
+      // 1) queue an OUTGOING routing indication...
+      outbound_ROUTING_INDICATION: function ( datagram ) {
+        var sm = this;
+        var elapsed = Date.now() - this.lastSentTime;
+        // if no miminum delay set OR the last sent datagram was long ago...
+        if (!this.options.minimumDelay || elapsed >= this.options.minimumDelay) {
+          // ... send now
+          this.transition( 'sendTunnReq', datagram );
+        } else {
+          // .. or else, let the FSM handle it later
+          setTimeout(function () {
+            sm.handle( 'outbound_ROUTING_INDICATION', datagram );
+          }, this.minimumDelay - elapsed);
+        }
+      },
+
+      // 2) queue an OUTGOING tunelling request...
       outbound_TUNNELING_REQUEST: function ( datagram ) {
         var sm = this;
         var elapsed = Date.now() - this.lastSentTime;
@@ -161,11 +178,13 @@ module.exports = machina.Fsm.extend({
           }, this.minimumDelay - elapsed);
         }
       },
-      // 2) receive an INBOUND tunneling request INDICATION (L_Data.ind)
+
+      // 3) receive an INBOUND tunneling request INDICATION (L_Data.ind)
       'inbound_TUNNELING_REQUEST_L_Data.ind': function( datagram ) {
         this.transition( 'recvTunnReqIndication', datagram );
       },
-      /* 3) receive an INBOUND tunneling request CONFIRMATION (L_Data.con) to one of our sent tunnreq's
+
+      /* 4) receive an INBOUND tunneling request CONFIRMATION (L_Data.con) to one of our sent tunnreq's
        * We don't need to explicitly wait for a L_Data.con confirmation that the datagram has in fact
        *  reached its intended destination. This usually requires setting the 'Sending' flag
        *  in ETS, usually on the 'primary' device that contains the actuator endpoint
