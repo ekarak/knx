@@ -179,8 +179,7 @@ KnxProtocol.define('HPAI', {
         throw "Incomplete KNXNet HPAI header";
       }
       if (KnxProtocol.debug) {
-        console.log('read HPAI: %j', hdr);
-        console.log("     HPAI: proto = %s", KnxConstants.keyText('PROTOCOL_TYPE', hdr.protocol_type));
+        console.log('read HPAI: %j, proto = %s', hdr, KnxConstants.keyText('PROTOCOL_TYPE', hdr.protocol_type));
       }
       switch (hdr.protocol_type) {
         case KnxConstants.PROTOCOL_TYPE.IPV4_TCP:
@@ -371,16 +370,14 @@ KnxProtocol.define('APDU', {
     }).tap(function (hdr) {
       // Parse the APDU. tcpi/apci bits split across byte boundary.
       // Typical example of protocol designed by committee.
-      if (KnxProtocol.debug) console.log(' APDU read: %j', hdr);
-      if (hdr.apdu_length > 0) {
-        var apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
-        hdr.tpci = apdu.tpci;
-        hdr.apci = KnxConstants.APCICODES[apdu.apci];
-        // APDU data should ALWAYS be a buffer, even for 1-bit payloads
-        hdr.data = (hdr.apdu_length > 1) ?
-          hdr.apdu_raw.slice(2) :
-          new Buffer([apdu.data]);
-      }
+      var apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw);
+      hdr.tpci = apdu.tpci;
+      hdr.apci = KnxConstants.APCICODES[apdu.apci];
+      // APDU data should ALWAYS be a buffer, even for 1-bit payloads
+      hdr.data = (hdr.apdu_length > 1) ?
+        hdr.apdu_raw.slice(2) :
+        new Buffer([apdu.data]);
+      if (KnxProtocol.debug) console.log(' unmarshalled APDU: %j', hdr);
     })
     .popStack(propertyName, function (data) {
       return data;
@@ -391,11 +388,8 @@ KnxProtocol.define('APDU', {
     var total_length = knxlen('APDU', value);
     if (KnxProtocol.debug) console.log('APDU.write: \t%j (total %d bytes)', value, total_length);
     if (KnxConstants.APCICODES.indexOf(value.apci) == -1) {
-      //throw util.format("invalid APCI code: %j", value);
-      this.UInt8(value.apdu_raw.length-1);
-      this.raw(value.apdu_raw)
+      console.log("invalid APCI code: %j", value);
     } else {
-
       if (total_length < 3) throw util.format("APDU is too small (%d bytes)", total_length);
       if (total_length > 17) throw util.format("APDU is too big (%d bytes)", total_length);
       // camel designed by committee: total length MIGHT or MIGHT NOT include the payload
@@ -407,12 +401,14 @@ KnxProtocol.define('APDU', {
         KnxConstants.APCICODES.indexOf(value.apci) * 0x40;
       //
       if (total_length == 3) {
+        // payload embedded in the last 6 bits
         word += parseInt(isFinite(value.data) ? value.data : value.data[0]);
         this.UInt16BE(word);
       } else {
         this.UInt16BE(word);
         // payload follows TPCI+APCI word
-        this.raw(value.data, value.data.length);
+        // console.log('~~~%s, %j, %d', typeof value.data, value.data, total_length);
+        this.raw(new Buffer(value.data, total_length-3));
       }
     }
   }
@@ -421,8 +417,13 @@ KnxProtocol.define('APDU', {
 /* APDU length is truly chaotic: header and data can be interleaved (but
 not always!), so that apdu_length=1 means _2_ bytes following the apdu_length */
 KnxProtocol.lengths['APDU'] = function(value) {
-  // if we have the APDU raw buffer, then simply use its length
-  if (value.apdu_raw && value.apdu_raw.length) return value.apdu_raw.length+1;
+  if (!value) return 0;
+  // if we have the APDU bitlength, usually by the DPT, then simply use it
+  if (value.bitlength) {
+    // KNX spec states that up to 6 bits of payload must fit into the TPCI
+    // if payload larger than 6 bits, than append it AFTER the TPCI
+    return 3 + (value.bitlength > 6 ? Math.ceil(value.bitlength / 8) : 0);
+  }
   // not all requests carry a value; eg read requests
   if (!value.data) value.data = 0;
   if (value.data.length) {
@@ -455,14 +456,20 @@ KnxProtocol.define('CEMI', {
     .raw('ctrl', 2)
     .raw('src_addr', 2)
     .raw('dest_addr', 2)
-    .APDU('apdu')
     .tap(function (hdr) {
-      if (KnxProtocol.debug) console.log('--- APDU as seen from CEMI==%j', hdr.apdu);
       // parse 16bit control field
       hdr.ctrl = ctrlStruct.parse(hdr.ctrl);
       // KNX source addresses are always physical
       hdr.src_addr  = KnxAddress.toString(hdr.src_addr, KnxAddress.TYPE.PHYSICAL);
       hdr.dest_addr = KnxAddress.toString(hdr.dest_addr, hdr.ctrl.destAddrType);
+      switch (hdr.msgcode) {
+        case KnxConstants.MESSAGECODES['L_Data.req']:
+        case KnxConstants.MESSAGECODES['L_Data.ind']:
+        case KnxConstants.MESSAGECODES['L_Data.con']: {
+          this.APDU('apdu');
+          if (KnxProtocol.debug) console.log('--- unmarshalled APDU ==> %j', hdr.apdu);
+        }
+      }
       return hdr;
     })
     .popStack(propertyName, function (data) {
@@ -472,7 +479,6 @@ KnxProtocol.define('CEMI', {
   write: function (value) {
     if (!value)      throw "cannot write null CEMI value";
     if (KnxProtocol.debug) console.log('CEMI.write: \n\t%j', value);
-    if (value.apdu === null) throw "no APDU supplied";
     if (value.ctrl === null) throw "no Control Field supplied";
     var ctrlField1 =
       value.ctrl.frameType   * 0x80 +
@@ -492,8 +498,17 @@ KnxProtocol.define('CEMI', {
       .UInt8(ctrlField1)
       .UInt8(ctrlField2)
       .raw(KnxAddress.parse(value.src_addr, KnxAddress.TYPE.PHYSICAL), 2)
-      .raw(KnxAddress.parse(value.dest_addr, value.ctrl.destAddrType), 2)
-      .APDU(value.apdu);
+      .raw(KnxAddress.parse(value.dest_addr, value.ctrl.destAddrType), 2);
+    // only need to marshal an APDU if this is a
+    // L_Data.* (requet/indication/confirmation)
+    switch (value.msgcode) {
+      case KnxConstants.MESSAGECODES['L_Data.req']:
+      case KnxConstants.MESSAGECODES['L_Data.ind']:
+      case KnxConstants.MESSAGECODES['L_Data.con']: {
+        if (value.apdu === null) throw "no APDU supplied";
+        this.APDU(value.apdu);
+      }
+    }
   }
 });
 KnxProtocol.lengths['CEMI'] = function(value) {

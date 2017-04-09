@@ -34,13 +34,15 @@ test('DPT10 time conversion', function(t) {
     let dpt = DPTLib.resolve(tests[i][0]);
     let buf = new Buffer(tests[i][1]);
     let val = tests[i][2];
-    // forward test (raw data to value)
+
+    // unmarshalling test (raw data to value)
     let converted = DPTLib.fromBuffer(buf, dpt);
     t.ok(converted == val,
       `${tests[i][0]} fromBuffer value ${val} => ${converted}`);
-    // backward test (value to raw data)
+
+    // marshalling test (value to raw data)
     converted = DPTLib.formatAPDU(val, dpt);
-    t.ok(Buffer.compare(buf, converted) == 0,
+    t.ok(Buffer.compare(buf, converted.data) == 0,
       `${tests[i][0]} formatAPDU value ${val} => ${converted}`);
   }
   t.end()
