@@ -83,10 +83,9 @@ dpts.resolve = function(dptid) {
  */
 dpts.formatAPDU = function(value, dpt) {
   var nbytes = Math.ceil(dpt.basetype.bitlength / 8);
-  console.log('*** dptlib.formatAPDU %s: %d bytes', dpt.id, nbytes);
   var apdu = {
     data: new Buffer(nbytes),
-    bitlength: dpt.basetype.bitlength || 1
+    bitlength: dpt.basetype && dpt.basetype.bitlength || 1
   };
   var tgtvalue;
   // get the raw APDU data for the given JS value

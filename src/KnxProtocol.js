@@ -179,8 +179,7 @@ KnxProtocol.define('HPAI', {
         throw "Incomplete KNXNet HPAI header";
       }
       if (KnxProtocol.debug) {
-        console.log('read HPAI: %j', hdr);
-        console.log("     HPAI: proto = %s", KnxConstants.keyText('PROTOCOL_TYPE', hdr.protocol_type));
+        console.log('read HPAI: %j, proto = %s', hdr, KnxConstants.keyText('PROTOCOL_TYPE', hdr.protocol_type));
       }
       switch (hdr.protocol_type) {
         case KnxConstants.PROTOCOL_TYPE.IPV4_TCP:
@@ -408,7 +407,7 @@ KnxProtocol.define('APDU', {
       } else {
         this.UInt16BE(word);
         // payload follows TPCI+APCI word
-  console.log('~~~%s, %j, %d', typeof value.data, value.data, total_length);
+        // console.log('~~~%s, %j, %d', typeof value.data, value.data, total_length);
         this.raw(new Buffer(value.data, total_length-3));
       }
     }
