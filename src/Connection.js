@@ -174,16 +174,13 @@ FSM.prototype.send = function(datagram, callback) {
   var buf = packet.buffer;
   var svctype = KnxConstants.keyText('SERVICE_TYPE', datagram.service_type);
   var descr = this.datagramDesc(datagram);
-  this.debugPrint(util.format(
-    'Sending %s from port %d to %s ==> %j',
-    descr, conn.socket.address().port, conn.remoteEndpoint, datagram
-  ));
+  this.debugPrint(util.format('Sending %s ==> %j', descr, datagram));
   this.socket.send(
     buf, 0, buf.length,
     conn.remoteEndpoint.port, conn.remoteEndpoint.addr.toString(),
     function(err) {
-      conn.debugPrint(util.format('UDP send: %s to %j: %s',
-        descr, conn.remoteEndpoint, (err ? err.toString() : 'OK')
+      conn.debugPrint(util.format('UDP send %s: %s %j',
+        (err ? err.toString() : 'OK'), descr, buf
       ));
       if (typeof callback === 'function') callback(err);
     }

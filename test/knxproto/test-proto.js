@@ -191,7 +191,47 @@ test('KNX protocol composer', function(t) {
       }
     },
 
+    "temperature response, apdu=2-byte": {
+      hexbuf: "2900BCD0110B000F0300400730",
+      dgram: {
+        header_length: 6,
+        protocol_version: 16,
+        service_type: 1056,
+        total_length: 21,
+        tunnstate: {
+          header_length: 4,
+          channel_id: 2,
+          seqnum: 0,
+          rsvd: 0
+        },
+        cemi: {
+          msgcode: 46,
+          addinfo_length: 0,
+          ctrl: {
+            frameType: 1,
+            reserved: 0,
+            repeat: 1,
+            broadcast: 1,
+            priority: 3,
+            acknowledge: 0,
+            confirm: 0,
+            destAddrType: 1,
+            hopCount: 6,
+            extendedFrame: 0
+          },
+          src_addr: '0.0.0',
+          dest_addr: '0/0/15',
+          apdu: {
+            bitlength: 16,
+            tpci: 0,
+            apci: 'GroupValue_Response',
+            data: [0x07, 0x30]
+          }
+        }
+      }
+    },
   }
+
 
   Object.keys(tests).forEach((key, idx) => {
     var testcase = tests[key];

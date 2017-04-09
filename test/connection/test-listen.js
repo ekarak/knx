@@ -21,6 +21,10 @@ var connection = new knx.Connection({
       }, connection);
       temperature_in.read(function(src, response) {
         console.log("KNX response from %s: %j", src, response);
+        if ((response < 15) || (response > 32)) {
+          console.log("Either you can't pay the bills or the temperature readout is not correct?");
+          process.exit(1);
+        }
         // all OK, just give a chance to acknowledge the L_Data.ind
         setTimeout(function() {
           process.exit(0);
