@@ -365,7 +365,7 @@ KnxProtocol.define('APDU', {
     this.pushStack({ apdu_length: null, apdu_raw: null, tpci: null, apci: null, data: null })
     .UInt8('apdu_length')
     .tap(function (hdr) {
-      if (KnxProtocol.debug) console.log('--- parsing extra %d apdu bytes', hdr.apdu_length+1);
+      //if (KnxProtocol.debug) console.log('--- parsing extra %d apdu bytes', hdr.apdu_length+1);
       this.raw('apdu_raw', hdr.apdu_length+1);
     }).tap(function (hdr) {
       // Parse the APDU. tcpi/apci bits split across byte boundary.
@@ -386,7 +386,7 @@ KnxProtocol.define('APDU', {
   write: function (value) {
     if (!value)      throw "cannot write null APDU value";
     var total_length = knxlen('APDU', value);
-    console.log('APDU.write: \t%j (total %d bytes)', value, total_length);
+    //if (KnxProtocol.debug) console.log('APDU.write: \t%j (total %d bytes)', value, total_length);
     if (KnxConstants.APCICODES.indexOf(value.apci) == -1) {
       console.trace("invalid APCI code: %j", value);
     } else {
