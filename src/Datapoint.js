@@ -85,7 +85,6 @@ Datapoint.prototype.update = function(jsvalue) {
    and submit a GroupValue_Write to the connection */
 Datapoint.prototype.write = function(value) {
   var self = this;
-  console.log('write %j', value);
   if (!this.conn) throw "must supply a valid KNX connection to bind to";
   if (this.dpt.hasOwnProperty('range')) {
     // check if value is in range
