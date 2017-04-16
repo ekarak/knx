@@ -16,12 +16,10 @@ let connection = new knx.Connection( {
               evt, src, dest, value)
       })
 
-      let dimmer_control = new knx.Datapoint({ga: '14/2/129', dpt: 'DPT5.001'})
-      dimmer_control.bind(connection)
+      let dimmer_control = new knx.Datapoint({ga: '14/2/129', dpt: 'DPT5.001'}, connection);
       console.log('--------- 100');
       dimmer_control.write(100);
       console.log('--------- 0');
-      dimmer_control.write(0);
       process.on('SIGINT', () => {
           console.log('Terminating')
           connection.Disconnect()
