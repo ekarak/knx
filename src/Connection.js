@@ -17,10 +17,10 @@ var KnxNetProtocol = require('./KnxProtocol.js');
 // bind incoming UDP packet handler
 FSM.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
   // get the incoming packet's service type ...
-  var reader = KnxNetProtocol.createReader(msg);
-  reader.KNXNetHeader('tmp');
-  var dg = reader.next()['tmp'];
-  if (dg) {
+  try {
+    var reader = KnxNetProtocol.createReader(msg);
+    reader.KNXNetHeader('tmp');
+    var dg = reader.next()['tmp'];
     var descr = this.datagramDesc(dg);
     this.debugPrint(util.format(
       "Received %s message: %j", descr, dg
@@ -38,9 +38,9 @@ FSM.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
       var signal = util.format('inbound_%s', descr);
       this.handle(signal, dg);
     }
-  } else {
+  } catch(err) {
     this.debugPrint(util.format(
-      "Incomplete/unparseable UDP packet: %j", msg
+      "%s: Incomplete/unparseable UDP packet: %j", err, msg
     ));
   }
 };
