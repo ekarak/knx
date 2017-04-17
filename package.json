@@ -34,6 +34,7 @@
     "building automation"
   ],
   "dependencies": {
+    "@types/node": "^6.0.48",
     "binary-parser": "1.1.5",
     "binary-protocol": "0.0.0",
     "ipaddr.js": "1.2.0",
