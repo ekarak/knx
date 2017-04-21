@@ -24,7 +24,7 @@ type KnxDeviceAddress = string
 type KnxGroupAddress = string
 
 // The type of the KnxValue depends on the DPT that it is associated with
-type KnxValue = number|string|NodeBuffer
+type KnxValue = number|string|boolean
 
 // Possible formats "X" or "X.Y", i.e. "1" or "1.001"
 type DPT = string
@@ -36,22 +36,23 @@ type DatapointOptions = {
 
 interface DatapointEvent {
     on( event: 'change', listener: (old_value: KnxValue, new_value: KnxValue) => void): this
+    on(event: string, listener: Function): this
 }
 
 declare module 'knx' {
     export interface IConnection extends events.EventEmitter {
         debug: boolean
         Disconnect(): void
-        read( ga: KnxGroupAddress, cb?: (value: Buffer) => void ): void
-        write( ga: KnxGroupAddress, value: KnxValue, dpt: DPT, cb?: () => void): void
+        read( ga: KnxGroupAddress, cb?: (value: NodeBuffer) => void ): void
+        write( ga: KnxGroupAddress, value: NodeBuffer, dpt: DPT, cb?: () => void): void
     }
 
     export class Connection extends events.EventEmitter implements IConnection {
         public debug: boolean
         constructor( conf: ConnectionSpec )
         Disconnect(): void
-        read( ga: KnxGroupAddress, cb?: (value: Buffer) => void ): void
-        write( ga: KnxGroupAddress, value: KnxValue, dpt: DPT, cb?: () => void): void
+        read( ga: KnxGroupAddress, cb?: (value: NodeBuffer) => void ): void
+        write( ga: KnxGroupAddress, value: NodeBuffer, dpt: DPT, cb?: () => void): void
     }
 
     export class Datapoint extends events.EventEmitter implements DatapointEvent {
@@ -61,6 +62,6 @@ declare module 'knx' {
         constructor(options: DatapointOptions, conn?: IConnection)
         bind(conn: Connection): void
         write(value: KnxValue): void
-        read(callback?: (value: Buffer) => void): void
+        read(callback?: (value: KnxValue) => void): void
     }
 }
