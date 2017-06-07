@@ -257,7 +257,7 @@ module.exports = machina.Fsm.extend({
     },
 
     /*
-    * 1) OUTBOUND ROUTING_REQUEST
+    * 1) OUTBOUND ROUTING_INDICATION
     */
     sendRoutingInd:  {
       _onEnter: function ( datagram ) {
