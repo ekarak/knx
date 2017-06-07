@@ -141,6 +141,8 @@ FSM.prototype.prepareDatagram = function(svcType) {
       this.AddConnState(datagram);
       break;
     case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
+      this.AddCEMI(datagram);
+      break;
     case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
       this.AddTunn(datagram);
       this.AddTunnState(datagram);
@@ -159,6 +161,7 @@ FSM.prototype.prepareDatagram = function(svcType) {
 /*
 send the datagram over the wire
 */
+
 FSM.prototype.send = function(datagram, callback) {
   var conn = this;
   //try {
@@ -197,10 +200,14 @@ FSM.prototype.write = function(grpaddr, value, dptid, callback) {
     return;
   }
   // outbound request onto the state machine
-  this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
+  var serviceType = KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST;
+  if (this.connectionType.routing) {
+    serviceType = KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
+  }
+  
+  this.Request(serviceType, function(datagram) {
     DPTLib.populateAPDU(value, datagram.cemi.apdu, dptid);
     datagram.cemi.dest_addr = grpaddr;
-    //console.log(datagram.cemi);
   }, callback);
 }
 

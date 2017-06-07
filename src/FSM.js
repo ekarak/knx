@@ -27,17 +27,23 @@ module.exports = machina.Fsm.extend({
       addr: ipaddr.parse(options.ipAddr || '224.0.23.12'),
       port: options.ipPort || 3671
     };
+    this.connectionType = {
+      routing: false,
+      tunneling: false
+    };
     var range = this.remoteEndpoint.addr.range();
     this.debugPrint(
       util.format('initializing connection to %s (%s)', this.remoteEndpoint.addrstring, range));
     switch (range) {
       case 'multicast':
         IpRoutingConnection(this, options);
+        this.connectionType.routing = true;
         break;
       case 'unicast':
       case 'private':
       case 'loopback':
         IpTunnelingConnection(this, options);
+        this.connectionType.tunneling = true;
         break;
       default:
         throw util.format("IP address % (%s) cannot be used for KNX", options.ipAddr, range);
@@ -61,18 +67,24 @@ module.exports = machina.Fsm.extend({
         var sm = this;
         if (!this.localAddress) throw "Not bound to an IPv4 non-loopback interface";
         this.debugPrint(util.format('Connecting to %s...', sm.localAddress));
-        // set a connection timer for 3 seconds, 3 retries
-        this.connecttimer = setInterval( function() {
-          sm.debugPrint('connection timed out - retrying...');
-          sm.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
-          // TODO: handle send err
-        }.bind( this ), 3000 );
+
         delete this.channel_id;
         delete this.conntime;
         delete this.lastSentTime;
-        // send connect request directly
-        this.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
-        // TODO: handle send err
+
+        if (this.connectionType.routing) {
+          this.transition( 'idle');
+          this.emit('connected');
+        } else {
+          // set a connection timer for 3 seconds, 3 retries
+          this.connecttimer = setInterval( function() {
+            sm.debugPrint('connection timed out - retrying...');
+            sm.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
+            // TODO: handle send err
+          }.bind( this ), 3000 );
+          // send connect request directly
+          this.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
+        }
       },
       _onExit: function( ) {
         clearInterval( this.connecttimer );
@@ -154,7 +166,7 @@ module.exports = machina.Fsm.extend({
         // if no miminum delay set OR the last sent datagram was long ago...
         if (!this.options.minimumDelay || elapsed >= this.options.minimumDelay) {
           // ... send now
-          this.transition( 'sendTunnReq', datagram );
+          this.transition( 'sendRoutingInd', datagram );
         } else {
           // .. or else, let the FSM handle it later
           setTimeout(function () {
@@ -242,6 +254,28 @@ module.exports = machina.Fsm.extend({
         this.debugPrint(util.format('*** deferring %s until transition to idle', data.inputType));
         this.deferUntilTransition( 'idle' );
       },
+    },
+
+    /*
+    * 1) OUTBOUND ROUTING_REQUEST
+    */
+    sendRoutingInd:  {
+      _onEnter: function ( datagram ) {
+        var sm = this;
+        // send the telegram on the wire
+        this.seqnum += 1;
+        this.send( datagram, function(err) {
+          // TODO: handle send err
+        });
+        this.lastSentTime = Date.now();
+        this.debugPrint(util.format('>>>>>>> seqnum: %d', this.seqnum));
+        // and then wait for the acknowledgement
+        this.transition( 'idle' );
+      },
+      "*": function ( data ) {
+        this.debugPrint(util.format('*** deferring %s until transition to idle', data.inputType));
+        this.deferUntilTransition( 'idle' );
+      }
     },
 
     /*
