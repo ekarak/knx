@@ -161,7 +161,6 @@ FSM.prototype.prepareDatagram = function(svcType) {
 /*
 send the datagram over the wire
 */
-
 FSM.prototype.send = function(datagram, callback) {
   var conn = this;
   //try {
