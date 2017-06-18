@@ -235,9 +235,17 @@ module.exports = machina.Fsm.extend({
         this.debugPrint(util.format('%s: '+msg, datagram.cemi.dest_addr));
         this.acknowledge(datagram);
       },
+
+      // 5) receive an INBOUND ROUTING_INDICATION (L_Data.ind)
+      'inbound_ROUTING_INDICATION_L_Data.ind': function( datagram ) {
+        this.transition( 'idle' );
+        this.emitEvent(datagram);
+      },
+
       inbound_DISCONNECT_REQUEST: function( datagram ) {
         this.transition( 'connecting' );
       },
+
     },
 
     // if idle for too long, request connection state from the KNX IP router
