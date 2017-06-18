@@ -8,7 +8,9 @@ var knx = require('knx');
 Error.stackTraceLimit = Infinity;
 
 var connection = knx.Connection({
-  //debug: true,
+  debug: true,
+  //useMulticastTunneling: true,
+  minimumDelay: 100,
   handlers: {
     connected: function() {
       console.log('===========\nConnected!\n===========');
@@ -42,7 +44,8 @@ function setupDatapoint(groupadress, statusga) {
     ga: groupadress,
     status_ga: statusga,
     dpt: "DPT1.001",
-    autoread: true}, connection);
+    autoread: true
+  }, connection);
   dp.on('change', (oldvalue, newvalue) => {
     console.log("**** %s current value: %j", groupadress, newvalue);
     console.log("options.ga==%s", dp.options.ga);

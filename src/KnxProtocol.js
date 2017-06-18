@@ -555,13 +555,15 @@ KnxProtocol.define('KNXNetHeader', {
           break;
         }
         // most common case:
-        case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
         case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
           this.TunnState('tunnstate');
           this.CEMI('cemi');
           break;
         case KnxConstants.SERVICE_TYPE.TUNNELING_ACK:
           this.TunnState('tunnstate');
+          break;
+        case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
+          this.CEMI('cemi');
           break;
         default: {
           console.trace("read KNXNetHeader: unhandled serviceType = %s", KnxConstants.keyText('SERVICE_TYPE', hdr.service_type));
@@ -633,13 +635,15 @@ KnxProtocol.lengths['KNXNetHeader'] = function(value) {
         + knxlen('ConnState', value.connstate)
         + knxlen('HPAI', value.hpai)
         + knxlen('CRI', value.cri);
-    case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
     case KnxConstants.SERVICE_TYPE.TUNNELING_ACK:
     case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
       return 6
         + knxlen('TunnState', value.tunnstate)
         + knxlen('CEMI', value.cemi);
-    }
+    case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
+      return 6
+        + knxlen('CEMI', value.cemi);
+    };
 }
 
 module.exports = KnxProtocol;

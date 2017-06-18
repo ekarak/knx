@@ -9,11 +9,10 @@ const dgram = require('dgram');
 function IpTunnelingConnection(instance, options) {
 
   instance.BindSocket = function(cb) {
-    instance.debugPrint('IpTunnelingConnection.BindSocket');
     var udpSocket = dgram.createSocket("udp4");
     udpSocket.bind(function() {
-      instance.debugPrint(util.format('tunneling socket bound to %j',
-        udpSocket.address()));
+      instance.debugPrint(util.format('IpTunnelingConnection.BindSocket %s:%d',
+        instance.localAddress, udpSocket.address().port));
       cb && cb(udpSocket);
     });
     return udpSocket;
@@ -24,8 +23,11 @@ function IpTunnelingConnection(instance, options) {
     this.localAddress = this.getLocalAddress();
     // create the socket
     this.socket = this.BindSocket(function(socket) {
+      socket.on("error", function(errmsg) {
+        sm.debugPrint(util.format('Socket error: %j', errmsg));
+      });
       socket.on("message", function(msg, rinfo, callback) {
-        sm.debugPrint(util.format('Inbound message: %j', msg));
+        sm.debugPrint(util.format('Inbound message: %s', msg.toString('hex')));
         sm.onUdpSocketMessage(msg, rinfo, callback);
       });
       // start connection sequence

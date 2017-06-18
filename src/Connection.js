@@ -39,8 +39,9 @@ FSM.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
       this.handle(signal, dg);
     }
   } catch(err) {
+    console.log(err.stack);
     this.debugPrint(util.format(
-      "%s: Incomplete/unparseable UDP packet: %j", err, msg
+      "%s: Incomplete/unparseable UDP packet: %s", err, msg.toString('hex')
     ));
   }
 };
@@ -71,18 +72,18 @@ FSM.prototype.AddCRI = function(datagram) {
 
 FSM.prototype.AddCEMI = function(datagram, msgcode) {
   datagram.cemi = {
-    msgcode: msgcode || 0x11, // default: L_Data.req
+    msgcode: msgcode || 0x11, // default: L_Data.req for tunneling
     ctrl: {
       frameType: 1, // 0=extended 1=standard
       reserved: 0, // always 0
       repeat: 1, // the OPPOSITE: 1=do NOT repeat
       broadcast: 1, // 0-system broadcast 1-broadcast
       priority: 3, // 0-system 1-normal 2-urgent 3-low
-      acknowledge: 1, // FIXME: only for L_Data.req
+      acknowledge: (msgcode || 0x11) == 0x11 ? 1 : 0, // only for L_Data.req
       confirm: 0, // FIXME: only for L_Data.con 0-ok 1-error
       // 2nd byte
       destAddrType: 1, // FIXME: 0-physical 1-groupaddr
-      hopCount: 5,
+      hopCount: 6,
       extendedFrame: 0
     },
     src_addr: this.options.physAddr || "15.15.15",
@@ -141,6 +142,8 @@ FSM.prototype.prepareDatagram = function(svcType) {
       this.AddConnState(datagram);
       break;
     case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
+      this.AddCEMI(datagram, KnxConstants.MESSAGECODES['L_Data.ind']);
+      break;
     case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
       this.AddTunn(datagram);
       this.AddTunnState(datagram);
@@ -180,8 +183,8 @@ FSM.prototype.send = function(datagram, callback) {
     buf, 0, buf.length,
     conn.remoteEndpoint.port, conn.remoteEndpoint.addr.toString(),
     function(err) {
-      conn.debugPrint(util.format('UDP send %s: %s %j',
-        (err ? err.toString() : 'OK'), descr, buf
+      conn.debugPrint(util.format('UDP send %s: %s %s',
+        (err ? err.toString() : 'OK'), descr, buf.toString('hex')
       ));
       if (typeof callback === 'function') callback(err);
     }
@@ -197,10 +200,12 @@ FSM.prototype.write = function(grpaddr, value, dptid, callback) {
     return;
   }
   // outbound request onto the state machine
-  this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
+  var serviceType = this.useTunneling ?
+    KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
+    KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
+  this.Request(serviceType, function(datagram) {
     DPTLib.populateAPDU(value, datagram.cemi.apdu, dptid);
     datagram.cemi.dest_addr = grpaddr;
-    //console.log(datagram.cemi);
   }, callback);
 }
 
@@ -225,7 +230,10 @@ FSM.prototype.read = function(grpaddr, callback) {
       conn.off(responseEvent, binding);
     }, 3000);
   }
-  this.Request(KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST, function(datagram) {
+  var serviceType = this.useTunneling ?
+    KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
+    KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
+  this.Request(serviceType, function(datagram) {
     // this is a READ request
     datagram.cemi.apdu.apci = "GroupValue_Read";
     datagram.cemi.dest_addr = grpaddr;
@@ -249,7 +257,8 @@ FSM.prototype.debugPrint = function(msg) {
 // return a descriptor for this datagram (TUNNELING_REQUEST_L_Data.ind)
 FSM.prototype.datagramDesc = function(dg) {
   var blurb = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
-  if (dg.service_type == KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST) {
+  if (dg.service_type == KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST ||
+      dg.service_type == KnxConstants.SERVICE_TYPE.ROUTING_INDICATION) {
     blurb += '_' + KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode);
   }
   return blurb;

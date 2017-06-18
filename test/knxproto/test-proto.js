@@ -44,6 +44,8 @@ test('KNX protocol marshal+unmarshal', function(t) {
       "061004200015040200002e00bce000000832010081", 'hex'),
     "tunneling request (GroupValue_Write) apdu=2byte": new Buffer(
       "061004200016040201002900bce00000083b0200804a", 'hex'),
+    "routing indication": new Buffer(
+      "0610053000112900bce0ff0f0908010000", 'hex'),
     DISCONNECT_REQUEST: new Buffer([
       6,  16,   2, 9, 0, 16, 142, 142,
       8, 1,  192, 168, 2, 222, 14, 87

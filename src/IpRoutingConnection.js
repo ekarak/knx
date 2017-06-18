@@ -15,17 +15,19 @@ function IpRoutingConnection(instance, options) {
   instance.BindSocket = function(cb) {
     var conn = this;
     var udpSocket = dgram.createSocket("udp4");
-    udpSocket.bind(function() {
+    udpSocket.on('listening', function() {
       instance.debugPrint(util.format(
-        'IpRoutingConnection.BindSocket %j, add membership for %s',
-        udpSocket.address(), conn.remoteEndpoint.addr
+        'IpRoutingConnection %s:%d, adding membership for %s',
+        instance.localAddress, udpSocket.address().port, conn.remoteEndpoint.addr
       ));
       try {
-        conn.socket.addMembership(conn.remoteEndpoint.addr);
+        conn.socket.addMembership(conn.remoteEndpoint.addr, instance.localAddress);
       } catch (err) {
-        console.log('IPRouting connection: cannot add membership (%s)',
-          err);
+        console.log('IPRouting connection: cannot add membership (%s)', err);
       }
+    });
+    // ROUTING multicast connections need to bind to the default port, 3671
+    udpSocket.bind(3671, function() {
       cb && cb(udpSocket);
     });
     return udpSocket;
@@ -38,9 +40,11 @@ function IpRoutingConnection(instance, options) {
     var sm = this;
     this.localAddress = this.getLocalAddress();
     this.socket = this.BindSocket(function(socket) {
+      socket.on("error", function(errmsg) {
+        sm.debugPrint(util.format('Socket error: %j', errmsg));
+      });
       socket.on("message", function(msg, rinfo, callback) {
-        sm.debugPrint(util.format('Inbound multicast message %j: %j',
-          rinfo, msg));
+        sm.debugPrint('Inbound multicast message: '+ msg.toString('hex'));
         sm.onUdpSocketMessage(msg, rinfo, callback);
       });
       // start connection sequence

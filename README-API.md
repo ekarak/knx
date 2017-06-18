@@ -1,20 +1,37 @@
 ### Connect to your KNX IP router
 
+By default *you only need to specify a 'handlers' object* containing your functions to handle KNX events. All the other options can be overridden according to your needs.
+
+
 ```js
-// Create a multicast connection, no mandatory arguments.
 var connection = new knx.Connection( {
-  ipAddr: '127.0.0.1', // ip address of the KNX router or interface
-  ipPort: 3671, // the UDP port of the router or interface
-  physAddr: '15.15.15', // the KNX physical address we want to use
-  debug: true, // print lots of debug output to the console
-  manualConnect: true, // do not automatically connect, but use connection.Connect() to establish connection
-  minimumDelay: 10, // wait at least 10 millisec between each datagram
+  // ip address and port of the KNX router or interface
+  ipAddr: '127.0.0.1', ipPort: 3671,
+  // in case you need to specify the multicast interface (say if you have more than one)
+  interface: 'eth0',
+  // the KNX physical address we'd like to use
+  physAddr: '15.15.15',
+  // print lots of debug output to the console
+  debug: true,
+  // do not automatically connect, but use connection.Connect() to establish connection
+  manualConnect: true,  
+  // use tunneling with multicast (router) - this is NOT supported by all routers! See README-resilience.md
+  useMulticastTunneling: true,
+  // wait at len.write("1/0/0", 1);
+      // you also WRITE to an explicit datapoint type, eg. DPT9.001 is temperature Celcius
+      connection.write("2/1/0", 22.5, "DPT9.001");
+      // you can also issue a READ request and pass a callback to capture the response
+      connection.read("1/0/1", (src, responsevalue) => { ... });
+    },
+    // get notified for all KNX events:
+    event: funcast 10 millisec between each datagram
+  minimumDelay: 10,
+  // define your event handlers here:
   handlers: {
-    // wait for connection establishment before doing anything
+    // wait for connection establishment before sending anything!
     connected: function() {
-      // Get a nice greeting when connected.
       console.log('Hurray, I can talk KNX!');
-      // WRITE an arbitrary write request to a binary group address
+      // WRITE an arbitrary boolean request to a DPT1 group address
       connection.write("1/0/0", 1);
       // you also WRITE to an explicit datapoint type, eg. DPT9.001 is temperature Celcius
       connection.write("2/1/0", 22.5, "DPT9.001");
@@ -32,11 +49,7 @@ var connection = new knx.Connection( {
       console.log("**** ERROR: %j", connstatus);
     }
   }
-});  
-// optionally specify another address and port
-var connection = new knx.Connection( {ipAddr: '224.0.23.12', ipPort: 3671} );
-// in case you need to specify the multicast interface if you have more than one
-var connection = new knx.Connection( {interface: 'eth0'} );
+});
 ```
 
 **Important**: connection.write() will only accept *raw APDU payloads* and a DPT.
