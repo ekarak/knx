@@ -21,7 +21,6 @@ FSM.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
     var reader = KnxNetProtocol.createReader(msg);
     reader.KNXNetHeader('tmp');
     var dg = reader.next()['tmp'];
-  if (!dg) throw "what??? no dg";
     var descr = this.datagramDesc(dg);
     this.debugPrint(util.format(
       "Received %s message: %j", descr, dg
@@ -257,7 +256,6 @@ FSM.prototype.debugPrint = function(msg) {
 
 // return a descriptor for this datagram (TUNNELING_REQUEST_L_Data.ind)
 FSM.prototype.datagramDesc = function(dg) {
-  if (!dg) throw "no datagram provided!";
   var blurb = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
   if (dg.service_type == KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST ||
       dg.service_type == KnxConstants.SERVICE_TYPE.ROUTING_INDICATION) {

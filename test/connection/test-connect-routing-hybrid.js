@@ -9,6 +9,7 @@ Error.stackTraceLimit = Infinity;
 
 var connection = knx.Connection({
 	debug: true,
+	useMulticastTunneling: true,
 	handlers: {
 		connected: function() {
 			console.log('----------');
