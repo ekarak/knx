@@ -27,12 +27,12 @@ There are basically *two* ways to talk to KNX via UDP/IP:
 
 - **Routing** is a plain UDP multicast transport *without any connection or reliability semantics whatsoever* - which makes it much harder to detect dropped packets eg due to congested networks. The multicast approach works well on wired high-speed (eg Ethernet) segments that are dedicated to KNX traffic only. As we all know, KNX/TP1 has a bandwidth that is several orders of magnitude slower than a LAN, but this isn't necessarily the case when you connect over a VPN! *In reality, your network is definately going to drop some packets*. The advantage of multicast though is that it needs no configuration, as long as the IP router is configured to the default KNX multicast address (224.0.23.12)
 
-- Finally, this library allows a **hybrid** approach, that's taking the best of the two methods above: You can use **multicast** transport with a **tunnelling** connection to ensure reliable communication. *Unfortunately this deviates from the official KNXnet/IP spec*, and is therefore not compatible with some IP routers. You can enable this "hybrid mode" by enabling the `useMulticastTunneling` option when constructing a new Connection object as follows:
+- Finally, this library allows a **hybrid** approach, that's taking the best of the two methods above: You can use **multicast** transport with a **tunnelling** connection to ensure reliable communication. *Unfortunately this deviates from the official KNXnet/IP spec*, and is therefore not compatible with some IP routers. You can enable this "hybrid mode" by enabling the `forceTunneling` option when constructing a new Connection object as follows:
 
 ```js
 var connection = new knx.Connection( {
   // use tunneling with multicast - this is NOT supported by all routers!
-  useMulticastTunneling: true,
+  forceTunneling: true,
 ...
 });
 ```

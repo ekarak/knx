@@ -23,7 +23,7 @@ module.exports = machina.Fsm.extend({
     this.ThreeLevelGroupAddressing = true;
     // a cache of recently sent requests
     this.sentTunnRequests = {};
-    this.useTunneling = false;
+    this.useTunneling = options.forceTunneling || false;
     this.remoteEndpoint = {
       addrstring: options.ipAddr || '224.0.23.12',
       addr: ipaddr.parse(options.ipAddr || '224.0.23.12'),
@@ -34,7 +34,6 @@ module.exports = machina.Fsm.extend({
       util.format('initializing %s connection to %s', range, this.remoteEndpoint.addrstring));
     switch (range) {
       case 'multicast':
-        this.useTunneling = this.options.useMulticastTunneling;
         IpRoutingConnection(this, options);
         break;
       case 'unicast':
