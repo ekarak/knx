@@ -103,11 +103,27 @@ module.exports = machina.Fsm.extend({
       inbound_CONNECT_RESPONSE: function (datagram) {
         var sm = this;
         this.debugPrint(util.format('got connect response'));
-        // store channel ID into the Connection object
-        this.channel_id = datagram.connstate.channel_id;
-        // send connectionstate request directly
-        this.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST ));
-        // TODO: handle send err
+        if (datagram.hasOwnProperty('connstate') && datagram.connstate.status === KnxConstants.RESPONSECODE.E_NO_MORE_CONNECTIONS) {
+          clearInterval( sm.connecttimer );
+          this.debugPrint("The KNXnet/IP server could not accept the new data connection (Maximum reached)");
+          this.debugPrint("Waiting 1 minute before retrying...");
+          sm.connection_attempts = 0;
+          this.connecttimer = setInterval( function() {
+            sm.connection_attempts += 1;
+            if (sm.connection_attempts >= 3) {
+              sm.transition('uninitialized');
+            } else {
+              this.debugPrint("The KNXnet/IP server rejected the data connection (Maximum connections reached). Waiting 1 minute before retrying...");
+              this.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
+            }
+          }.bind( this ), 60000 );
+        } else {
+          // store channel ID into the Connection object
+          this.channel_id = datagram.connstate.channel_id;
+          // send connectionstate request directly
+          this.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST ));
+          // TODO: handle send err
+        }
       },
       inbound_CONNECTIONSTATE_RESPONSE: function (datagram) {
         var str = KnxConstants.keyText('RESPONSECODE', datagram.connstate.status);

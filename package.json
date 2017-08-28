@@ -31,7 +31,10 @@
     }, {
       "name": "Timo Krieger",
       "url": "https://bitbucket.org/timokri/"
-    }],
+    }, {
+      "name": "Cédric Trévisan",
+      "url":  "https://bitbucket.org/ctrevisan/"
+  }],
   "keywords": [
     "knx",
     "smart home",
