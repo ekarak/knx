@@ -26,7 +26,6 @@ const Parser = require('binary-parser').Parser;
 //           +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 //           |  | Main Grp  | Midd G |       Sub Group       |
 //           +--+--------------------+-----------------------+
-
 //           +-----------------------------------------------+
 // 16 bits   |             GROUP ADDRESS (2 level)           |
 //           +-----------------------+-----------------------+
@@ -36,6 +35,7 @@ const Parser = require('binary-parser').Parser;
 //           +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 //           |  | Main Grp  |            Sub Group           |
 //           +--+--------------------+-----------------------+
+// NOTE: ets4 can utilise all 5 bits for the main group (0..31)
 var Address = {};
 
 var TYPE = Address.TYPE = {
@@ -44,8 +44,8 @@ var TYPE = Address.TYPE = {
 };
 //
 var threeLevelPhysical = (new Parser()).bit4('l1').bit4('l2').uint8('l3');
-var threeLevelGroup    = (new Parser()).bit1('rsvd').bit4('l1').bit3('l2').uint8('l3');
-var twoLevel           = (new Parser()).bit1('rsvd').bit4('l1').bit11('l2');
+var threeLevelGroup    = (new Parser()).bit5('l1').bit3('l2').uint8('l3');
+var twoLevel           = (new Parser()).bit5('l1').bit11('l2');
 
 // convert address stored in two-byte buffer to string
 Address.toString = function (buf /*buffer*/, addrtype /*ADDRESS_TYPE*/, twoLevelAddressing) {
@@ -74,19 +74,21 @@ Address.parse = function (addr /*string*/, addrtype /*TYPE*/, twoLevelAddressing
   }
   var group = (addrtype === TYPE.GROUP) ;
   var address = new Buffer(2);
-  var tokens  = addr.split((group ? '/' : '.'));
+  var tokens  = addr.split((group ? '/' : '.')).filter((w) => { return w.length > 0; });
+  if (tokens.length < 2) throw "Invalid address (less than 2 tokens)";
   var hinibble = parseInt(tokens[0]);
   var midnibble = parseInt(tokens[1]);
   if (group && twoLevelAddressing) {
     // 2 level group address
-    if (hinibble < 0 || hinibble > 15)     throw "Invalid KNX 2-level main group";
+    if (hinibble < 0 || hinibble > 31)     throw "Invalid KNX 2-level main group";
     if (midnibble < 0 || midnibble > 2047) throw "Invalid KNX 2-level sub group";
     address.writeUInt16BE((hinibble << 11) + midnibble, 0);
   } else {
+    if (tokens.length < 3) throw "Invalid address - missing 3rd token";
     var lonibble = parseInt(tokens[2]);
     if (group) {
       // 3 level group address
-      if (hinibble < 0  || hinibble > 15)  throw "Invalid KNX 3-level main group";
+      if (hinibble < 0  || hinibble > 31)  throw "Invalid KNX 3-level main group";
       if (midnibble < 0 || midnibble > 7)  throw "Invalid KNX 3-level mid group";
       if (lonibble < 0  || lonibble > 255) throw "Invalid KNX 3-level sub group";
       address.writeUInt8((hinibble << 3) + midnibble, 0);
