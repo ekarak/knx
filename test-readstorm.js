@@ -8,7 +8,7 @@ var knx = require('knx');
 Error.stackTraceLimit = Infinity;
 
 var connection = knx.Connection({
-  debug: true,
+//  debug: true,
   //useMulticastTunneling: true,
   minimumDelay: 100,
   handlers: {
