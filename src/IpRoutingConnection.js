@@ -14,7 +14,7 @@ function IpRoutingConnection(instance, options) {
 
   instance.BindSocket = function(cb) {
     var conn = this;
-    var udpSocket = dgram.createSocket("udp4");
+    var udpSocket = dgram.createSocket({type: "udp4", reuseAddr: true});
     udpSocket.on('listening', function() {
       instance.debugPrint(util.format(
         'IpRoutingConnection %s:%d, adding membership for %s',

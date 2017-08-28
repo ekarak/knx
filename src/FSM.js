@@ -39,6 +39,7 @@ module.exports = machina.Fsm.extend({
       case 'unicast':
       case 'private':
       case 'loopback':
+        this.useTunneling = true;
         IpTunnelingConnection(this, options);
         break;
       default:
