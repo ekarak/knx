@@ -214,6 +214,10 @@ FSM.prototype.writeRaw = function(grpaddr, value, bitlength, callback) {
     console.trace('You must supply both grpaddr and value!');
     return;
   }
+  if (!Buffer.isBuffer(value)) {
+    console.trace('Value must be a buffer!');
+    return;
+  }
   // outbound request onto the state machine
   var serviceType = this.useTunneling ?
     KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
