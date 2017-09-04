@@ -53,6 +53,7 @@ declare module 'knx' {
         Disconnect(): void
         read( ga: KnxGroupAddress, cb?: (value: NodeBuffer) => void ): void
         write( ga: KnxGroupAddress, value: NodeBuffer, dpt: DPT, cb?: () => void): void
+        writeRaw( ga: KnxGroupAddress, value: NodeBuffer, bitlength?: number, cb?: () => void): void
     }
 
     export class Datapoint extends events.EventEmitter implements DatapointEvent {

@@ -209,6 +209,26 @@ FSM.prototype.write = function(grpaddr, value, dptid, callback) {
   }, callback);
 }
 
+FSM.prototype.writeRaw = function(grpaddr, value, bitlength, callback) {
+  if (grpaddr == null || value == null) {
+    console.trace('You must supply both grpaddr and value!');
+    return;
+  }
+  if (!Buffer.isBuffer(value)) {
+    console.trace('Value must be a buffer!');
+    return;
+  }
+  // outbound request onto the state machine
+  var serviceType = this.useTunneling ?
+    KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
+    KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
+  this.Request(serviceType, function(datagram) {
+    datagram.cemi.apdu.data = value;
+    datagram.cemi.apdu.bitlength = bitlength ? bitlength : (value.byteLength * 8);
+    datagram.cemi.dest_addr = grpaddr;
+  }, callback);
+}
+
 // send a READ request to the bus
 // you can pass a callback function which gets bound to the RESPONSE datagram event
 FSM.prototype.read = function(grpaddr, callback) {

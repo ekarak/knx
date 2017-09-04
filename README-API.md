@@ -124,3 +124,20 @@ light.switchOn(); // or switchOff();
 This effectively creates a pair of datapoints typically associated with a binary
 switch, one for controlling it and another for getting a status feedback (eg via
 manual operation)
+
+### Write raw buffers
+
+If you encode the values by yourself, you can write raw buffers with `writeRaw(groupaddress: string, buffer: Buffer, bitlength?: Number, callback?: () => void)`.
+
+The third (optional) parameter `bitlength` is necessary for datapoint types
+where the bitlength does not equal the buffers bytelength * 8.
+This is the case for dpt 1 (bitlength 1), 2 (bitlength 2) and 3 (bitlength 4).
+For other dpts the paramter can be omitted.
+
+```js
+// Write raw buffer to a groupaddress with dpt 1 (e.g light on = value true = Buffer<01>) with a bitlength of 1
+connection.writeRaw('1/0/0', Buffer.from('01', 'hex'), 1)
+// Write raw buffer to a groupaddress with dpt 9 (e.g temperature 18.4 °C = Buffer<0730>) without bitlength
+connection.writeRaw('1/0/0', Buffer.from('0730', 'hex'))
+```
+

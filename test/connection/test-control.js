@@ -23,6 +23,14 @@ var connection = new knx.Connection({
       setTimeout(function() {
         light.write(1);
       }, 1000);
+
+      // Do the same with writeRaw
+      setTimeout(function() {
+        connection.writeRaw('5/0/0', Buffer.from('01', 'hex'), 1);
+      }, 2000);
+      setTimeout(function() {
+        connection.writeRaw('5/0/0', Buffer.from('01', 'hex'), 0);
+      }, 3000);
     },
     event: function(evt, src, dest, value) {
       console.log("%s ===> %s <===, src: %j, dest: %j, value: %j",
@@ -42,4 +50,4 @@ var connection = new knx.Connection({
 setTimeout(function() {
   console.log('Exiting ...');
   process.exit(0);
-}, 1500);
+}, 3500);
