@@ -34,7 +34,11 @@
     }, {
       "name": "Cédric Trévisan",
       "url":  "https://bitbucket.org/ctrevisan/"
-  }],
+    }, {
+      "name": "Timo Müller",
+      "email": "timomueller1993@gmail.com"
+    }
+  ],
   "keywords": [
     "knx",
     "smart home",
