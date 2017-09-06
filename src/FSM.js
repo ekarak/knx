@@ -435,8 +435,9 @@ module.exports = machina.Fsm.extend({
         throw "Interface "+this.options.interface+" not found or has no useful IPv4 address!"
       else
         return candidateInterfaces[this.options.interface].address;
-    } else {
-      // just return the first available IPv4 non-loopback interface
+    }
+    // just return the first available IPv4 non-loopback interface
+    if (Object.keys(candidateInterfaces).length > 0) {
       return candidateInterfaces[Object.keys(candidateInterfaces)[0]].address;
     }
     // no local IpV4 interfaces?
