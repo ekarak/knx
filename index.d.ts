@@ -63,6 +63,6 @@ declare module 'knx' {
         constructor(options: DatapointOptions, conn?: IConnection)
         bind(conn: Connection): void
         write(value: KnxValue): void
-        read(callback?: (value: KnxValue) => void): void
+        read(callback?: (src: KnxDeviceAddress, value: KnxValue) => void): void
     }
 }
