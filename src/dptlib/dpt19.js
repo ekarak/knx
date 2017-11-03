@@ -23,11 +23,13 @@ exports.formatAPDU = function(value) {
   if (typeof value != 'object' || value.constructor.name != 'Date')
     console.trace('DPT19: Must supply a Date object')
   else {
+    // Sunday is 0 in Javascript, but 7 in KNX.
+    var day = (value.getDay() === 0) ? 7 : value.getDay();
     var apdu_data = new Buffer(8);
     apdu_data[0] = value.getFullYear() - 1900;
     apdu_data[1] = value.getMonth() + 1;
     apdu_data[2] = value.getDate();
-    apdu_data[3] = (value.getDay() << 5) + value.getHours();
+    apdu_data[3] = (day << 5) + value.getHours();
     apdu_data[4] = value.getMinutes();
     apdu_data[5] = value.getSeconds();
     apdu_data[6] = 0b00000001 & value.dst();
