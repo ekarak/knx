@@ -1,7 +1,7 @@
 {
   "name": "knx",
   "description": "KNXnet/IP protocol implementation for Node(>=4.x)",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "engines": {
     "node": ">=4"
   },
@@ -37,6 +37,10 @@
     }, {
       "name": "Timo Müller",
       "email": "timomueller1993@gmail.com"
+    },{
+      "name": "Patrik Åkerfeldt"
+    },{
+      "name": "Johannes Ritter"
     }
   ],
   "keywords": [
