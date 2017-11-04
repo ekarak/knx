@@ -6,10 +6,10 @@
 // Bitstruct to parse a DPT6 frame (8-bit signed integer)
 // Always 8-bit aligned.
 
-
 // DPT Basetype info
 exports.basetype = {
     "bitlength" : 8,
+    "signedness": "signed",
     "valuetype" : "basic",
     "desc" : "8-bit signed value",
     "range" : [-128, 127]

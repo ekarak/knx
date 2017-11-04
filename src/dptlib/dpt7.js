@@ -8,6 +8,7 @@
 //
 exports.basetype = {
   "bitlength" : 16,
+  "signedness": "unsigned",
   "valuetype" : "basic",
   "desc" : "16-bit unsigned value"
 }

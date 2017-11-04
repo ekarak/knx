@@ -13,7 +13,7 @@ exports.formatAPDU = function(value) {
     if (typeof value == 'string') {
       var apdu_data = value.charCodeAt(0);
       if (apdu_data > 255) console.trace("DPT4: must supply an ASCII character");
-      return apdu_data;
+      return new Buffer([apdu_data]);
     }
     else console.trace("DPT4: Must supply a character or string");
   }

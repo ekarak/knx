@@ -87,11 +87,13 @@ dpts.populateAPDU = function(value, apdu, dptid) {
   var nbytes = Math.ceil(dpt.basetype.bitlength / 8);
   apdu.data = new Buffer(nbytes);
   apdu.bitlength = dpt.basetype && dpt.basetype.bitlength || 1;
-  var tgtvalue;
+  var tgtvalue = value;
   // get the raw APDU data for the given JS value
   if (typeof dpt.formatAPDU == 'function') {
     // nothing to do here, DPT-specific formatAPDU implementation will handle everything
+    // console.log('>>> custom formatAPDU(%s): %j', dptid, value);
     apdu.data = dpt.formatAPDU(value);
+    // console.log('<<< custom formatAPDU(%s): %j', dptid, apdu.data);
   } else {
     if (!isFinite(value)) throw util.format("Invalid value, expected a %s",
       dpt.desc);
@@ -118,17 +120,16 @@ dpts.populateAPDU = function(value, apdu, dptid) {
       if (value < range[0] || value > range[1]) {
         console.trace("Value %j(%s) out of bounds(%j) for %s.%s",
           value, (typeof value), range, dpt.id, dpt.subtypeid);
-      } else {
-        tgtvalue = value;
       }
     }
-    for (var i = 0; i < nbytes; i++) {
-      apdu.data[i] = tgtvalue % 256;
-      //console.log('apdu.data[%d] == %j', i, apdu.data[i]);
-      tgtvalue = tgtvalue >> 8;
+    // generic APDU is assumed to convey an unsigned integer of arbitrary bitlength
+    if (dpt.basetype.hasOwnProperty('signedness') && dpt.basetype.signedness == 'signed') {
+      apdu.data.writeIntBE(tgtvalue, 0, nbytes);
+    } else {
+      apdu.data.writeUIntBE(tgtvalue, 0, nbytes);
     }
   }
-  //console.log('generic formatAPDU value=%j => apdu=%j', value, apdu);
+  // console.log('generic populateAPDU tgtvalue=%j(%s) nbytes=%d => apdu=%j', tgtvalue, typeof tgtvalue, nbytes, apdu);
   return apdu;
 }
 
@@ -146,11 +147,16 @@ dpts.fromBuffer = function(buf, dpt) {
     // nothing to do here, DPT-specific fromBuffer implementation will handle everything
     value = dpt.fromBuffer(buf);
   } else {
-    // get the raw numeric from the buffer
-    for (var i = 0; i < buf.length; i++) {
-      value += Math.pow(2, i) * buf[i];
+    // console.log('%s buflength == %d => %j', typeof buf, buf.length, JSON.stringify(buf) );
+    // get a raw unsigned integer from the buffer
+    if (buf.length > 6) {
+      throw "cannot handle unsigned integers more then 6 bytes in length"
     }
-    //console.log('%s %j == %j', dpt.id, dpt.basetype, value);
+    if (dpt.basetype.hasOwnProperty('signedness') && dpt.basetype.signedness == 'signed') {
+      value = buf.readIntBE(0,buf.length);
+    } else {
+      value = buf.readUIntBE(0,buf.length);
+    }
  // console.log(' ../knx/src/index.js : DPT : ' + JSON.stringify(dpt));   // for exploring dpt and implementing description
     if (dpt.hasOwnProperty('subtype') && dpt.subtype.hasOwnProperty(
         'scalar_range')) {

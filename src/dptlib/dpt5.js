@@ -9,6 +9,7 @@
 // DPT5 is the only (AFAIK) DPT with scalar datatypes (5.001 and 5.003)
 exports.basetype = {
     "bitlength" : 8,
+    "signedness": "unsigned",
     "range" : [0, 255],
     "valuetype" : "basic",
     "desc" : "8-bit unsigned value"

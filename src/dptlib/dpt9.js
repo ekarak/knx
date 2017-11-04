@@ -32,7 +32,7 @@ function frexp(value) {
 }
 
 exports.formatAPDU = function(value) {
-  var apdu_data;
+  var apdu_data  = new Buffer(2);
   if (!isFinite(value)) {
     console.trace( "DPT9: cannot write non-numeric or undefined value" );
   } else {
@@ -48,7 +48,6 @@ exports.formatAPDU = function(value) {
     var sign = (mantissa < 0) ?  1 :  0
     var mant = (mantissa < 0) ?  ~(max_mantissa^2047) : max_mantissa
     var exp = exponent - e;
-    apdu_data = new Buffer(2);
     // yucks
     apdu_data[0] = (sign << 7) + (exp << 3) + (mant >> 8);
     apdu_data[1] = mant % 256;

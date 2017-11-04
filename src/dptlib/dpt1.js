@@ -7,11 +7,17 @@ exports.formatAPDU = function(value) {
   var f = parseFloat(value);
   if (!isNaN(f) && isFinite(value)) {
     // numeric values (in native and string form) are truthy if NOT zero
-    return [Boolean(f) ? 1 : 0];
+    return new Buffer([Boolean(f) ? 1 : 0]);
   } else {
     // non-numeric value truthiness is Boolean true or the string 'true'.
-    return [(value == true || value == 'true') ? 1 : 0];
+    return new Buffer([(value == true || value == 'true') ? 1 : 0]);
   }
+}
+
+exports.fromBuffer = function(buf) {
+  if (buf.length != 1) {
+    console.trace("DPT1.fromBuffer: buf should be 1 byte (got %d bytes)", buf.length);
+  } else return (buf[0] != 0);
 }
 
 // DPT basetype info hash

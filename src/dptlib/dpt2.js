@@ -17,7 +17,7 @@ exports.formatAPDU = function(value) {
     } else {
       console.trace("DPT2: Must supply an value {priority:<bool>, data:<bool>}");
     }
-    return apdu_data;
+    return new Buffer([apdu_data]);
   }
 }
 
@@ -26,8 +26,8 @@ exports.fromBuffer = function(buf) {
     console.trace( "Buffer should be 1 byte long" );
   } else
   return {
-    priority: (buf & 0b00000011) >> 1,
-    data:     (buf & 0b00000001)
+    priority: (buf[0] & 0b00000011) >> 1,
+    data:     (buf[0] & 0b00000001)
   };
 }
 
