@@ -10,6 +10,7 @@
 // DPT13 base type info
 exports.basetype = {
     "bitlength" : 32,
+    "signedness": "signed",
     "valuetype" : "basic",
     "desc" : "4-byte signed value",
     "range" : [-Math.pow(2, 31), Math.pow(2, 31)-1]

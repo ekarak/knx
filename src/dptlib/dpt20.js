@@ -6,7 +6,7 @@
 //
 // DPT20: 1-byte HVAC
 //
-// DPT5 is the only (AFAIK) DPT with scalar datatypes
+// FIXME: help needed
 exports.formatAPDU = function(value) {
     var apdu_data = new Buffer(1);
     apdu_data[0] = value;

@@ -29,10 +29,15 @@ function unmarshalTest(t, dptid, jsval, data) {
   var unmarshalled = DPTLib.fromBuffer(data, dpt);
   //console.log('%s: %j --> %j', dpt.id, rhs, converted);
   var msg = `${dptid}.fromBuffer(${JSON.stringify(data)}) should unmarshall to ${JSON.stringify(jsval)}, got: ${JSON.stringify(unmarshalled)}`
-  if (typeof jsval == 'object') {
-    t.deepEqual(unmarshalled, jsval, msg);
-  } else {
-    t.ok(unmarshalled == jsval, msg);
+  switch (typeof jsval) {
+    case 'object':
+      t.deepEqual(unmarshalled, jsval, msg);
+      break;
+    case 'number':
+      t.equal(unmarshalled.toPrecision(15), jsval.toPrecision(15), msg);
+      break;
+    default:
+      t.ok(unmarshalled == jsval, msg);
   }
 };
 
