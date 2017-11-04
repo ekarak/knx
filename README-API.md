@@ -1,4 +1,4 @@
-### Connect to your KNX IP router
+## Connect to your KNX IP router
 
 By default *you only need to specify a 'handlers' object* containing your functions to handle KNX events. All the other options can be overridden according to your needs.
 
@@ -16,7 +16,7 @@ var connection = new knx.Connection( {
   // do not automatically connect, but use connection.Connect() to establish connection
   manualConnect: true,  
   // use tunneling with multicast (router) - this is NOT supported by all routers! See README-resilience.md
-  useMulticastTunneling: true,
+  forceTunneling: true,
   // wait at least 10 millisec between each datagram
   minimumDelay: 10,
   // define your event handlers here:
