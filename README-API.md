@@ -17,14 +17,7 @@ var connection = new knx.Connection( {
   manualConnect: true,  
   // use tunneling with multicast (router) - this is NOT supported by all routers! See README-resilience.md
   useMulticastTunneling: true,
-  // wait at len.write("1/0/0", 1);
-      // you also WRITE to an explicit datapoint type, eg. DPT9.001 is temperature Celcius
-      connection.write("2/1/0", 22.5, "DPT9.001");
-      // you can also issue a READ request and pass a callback to capture the response
-      connection.read("1/0/1", (src, responsevalue) => { ... });
-    },
-    // get notified for all KNX events:
-    event: funcast 10 millisec between each datagram
+  // wait at least 10 millisec between each datagram
   minimumDelay: 10,
   // define your event handlers here:
   handlers: {
@@ -103,7 +96,6 @@ var connection = knx.Connection({
 });
 ```
 
-
 ### Declare your devices
 
 You can define a device (basically a set of GA's that are related to a
@@ -140,4 +132,3 @@ connection.writeRaw('1/0/0', Buffer.from('01', 'hex'), 1)
 // Write raw buffer to a groupaddress with dpt 9 (e.g temperature 18.4 °C = Buffer<0730>) without bitlength
 connection.writeRaw('1/0/0', Buffer.from('0730', 'hex'))
 ```
-
