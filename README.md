@@ -3,10 +3,11 @@
 **New:** [Join the Gitter.im chatroom!](https://gitter.im/knx-js/Lobby)
 
 A feature-complete KNXnet/IP protocol stack in pure Javascript, capable of talking multicast (routing) and unicast (tunneling). Adding KNX to your Node.JS applications is now finally easy as pie.
-- Wide DPT (datapoint type) support (DPT1 - DPT20 supported)
-- Extensible Device support (binary lights, dimmers, ...)
-- You won't need to install a specialised eibd daemon with its arcane dependencies  and most importantly,
-- If you got an IP router and a network that supports IP multicast (such as wired ethernet), you can start talking to KNX within seconds!
+
+* Wide DPT (datapoint type) support (DPT1 - DPT20 supported)
+* Extensible Device support (binary lights, dimmers, ...)
+* You won't need to install a specialised eibd daemon with its arcane dependencies  and most importantly,
+* If you got an IP router and a network that supports IP multicast, you can start talking to KNX within seconds!
 
 ## Installation
 
