@@ -44,7 +44,7 @@ function IpRoutingConnection(instance, options) {
         sm.debugPrint(util.format('Socket error: %j', errmsg));
       });
       socket.on("message", function(msg, rinfo, callback) {
-        sm.debugPrint('Inbound multicast message: '+ msg.toString('hex'));
+        sm.debugPrint('Inbound multicast message from ' + rinfo.address + ': '+ msg.toString('hex'));
         sm.onUdpSocketMessage(msg, rinfo, callback);
       });
       // start connection sequence

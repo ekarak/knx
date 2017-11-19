@@ -3,26 +3,36 @@
 * (C) 2016-2017 Elias Karakoulakis
 */
 
-var knx = require('../..');
-
 Error.stackTraceLimit = Infinity;
 
-var connection = knx.Connection({
-	debug: true,
-	handlers: {
-		connected: function() {
-			console.log('----------');
-			console.log('Connected!');
-			console.log('----------');
-			process.exit(0);
-		},
-		error: function() {
-			process.exit(1);
-		}
-	}
+const knx = require('../..');
+const address = require('../../src/Address.js');
+const assert = require('assert');
+const test = require('tape');
+
+//
+test('KNX connect routing', function(t) {
+  var connection = knx.Connection({
+    debug: true,
+    handlers: {
+      connected: function() {
+        console.log('----------');
+        console.log('Connected!');
+        console.log('----------');
+        t.pass('connected in routing mode');
+        t.end();
+        process.exit(0);
+      },
+      error: function() {
+        t.fail('error connecting');
+        t.end();
+        process.exit(1);
+      }
+    }
+  });
 });
 
 setTimeout(function() {
-	console.log('Exiting...');
-	process.exit(0);
-}, 1500);
+  console.log('Exiting with timeout...');
+  process.exit(2);
+}, 1000);
