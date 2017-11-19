@@ -126,11 +126,13 @@ module.exports = machina.Fsm.extend({
         }
       },
       inbound_CONNECTIONSTATE_RESPONSE: function (datagram) {
-        var str = KnxConstants.keyText('RESPONSECODE', datagram.connstate.status);
-        this.debugPrint(util.format(
-          'Got connection state response, connstate: %s, channel ID: %d',
-          str, datagram.connstate.channel_id));
-        this.transition( 'connected');
+        if (this.useTunneling) {
+          var str = KnxConstants.keyText('RESPONSECODE', datagram.connstate.status);
+          this.debugPrint(util.format(
+            'Got connection state response, connstate: %s, channel ID: %d',
+            str, datagram.connstate.channel_id));
+          this.transition( 'connected');
+        }
       },
       "*": function ( data ) {
         this.debugPrint(util.format('*** deferring Until Transition %j', data));
@@ -155,27 +157,31 @@ module.exports = machina.Fsm.extend({
     disconnecting: {
       // TODO: skip on pure routing
       _onEnter: function() {
-        var sm = this;
-        var aliveFor = this.conntime ? Date.now() - this.conntime : 0;
-        this.debugPrint(util.format('connection alive for %d seconds', aliveFor/1000));
-        this.disconnecttimer = setTimeout( function() {
-          sm.debugPrint("disconnection timed out");
-          sm.transition( "uninitialized");
-        }.bind( this ), 3000 );
-        //
-        this.send( this.prepareDatagram ( KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST), function(err) {
-          // TODO: handle send err
-          sm.debugPrint('sent DISCONNECT_REQUEST');
-        });
+        if (this.useTunneling) {
+          var sm = this;
+          var aliveFor = this.conntime ? Date.now() - this.conntime : 0;
+          this.debugPrint(util.format('connection alive for %d seconds', aliveFor/1000));
+          this.disconnecttimer = setTimeout( function() {
+            sm.debugPrint("disconnection timed out");
+            sm.transition( "uninitialized");
+          }.bind( this ), 3000 );
+          //
+          this.send( this.prepareDatagram ( KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST), function(err) {
+            // TODO: handle send err
+            sm.debugPrint('sent DISCONNECT_REQUEST');
+          });
+        }
       },
       _onExit: function() {
         clearTimeout( this. disconnecttimer )
       },
       inbound_DISCONNECT_RESPONSE: function (datagram) {
-        this.debugPrint(util.format('got disconnect response'));
-        this.disconnected();
-        this.transition( 'uninitialized');
-        this.emit( 'disconnected' );
+        if (this.useTunneling) {
+          this.debugPrint(util.format('got disconnect response'));
+          this.disconnected();
+          this.transition( 'uninitialized');
+          this.emit( 'disconnected' );
+        }
       },
     },
 
@@ -215,22 +221,28 @@ module.exports = machina.Fsm.extend({
       // 2) queue an OUTGOING tunelling request...
       outbound_TUNNELING_REQUEST: function ( datagram ) {
         var sm = this;
-        var elapsed = Date.now() - this.lastSentTime;
-        // if no miminum delay set OR the last sent datagram was long ago...
-        if (!this.options.minimumDelay || elapsed >= this.options.minimumDelay) {
-          // ... send now
-          this.transition( 'sendDatagram', datagram );
+        if (this.useTunneling) {
+          var elapsed = Date.now() - this.lastSentTime;
+          // if no miminum delay set OR the last sent datagram was long ago...
+          if (!this.options.minimumDelay || elapsed >= this.options.minimumDelay) {
+            // ... send now
+            this.transition( 'sendDatagram', datagram );
+          } else {
+            // .. or else, let the FSM handle it later
+            setTimeout(function () {
+              sm.handle( 'outbound_TUNNELING_REQUEST', datagram );
+            }, this.minimumDelay - elapsed);
+          }
         } else {
-          // .. or else, let the FSM handle it later
-          setTimeout(function () {
-            sm.handle( 'outbound_TUNNELING_REQUEST', datagram );
-          }, this.minimumDelay - elapsed);
+          this.debugPrint( "dropping outbound TUNNELING_REQUEST, we're in routing mode" );
         }
       },
 
       // 3) receive an INBOUND tunneling request INDICATION (L_Data.ind)
       'inbound_TUNNELING_REQUEST_L_Data.ind': function( datagram ) {
-        this.transition( 'recvTunnReqIndication', datagram );
+        if (this.useTunneling) {
+          this.transition( 'recvTunnReqIndication', datagram );
+        }
       },
 
       /* 4) receive an INBOUND tunneling request CONFIRMATION (L_Data.con) to one of our sent tunnreq's
@@ -239,27 +251,30 @@ module.exports = machina.Fsm.extend({
        *  in ETS, usually on the 'primary' device that contains the actuator endpoint
        */
       'inbound_TUNNELING_REQUEST_L_Data.con': function ( datagram ) {
-        var msg;
-        var confirmed = this.sentTunnRequests[datagram.cemi.dest_addr];
-        if (confirmed) {
-          msg = 'delivery confirmation (L_Data.con) received';
-          delete this.sentTunnRequests[datagram.cemi.dest_addr];
-          this.emit('confirmed', confirmed);
-        } else {
-          msg = 'unknown dest addr';
+        if (this.useTunneling) {
+          var msg;
+          var confirmed = this.sentTunnRequests[datagram.cemi.dest_addr];
+          if (confirmed) {
+            msg = 'delivery confirmation (L_Data.con) received';
+            delete this.sentTunnRequests[datagram.cemi.dest_addr];
+            this.emit('confirmed', confirmed);
+          } else {
+            msg = 'unknown dest addr';
+          }
+          this.debugPrint(util.format('%s: '+msg, datagram.cemi.dest_addr));
+          this.acknowledge(datagram);
         }
-        this.debugPrint(util.format('%s: '+msg, datagram.cemi.dest_addr));
-        this.acknowledge(datagram);
       },
 
       // 5) receive an INBOUND ROUTING_INDICATION (L_Data.ind)
       'inbound_ROUTING_INDICATION_L_Data.ind': function( datagram ) {
-        this.transition( 'idle' );
         this.emitEvent(datagram);
       },
 
       inbound_DISCONNECT_REQUEST: function( datagram ) {
-        this.transition( 'connecting' );
+        if (this.useTunneling) {
+          this.transition( 'connecting' );
+        }
       },
 
     },
@@ -357,7 +372,7 @@ module.exports = machina.Fsm.extend({
     },
 
     /*
-    * 2) INBOUND tunneling request (L_Data.ind)
+    * 2) INBOUND tunneling request (L_Data.ind) - only in tunnelling mode
     */
     recvTunnReqIndication: {
       _onEnter: function (datagram) {
