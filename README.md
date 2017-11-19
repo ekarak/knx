@@ -2,7 +2,7 @@
 
 **New:** [Join the Gitter.im chatroom!](https://gitter.im/knx-js/Lobby)
 
-A feature-complete KNXnet/IP protocol stack in pure Javascript, capable of talking multicast (routing) and unicast (tunneling). Adding KNX to your Node.JS applications is now finally easy as pie.
+A feature-complete [KNXnet/IP protocol stack](https://www.knx.org/en-us/knx/technology/developing/devices/ip-devices/index.php) in pure Javascript, capable of talking multicast (routing) and unicast (tunneling). Adding KNX to your Node.JS applications is now finally easy as pie.
 
 * Wide DPT (datapoint type) support (DPT1 - DPT20 supported)
 * Extensible Device support (binary lights, dimmers, ...)

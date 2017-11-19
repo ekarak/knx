@@ -209,6 +209,23 @@ FSM.prototype.write = function(grpaddr, value, dptid, callback) {
   }, callback);
 }
 
+FSM.prototype.respond = function(grpaddr, value, dptid) {
+  if (grpaddr == null || value == null) {
+    console.trace('You must supply both grpaddr and value!');
+    return;
+  }
+  var serviceType = this.useTunneling ?
+    KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
+    KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
+  this.Request(serviceType, function(datagram) {
+    DPTLib.populateAPDU(value, datagram.cemi.apdu, dptid);
+    // this is a READ request
+    datagram.cemi.apdu.apci = "GroupValue_Response";
+    datagram.cemi.dest_addr = grpaddr;
+    return datagram;
+  });
+}
+
 FSM.prototype.writeRaw = function(grpaddr, value, bitlength, callback) {
   if (grpaddr == null || value == null) {
     console.trace('You must supply both grpaddr and value!');
