@@ -20,5 +20,9 @@ module.exports = {
   dpt9_timer_control_ga: '4/1/4',
   dpt9_timer_status_ga: '4/1/3',
   // a DPT1 group address that should also be able to respond to a GroupValue_Read request
-  wired_test_control_ga: '5/0/0'
+  wired_test_control_ga: '5/0/0',
+  // read storm test: read back statuses from an actuator with multiple relays
+  readstorm_control_ga_start: '1/1/0',
+  readstorm_status_ga_start: '1/1/100',
+  readstorm_range: 8
 }

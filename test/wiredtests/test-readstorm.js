@@ -18,49 +18,60 @@ Error.stackTraceLimit = Infinity;
  to run one test : $ WIREDTEST=1 node test/wiredtests/<test>.js
 */
 if (process.env.hasOwnProperty('WIREDTEST')) {
-
-  function setupDatapoint(groupadress, statusga) {
-    var dp = new knx.Datapoint({
-      ga: groupadress,
-      status_ga: statusga,
-      dpt: "DPT1.001",
-      autoread: true
-    }, connection);
-    dp.on('change', (oldvalue, newvalue) => {
-      console.log("**** %s current value: %j", groupadress, newvalue);
-      console.log("options.ga==%s", dp.options.ga);
-    });
-    return dp;
-  }
-  var connection = knx.Connection({
-  //  debug: true,
-    //forceTunneling: true,
-    minimumDelay: 100,
-    handlers: {
-      connected: function() {
-        console.log('===========\nConnected!\n===========');
-        setupDatapoint('1/1/0', '1/1/100');
-        setupDatapoint('1/1/1', '1/1/101');
-        setupDatapoint('1/1/2', '1/1/102');
-        setupDatapoint('1/1/3', '1/1/103');
-        setupDatapoint('1/1/4', '1/1/104');
-        setupDatapoint('1/1/5', '1/1/105');
-        setupDatapoint('1/1/6', '1/1/106');
-        setupDatapoint('1/1/7', '1/1/107');
-        dp8 = setupDatapoint('1/1/8', '1/1/108');
-  /*      setTimeout(function () {
-          dp8.write(1);
-          setTimeout(function () {
-            dp8.write(0);
-          }, 3000);
-        }, 3000); */
-      },
-      event: function (evt, src, dest, value) {
-        console.log("%s ===> %s <===, src: %j, dest: %j, value: %j",
-          new Date().toISOString().replace(/T/, ' ').replace(/Z$/, ''),
-          evt, src, dest, value
-        );
-      },
+  test('KNX wired test - read multiple statuses from a consecutive GA range', function(t) {
+    var readback = {};
+    function setupDatapoint(groupadress, statusga) {
+      var dp = new knx.Datapoint({
+        ga: groupadress,
+        status_ga: statusga,
+        dpt: "DPT1.001",
+        autoread: true
+      }, connection);
+      dp.on('change', (oldvalue, newvalue) => {
+        console.log("**** %s current value: %j", groupadress, newvalue);
+      });
+      return dp;
     }
+    function setupDatapoints() {
+      var ctrl_ga_arr = options.readstorm_control_ga_start.split('/');
+      var stat_ga_arr = options.readstorm_status_ga_start.split('/');
+      for (i=0; i< options.readstorm_range; i++) {
+        var ctrl_ga = [ctrl_ga_arr[0], ctrl_ga_arr[1], i+parseInt(ctrl_ga_arr[2])].join('/');
+        var stat_ga = [stat_ga_arr[0], stat_ga_arr[1], i+parseInt(stat_ga_arr[2])].join('/');
+        setupDatapoint(ctrl_ga, stat_ga);
+      }
+    }
+    var connection = knx.Connection({
+    //  debug: true,
+      //forceTunneling: true,
+//      minimumDelay: 100,
+      handlers: {
+        connected: function() {
+          setupDatapoints();
+        },
+        event: function (evt, src, dest, value) {
+          if (evt == 'GroupValue_Response') {
+            readback[dest] = [src, value];
+            // have we got responses from all the read requests for all datapoints?
+            if (Object.keys(readback).length == options.readstorm_range) {
+              t.pass(util.format('readstorm: all %d datapoints accounted for', options.readstorm_range));
+              t.end();
+              process.exit(0);
+            }
+          }
+        },
+        error: function(connstatus) {
+          console.log("%s **** ERROR: %j",
+            new Date().toISOString().replace(/T/, ' ').replace(/Z$/, ''),
+            connstatus);
+          process.exit(1);
+        }
+      }
+    });
   });
+
+  setTimeout(function() {
+    console.log('Exiting with timeout...');
+    process.exit(2);
+  }, 1500);
 }

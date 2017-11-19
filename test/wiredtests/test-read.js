@@ -46,6 +46,6 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
 
   setTimeout(function() {
     console.log('Exiting ...');
-    process.exit(0);
+    process.exit(2);
   }, 1500);
 }

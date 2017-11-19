@@ -20,10 +20,6 @@ test('KNX connect routing', function(t) {
         console.log('Connected!');
         console.log('----------');
         t.pass('connected in routing mode');
-        this.Disconnect();
-      },
-      disconnected: function() {
-        t.pass('disconnected in routing mode');
         t.end();
         process.exit(0);
       },

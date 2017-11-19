@@ -21,8 +21,6 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
       //debug: true,
       handlers: {
         connected: () => {
-          console.log('Connected!')
-
           var timer_control = new knx.Datapoint({ga: options.dpt9_timer_control_ga, dpt: 'DPT9.001', autoread: true}, connection);
           var timer_status  = new knx.Datapoint({ga: options.dpt9_timer_status_ga, dpt: 'DPT9.001', autoread: true}, connection);
           timer_control.on('change', function(oldvalue, newvalue) {
