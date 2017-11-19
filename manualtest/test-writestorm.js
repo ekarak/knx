@@ -2,7 +2,7 @@
 * knx.js - a KNX protocol stack in pure Javascript
 * (C) 2016-2017 Elias Karakoulakis
 */
-
+Error.stackTraceLimit = Infinity;
 var knx = require('knx');
 
 if (process.argv.length < 2) {
@@ -17,7 +17,7 @@ function setupSwitch(groupaddress, statusga) {
   });
   return sw;
 }
-Error.stackTraceLimit = Infinity;
+
 var connection = knx.Connection({
   //debug: true,
   //minimumDelay: 10,
