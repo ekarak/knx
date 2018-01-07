@@ -48,12 +48,12 @@ Datapoint.prototype.bind = function(conn) {
       case "GroupValue_Response":
         if (buf) {
           jsvalue = DPTLib.fromBuffer(buf, self.dpt);
-          this.emit('event', evt, jsvalue);
+          self.emit('event', evt, jsvalue);
           self.update(jsvalue); // update internal state
         }
         break;
       default:
-        this.emit('event', evt);
+        self.emit('event', evt);
         // TODO: add default handler; maybe emit warning?
     }
   });
