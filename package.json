@@ -18,28 +18,37 @@
     "name": "Elias Karakoulakis",
     "email": "Elias.Karakoulakis@gmail.com"
   },
-  "maintainers": [{
+  "maintainers": [
+    {
       "name": "Elias Karakoulakis",
       "email": "elias.karakoulakis@gmail.com"
-  }],
-  "contributors": [{
+    }
+  ],
+  "contributors": [
+    {
       "name": "Mattias Holmlund",
       "email": "mattias@holmlund.se"
-    }, {
+    },
+    {
       "name": "Kay Ringmann",
       "email": "info@punktnetzwerk.net"
-    }, {
+    },
+    {
       "name": "Timo Krieger",
       "url": "https://bitbucket.org/timokri/"
-    }, {
+    },
+    {
       "name": "Cédric Trévisan",
-      "url":  "https://bitbucket.org/ctrevisan/"
-    }, {
+      "url": "https://bitbucket.org/ctrevisan/"
+    },
+    {
       "name": "Timo Müller",
       "email": "timomueller1993@gmail.com"
-    },{
+    },
+    {
       "name": "Patrik Åkerfeldt"
-    },{
+    },
+    {
       "name": "Johannes Ritter"
     }
   ],

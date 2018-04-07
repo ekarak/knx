@@ -36,10 +36,6 @@ function IpTunnelingConnection(instance, options) {
     return this;
   }
 
-  instance.disconnected = function() {
-    this.socket.close();
-  }
-
   return instance;
 }
 

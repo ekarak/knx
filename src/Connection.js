@@ -183,7 +183,7 @@ FSM.prototype.send = function(datagram, callback) {
     buf, 0, buf.length,
     conn.remoteEndpoint.port, conn.remoteEndpoint.addr.toString(),
     function(err) {
-      conn.debugPrint(util.format('UDP send %s: %s %s',
+      conn.debugPrint(util.format('UDP sent %s: %s %s',
         (err ? err.toString() : 'OK'), descr, buf.toString('hex')
       ));
       if (typeof callback === 'function') callback(err);
@@ -278,7 +278,7 @@ FSM.prototype.read = function(grpaddr, callback) {
   });
 }
 
-FSM.prototype.Disconnect = function(msg) {
+FSM.prototype.Disconnect = function(cb) {
   this.transition("disconnecting");
   // machina.js removeAllListeners equivalent:
   // this.off();
