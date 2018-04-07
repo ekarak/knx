@@ -163,7 +163,9 @@ module.exports = machina.Fsm.extend({
           this.debugPrint(util.format('connection alive for %d seconds', aliveFor/1000));
           this.disconnecttimer = setTimeout( function() {
             sm.debugPrint("disconnection timed out");
-            sm.transition( "uninitialized");
+            sm.socket.close();
+            sm.transition( 'uninitialized');
+            sm.emit( 'disconnected' );
           }.bind( this ), 3000 );
           //
           this.send( this.prepareDatagram ( KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST), function(err) {
@@ -178,7 +180,7 @@ module.exports = machina.Fsm.extend({
       inbound_DISCONNECT_RESPONSE: function (datagram) {
         if (this.useTunneling) {
           this.debugPrint(util.format('got disconnect response'));
-          this.disconnected();
+          this.socket.close();
           this.transition( 'uninitialized');
           this.emit( 'disconnected' );
         }
