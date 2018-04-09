@@ -1,7 +1,9 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
+
+const log = require('log-driver');
 
 //
 // DPT14.*: 4-byte floating point value
@@ -13,14 +15,14 @@
 
 exports.formatAPDU = function(value) {
   if (!value || typeof value != 'number')
-    console.trace('DPT14: Must supply a number value');
+    log.error('DPT14: Must supply a number value');
   var apdu_data = new Buffer(4);
   apdu_data.writeFloatBE(value,0);
   return apdu_data;
 }
 
 exports.fromBuffer = function(buf) {
-  if (buf.length != 4) console.trace("DPT14: Buffer should be 4 bytes long");
+  if (buf.length != 4) log.warn("DPT14: Buffer should be 4 bytes long");
   return buf.readFloatBE(0);
 }
 

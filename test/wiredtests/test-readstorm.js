@@ -1,6 +1,6 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
 
 const knx = require('../..');
@@ -42,7 +42,7 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
       }
     }
     var connection = knx.Connection({
-    //  debug: true,
+       loglevel: 'warn',
       //forceTunneling: true,
 //      minimumDelay: 100,
       handlers: {

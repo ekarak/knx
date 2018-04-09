@@ -1,12 +1,13 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
 
 /*
   define the required options for running wired tests
 */
 module.exports = {
+  loglevel: 'trace',
   // your KNX IP router UNICAST ip address
   ipAddr: '192.168.8.4',
   // the physical address used by the wired tests

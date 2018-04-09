@@ -1,13 +1,15 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
+
+const log = require('log-driver');
 
 //
 // DPT3.*: 4-bit dimming/blinds control
 //
 exports.formatAPDU = function(value) {
-  if (!value) console.trace("DPT3: cannot write null value");
+  if (!value) log.warn("DPT3: cannot write null value");
   else {
     var apdu_data = new Buffer(1);
     if (typeof value == 'object' &&
@@ -15,16 +17,16 @@ exports.formatAPDU = function(value) {
       value.hasOwnProperty('data')) {
       apdu_data[0] = (value.decr_incr << 3) + (value.data & 0b00000111);
     } else {
-      console.trace("Must supply a value object of {decr_incr, data}");
+      log.error("Must supply a value object of {decr_incr, data}");
     }
-    //console.log('formatAPU returns %j', apdu_data);
+    //log.trace('formatAPU returns %j', apdu_data);
     return apdu_data;
   }
 }
 
 exports.fromBuffer = function(buf) {
   if (buf.length != 1) {
-    console.trace("DPT3: Buffer should be 1 byte long");
+    log.error("DPT3: Buffer should be 1 byte long");
   } else {
     return {
       decr_incr: (buf[0] & 0b00001000) >> 3,

@@ -1,7 +1,9 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
+
+const log = require('log-driver');
 
 //
 // DPT10.*: time (3 bytes)
@@ -23,12 +25,12 @@ exports.formatAPDU = function(value) {
         apdu_data[1] = parseInt(match[2]);
         apdu_data[2] = parseInt(match[3]);
       } else {
-        console.trace("DPT10: invalid time format (%s)", value);
+        log.warn("DPT10: invalid time format (%s)", value);
       }
       break;
     case 'object':
       if (value.constructor.name != 'Date') {
-        console.trace('Must supply a Date or String for DPT10 time');
+        log.warn('Must supply a Date or String for DPT10 time');
         break;
       }
     case 'number':
@@ -44,7 +46,7 @@ exports.formatAPDU = function(value) {
 // Javascript contains no notion of "time of day", hence this function
 // returns a string representation of the time. Beware, no timezone!
 exports.fromBuffer = function(buf) {
-  if (buf.length != 3) console.trace("DPT10: Buffer should be 3 bytes long")
+  if (buf.length != 3) log.warn("DPT10: Buffer should be 3 bytes long")
   else {
     var d = new Date();
     // FIXME: no ability to setDay() without week context
@@ -56,7 +58,7 @@ exports.fromBuffer = function(buf) {
       seconds >= 0 & seconds <= 59) {
       return util.format("%d:%d:%d", hours, minutes, seconds);
     } else {
-      console.trace(
+      log.warn(
         "DPT10: buffer %j (decoded as %d:%d:%d) is not a valid time",
         buf, hours, minutes, seconds);
     }

@@ -1,6 +1,6 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
 
 Error.stackTraceLimit = Infinity;
@@ -13,7 +13,7 @@ const test = require('tape');
 //
 test('KNX connect routing', function(t) {
   var connection = knx.Connection({
-    debug: true,
+    loglevel: 'trace',
     handlers: {
       connected: function() {
         console.log('----------');

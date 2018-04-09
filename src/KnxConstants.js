@@ -1,7 +1,9 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
+
+const KnxLog = require('./KnxLog');
 
 // SOURCES:
 // http://www.eb-systeme.de/?page_id=479
@@ -99,7 +101,7 @@ KnxConstants.keyText = function(mapref, value) {
   for (var key in map) {
     if (map[key] == value) return key;
   }
-  console.trace("not found: %j", value);
+  KnxLog.get().trace("not found: %j", value);
 }
 
 module.exports = KnxConstants;

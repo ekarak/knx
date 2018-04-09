@@ -1,6 +1,6 @@
 ## Connect to your KNX IP router
 
-By default *you only need to specify a 'handlers' object* containing your functions to handle KNX events. All the other options can be overridden according to your needs.
+By default *you only need to specify a 'handlers' object* containing your functions to handle KNX events. All the other options have defaults that can be overridden according to your needs.
 
 
 ```js
@@ -11,8 +11,8 @@ var connection = new knx.Connection( {
   interface: 'eth0',
   // the KNX physical address we'd like to use
   physAddr: '15.15.15',
-  // print lots of debug output to the console
-  debug: true,
+  // set the log level for messsages printed on the console. This can be 'error', 'warn', 'info' (default), 'debug', or 'trace'.
+  loglevel: 'info',
   // do not automatically connect, but use connection.Connect() to establish connection
   manualConnect: true,  
   // use tunneling with multicast (router) - this is NOT supported by all routers! See README-resilience.md

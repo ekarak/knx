@@ -1,7 +1,9 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
+
+const log = require('log-driver');
 
 exports.formatAPDU = function(value) {
   var f = parseFloat(value);
@@ -16,7 +18,7 @@ exports.formatAPDU = function(value) {
 
 exports.fromBuffer = function(buf) {
   if (buf.length != 1) {
-    console.trace("DPT1.fromBuffer: buf should be 1 byte (got %d bytes)", buf.length);
+    log.warn("DPT1.fromBuffer: buf should be 1 byte (got %d bytes)", buf.length);
   } else return (buf[0] != 0);
 }
 
