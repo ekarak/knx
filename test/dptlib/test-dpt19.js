@@ -7,7 +7,7 @@ const test = require('tape');
 const DPTLib = require('../../src/dptlib');
 
 test('DPT19 datetime conversion', function(t) {
-  // 2nd/even test cases MUST be summer/DST
+
   var tests = ['1995-12-17T03:24:00', '1996-07-17T03:24:00'];
 
   Object.keys(tests).forEach(function(key) {
@@ -22,7 +22,7 @@ test('DPT19 datetime conversion', function(t) {
         (day << 5) + date.getHours(), // 3 bits: day of week (1-7), 5 bits: hour
         date.getMinutes(),
         date.getSeconds(),
-        0b00000001 && key, // 2nd/even test cases MUST be summer/DST
+        0,
         0
     ]);
 

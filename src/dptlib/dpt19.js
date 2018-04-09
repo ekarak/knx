@@ -11,15 +11,6 @@ const log = require('log-driver');
 // DPT19: 8-byte Date and Time
 //
 
-Date.prototype.stdTimezoneOffset = function() {
-  var jan = new Date(this.getFullYear(), 0, 1);
-  var jul = new Date(this.getFullYear(), 6, 1);
-  return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
-}
-
-Date.prototype.dst = function() {
-  return this.getTimezoneOffset() < this.stdTimezoneOffset();
-}
 
 exports.formatAPDU = function(value) {
   if (typeof value != 'object' || value.constructor.name != 'Date')
@@ -34,7 +25,7 @@ exports.formatAPDU = function(value) {
     apdu_data[3] = (day << 5) + value.getHours();
     apdu_data[4] = value.getMinutes();
     apdu_data[5] = value.getSeconds();
-    apdu_data[6] = 0b00000001 & value.dst();
+    apdu_data[6] = 0;
     apdu_data[7] = 0;
     return apdu_data;
   }
