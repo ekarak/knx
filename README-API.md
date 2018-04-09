@@ -19,6 +19,8 @@ var connection = new knx.Connection( {
   forceTunneling: true,
   // wait at least 10 millisec between each datagram
   minimumDelay: 10,
+  // enable this option to suppress the acknowledge flag with outgoing L_Data.req requests. LoxOne needs this
+  suppress_ack_ldatareq: false,
   // define your event handlers here:
   handlers: {
     // wait for connection establishment before sending anything!
