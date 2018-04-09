@@ -1,7 +1,9 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
+
+const log = require('log-driver');
 
 //
 // DPT238: 1-byte unsigned value
@@ -10,7 +12,7 @@
 exports.formatAPDU = function(value) {
     var apdu_data = new Buffer(1);
     apdu_data[0] = value;
-    console.info('./knx/src/dpt5.js : input value = ' + value + '   apdu_data = ' + apdu_data);
+    log.trace('dpt238.js : input value = ' + value + '   apdu_data = ' + apdu_data);
     return apdu_data;
 }
 

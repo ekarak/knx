@@ -1,7 +1,7 @@
 {
   "name": "knx",
   "description": "KNXnet/IP protocol implementation for Node(>=4.x)",
-  "version": "2.2.8",
+  "version": "2.3.0",
   "engines": {
     "node": ">=4"
   },
@@ -62,7 +62,8 @@
     "binary-parser": "1.1.5",
     "binary-protocol": "0.0.0",
     "ipaddr.js": "1.2.0",
-    "machina": "^2.0.0-1"
+    "machina": "^2.0.0-1",
+    "log-driver": "1.2.7"
   },
   "devDependencies": {
     "multi-tape": "^1.1.1",

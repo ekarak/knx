@@ -1,10 +1,11 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
 
 const util = require('util');
 const DPTLib = require('./dptlib');
+const KnxLog = require('./KnxLog');
 const KnxProtocol = require('./KnxProtocol');
 const KnxConstants = require('./KnxConstants');
 const EventEmitter = require('events').EventEmitter;
@@ -17,14 +18,13 @@ const EventEmitter = require('events').EventEmitter;
  */
 function Datapoint(options, conn) {
   EventEmitter.call(this);
-  // console.log('new datapoint: %j', options);
   if (options == null || options.ga == null) {
     throw "must supply at least { ga, dpt }!";
   }
   this.options = options;
   this.dptid = options.dpt || "DPT1.001";
   this.dpt = DPTLib.resolve(this.dptid);
-  // console.log('resolved %s to %j', this.dptid, this.dpt);
+  KnxLog.get().trace('resolved %s to %j', this.dptid, this.dpt);
   this.current_value = null;
   if (conn) this.bind(conn);
 }
@@ -72,13 +72,12 @@ Datapoint.prototype.bind = function(conn) {
 }
 
 Datapoint.prototype.update = function(jsvalue) {
-  //console.log('UPDATE %j', jsvalue);
   if (this.current_value != jsvalue) {
     var old_value = this.current_value;
     this.emit('change', this.current_value, jsvalue, this.options.ga);
     this.current_value = jsvalue;
     var ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
-    //console.log("%s **** %s DATAPOINT CHANGE (was: %j)", ts, this.toString(), old_value );
+    KnxLog.get().trace("%s **** %s DATAPOINT CHANGE (was: %j)", ts, this.toString(), old_value );
   }
 }
 

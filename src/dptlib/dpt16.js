@@ -1,14 +1,16 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
+
+const log = require('log-driver');
 
 //
 // DPT16: ASCII string (max 14 chars)
 //
 
 exports.formatAPDU = function(value) {
-  if (typeof value != 'string') console.trace("Must supply a string value")
+  if (typeof value != 'string') log.warn("Must supply a string value")
   else {
     var buf = new Buffer(14);
     buf.write(value, 'ascii')

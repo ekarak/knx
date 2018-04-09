@@ -1,6 +1,6 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
 
 // Bitstruct to parse a DPT6 frame (8-bit signed integer)

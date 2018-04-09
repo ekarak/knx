@@ -1,8 +1,8 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
-
+const KnxLog = require('./KnxLog');
 const Parser = require('binary-parser').Parser;
 
 //           +-----------------------------------------------+
@@ -51,7 +51,7 @@ var twoLevel           = (new Parser()).bit5('l1').bit11('l2');
 Address.toString = function (buf /*buffer*/, addrtype /*ADDRESS_TYPE*/, twoLevelAddressing) {
   var group = (addrtype == TYPE.GROUP) ;
   var address = null;
-  //console.log('%j, type: %d, %j', buf, addrtype, knxnetprotocol.twoLevelAddressing);
+  //KnxLog.get().trace('%j, type: %d, %j', buf, addrtype, knxnetprotocol.twoLevelAddressing);
   if (!(typeof buf === 'object' && buf.constructor.name == 'Buffer' && buf.length == 2))
     throw "not a buffer, or not a 2-byte address buffer"
   if (group && twoLevelAddressing) {
@@ -70,7 +70,7 @@ Address.toString = function (buf /*buffer*/, addrtype /*ADDRESS_TYPE*/, twoLevel
 // parse address string to 2-byte Buffer
 Address.parse = function (addr /*string*/, addrtype /*TYPE*/, twoLevelAddressing) {
   if (!addr) {
-    console.trace('Fix your code - no address given');
+    KnxLog.get().warn('Fix your code - no address given to Address.parse');
   }
   var group = (addrtype === TYPE.GROUP) ;
   var address = new Buffer(2);

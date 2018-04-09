@@ -13,10 +13,11 @@ function BinarySwitch(options, conn) {
   this.control_ga = options.ga;
   this.status_ga = options.status_ga;
   if (conn) this.bind(conn);
+  this.log = knx.Log.get();
 }
 
 BinarySwitch.prototype.bind = function (conn) {
-  if (!conn) console.trace("must supply a valid KNX connection to bind to");
+  if (!conn) this.log.warn("must supply a valid KNX connection to bind to");
   this.conn = conn;
   this.control = new knx.Datapoint({ga: this.control_ga}, conn);
   if (this.status_ga) {
@@ -31,22 +32,22 @@ BinarySwitch.prototype.on = function () {
   try {
     tgt.on.apply(tgt, argsArray);
   } catch (err) {
-    console.log(err);
+    this.log.error(err);
   }
 }
 
 BinarySwitch.prototype.switchOn = function () {
-  if (!this.conn) console.trace("must supply a valid KNX connection to bind to");
+  if (!this.conn) this.log.warn("must supply a valid KNX connection to bind to");
   this.control.write(1);
 }
 
 BinarySwitch.prototype.switchOff = function () {
-  if (!this.conn) console.trace("must supply a valid KNX connection to bind to");
+  if (!this.conn) this.log.warn("must supply a valid KNX connection to bind to");
   this.control.write(0);
 }
 
 BinarySwitch.prototype.write = function (v) {
-  if (!this.conn) console.trace("must supply a valid KNX connection to bind to");
+  if (!this.conn) this.log.warn("must supply a valid KNX connection to bind to");
   this.control.write(v);
 }
 

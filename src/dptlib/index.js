@@ -1,6 +1,6 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
 
 /*
@@ -37,6 +37,7 @@ List 3-byte value                  3 Byte                  DPT 232	  DPT 232	RGB
 const fs = require('fs');
 const path = require('path');
 const util = require('util');
+const log = require('log-driver');
 
 var matches;
 var dirEntries = fs.readdirSync(__dirname);
@@ -51,7 +52,7 @@ for (var i = 0; i < dirEntries.length; i++) {
     }
     mod.id = dptid;
     dpts[dptid] = mod;
-    //console.log('DPT library: loaded %s (%s)', dptid, dpts[dptid].basetype.desc);
+    //log.trace('DPT library: loaded %s (%s)', dptid, dpts[dptid].basetype.desc);
   }
 }
 
@@ -72,7 +73,7 @@ dpts.resolve = function(dptid) {
     // we're passed in a raw number (9)
     return cloneDpt(dpts[util.format('DPT%s', dptid)]);
   }
-  console.trace("no such DPT: %j", dpt);
+  log.trace("no such DPT: %j", dpt);
   throw "no such DPT: " + dpt;
 }
 
@@ -91,9 +92,9 @@ dpts.populateAPDU = function(value, apdu, dptid) {
   // get the raw APDU data for the given JS value
   if (typeof dpt.formatAPDU == 'function') {
     // nothing to do here, DPT-specific formatAPDU implementation will handle everything
-    // console.log('>>> custom formatAPDU(%s): %j', dptid, value);
+    // log.trace('>>> custom formatAPDU(%s): %j', dptid, value);
     apdu.data = dpt.formatAPDU(value);
-    // console.log('<<< custom formatAPDU(%s): %j', dptid, apdu.data);
+    // log.trace('<<< custom formatAPDU(%s): %j', dptid, apdu.data);
   } else {
     if (!isFinite(value)) throw util.format("Invalid value, expected a %s",
       dpt.desc);
@@ -105,7 +106,7 @@ dpts.populateAPDU = function(value, apdu, dptid) {
         'scalar_range')) {
       var scalar = dpt.subtype.scalar_range;
       if (value < scalar[0] || value > scalar[1]) {
-        console.trace(
+        log.trace(
           "Value %j(%s) out of scalar range(%j) for %s",
           value, (typeof value), scalar, dpt.id);
       } else {
@@ -118,7 +119,7 @@ dpts.populateAPDU = function(value, apdu, dptid) {
     } else {
       // just a plain numeric value, only check if within bounds
       if (value < range[0] || value > range[1]) {
-        console.trace("Value %j(%s) out of bounds(%j) for %s.%s",
+        log.trace("Value %j(%s) out of bounds(%j) for %s.%s",
           value, (typeof value), range, dpt.id, dpt.subtypeid);
       }
     }
@@ -129,7 +130,7 @@ dpts.populateAPDU = function(value, apdu, dptid) {
       apdu.data.writeUIntBE(tgtvalue, 0, nbytes);
     }
   }
-  // console.log('generic populateAPDU tgtvalue=%j(%s) nbytes=%d => apdu=%j', tgtvalue, typeof tgtvalue, nbytes, apdu);
+  // log.trace('generic populateAPDU tgtvalue=%j(%s) nbytes=%d => apdu=%j', tgtvalue, typeof tgtvalue, nbytes, apdu);
   return apdu;
 }
 
@@ -147,7 +148,7 @@ dpts.fromBuffer = function(buf, dpt) {
     // nothing to do here, DPT-specific fromBuffer implementation will handle everything
     value = dpt.fromBuffer(buf);
   } else {
-    // console.log('%s buflength == %d => %j', typeof buf, buf.length, JSON.stringify(buf) );
+    // log.trace('%s buflength == %d => %j', typeof buf, buf.length, JSON.stringify(buf) );
     // get a raw unsigned integer from the buffer
     if (buf.length > 6) {
       throw "cannot handle unsigned integers more then 6 bytes in length"
@@ -157,7 +158,7 @@ dpts.fromBuffer = function(buf, dpt) {
     } else {
       value = buf.readUIntBE(0,buf.length);
     }
- // console.log(' ../knx/src/index.js : DPT : ' + JSON.stringify(dpt));   // for exploring dpt and implementing description
+ // log.trace(' ../knx/src/index.js : DPT : ' + JSON.stringify(dpt));   // for exploring dpt and implementing description
     if (dpt.hasOwnProperty('subtype') && dpt.subtype.hasOwnProperty(
         'scalar_range')) {
       var range = (dpt.basetype.hasOwnProperty('range')) ?
@@ -168,10 +169,10 @@ dpts.fromBuffer = function(buf, dpt) {
       var a = (scalar[1] - scalar[0]) / (range[1] - range[0]);
       var b = (scalar[0] - range[0]);
       value = Math.round(a * value + b);
-      //console.log('fromBuffer scalar a=%j b=%j %j', a,b, value);
+      //log.trace('fromBuffer scalar a=%j b=%j %j', a,b, value);
     }
   }
-  //  console.log('generic fromBuffer buf=%j, value=%j', buf, value);
+  //  log.trace('generic fromBuffer buf=%j, value=%j', buf, value);
   return value;
 }
 

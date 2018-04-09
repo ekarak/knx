@@ -1,26 +1,28 @@
 /**
 * knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2017 Elias Karakoulakis
+* (C) 2016-2018 Elias Karakoulakis
 */
+
+const log = require('log-driver');
 
 //
 // DPT4: 8-bit character
 //
 exports.formatAPDU = function(value) {
   if (!value) {
-    console.trace("DPT4: cannot write null value");
+    log.warn("DPT4: cannot write null value");
   } else {
     if (typeof value == 'string') {
       var apdu_data = value.charCodeAt(0);
-      if (apdu_data > 255) console.trace("DPT4: must supply an ASCII character");
+      if (apdu_data > 255) log.warn("DPT4: must supply an ASCII character");
       return new Buffer([apdu_data]);
     }
-    else console.trace("DPT4: Must supply a character or string");
+    else log.warn("DPT4: Must supply a character or string");
   }
 }
 
 exports.fromBuffer = function(buf) {
-  if (buf.length != 1) console.trace("DPT4: Buffer should be 1 byte long")
+  if (buf.length != 1) log.warn("DPT4: Buffer should be 1 byte long")
   else return String.fromCharCode(buf[0]);
 }
 

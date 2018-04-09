@@ -3,13 +3,18 @@
 * (C) 2016-2017 Elias Karakoulakis
 */
 
-var fs = require('fs');
-var path = require('path');
+const fs = require('fs');
+const path = require('path');
+const util = require('util');
+const log = require('log-driver').logger;
+
 var knx_path = path.join(__dirname, 'package.json');
 var pkginfo = JSON.parse(fs.readFileSync(knx_path));
-console.log('Loading %s: %s, version: %s',
-  pkginfo.name, pkginfo.description, pkginfo.version);
+
+log.info(util.format('Loading %s: %s, version: %s',
+  pkginfo.name, pkginfo.description, pkginfo.version));
 
 exports.Connection = require('./src/Connection.js');
 exports.Datapoint = require('./src/Datapoint.js');
 exports.Devices = require('./src/devices');
+exports.Log = require('./src/KnxLog.js');
