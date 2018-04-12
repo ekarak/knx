@@ -24,7 +24,7 @@ type KnxDeviceAddress = string
 type KnxGroupAddress = string
 
 // The type of the KnxValue depends on the DPT that it is associated with
-type KnxValue = number|string|boolean
+type KnxValue = number|string|boolean|Date
 
 // Possible formats "X" or "X.Y", i.e. "1" or "1.001"
 type DPT = string
