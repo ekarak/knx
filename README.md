@@ -50,5 +50,5 @@ Ahhh, KNX telegrams, what a joy:
 - [Basic API usage](../master/README-API.md)
 - [List of supported datapoints](../master/README-datapoints.md)
 - [List of supported events](../master/README-events.md)
-- [eibd/knxd compatibility](../master/README-knx.md)
+- [eibd/knxd compatibility](../master/README-knxd.md)
 - [On resilience](../master/README-resilience.md)
