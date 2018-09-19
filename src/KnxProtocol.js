@@ -403,7 +403,7 @@ KnxProtocol.define('APDU', {
       //
       if (total_length == 3) {
         // payload embedded in the last 6 bits
-        word += parseInt(isFinite(value.data) ? value.data : value.data[0]);
+        word += parseInt(isFinite(value.data) && (typeof value.data !== 'object') ? value.data : value.data[0]);
         this.UInt16BE(word);
       } else {
         this.UInt16BE(word);
