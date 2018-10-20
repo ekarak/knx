@@ -59,22 +59,19 @@ for (var i = 0; i < dirEntries.length; i++) {
 // a generic DPT resolution function
 // DPTs might come in as 9/"9"/"9.001"/"DPT9.001"
 dpts.resolve = function(dptid) {
-  if (typeof dptid == 'string') {
-    var m = dptid.toUpperCase().match(/(?:DPT)?(\d+)(\.(\d+))?/);
-    var dpt = cloneDpt(dpts[util.format('DPT%s', m[1])]);
-    if (!dpt) throw "no such DPT: " + dpt;
-    if (m[3]) {
-      dpt.subtypeid = m[3];
-      dpt.subtype = dpt.subtypes[m[3]];
-    }
-    return dpt;
+  var m = dptid.toString().toUpperCase().match(/^(?:DPT)?(\d+)(\.(\d+))?$/);
+  if (m === null) { throw "no such DPT: " + dptid; }
+
+  var dpt = dpts[util.format('DPT%s', m[1])];
+  if (!dpt) { throw "no such DPT: " + dptid; }
+
+  var cloned_dpt = cloneDpt(dpt);
+  if (m[3]) {
+    cloned_dpt.subtypeid = m[3];
+    cloned_dpt.subtype = cloned_dpt.subtypes[m[3]];
   }
-  if (isFinite(dptid)) {
-    // we're passed in a raw number (9)
-    return cloneDpt(dpts[util.format('DPT%s', dptid)]);
-  }
-  log.trace("no such DPT: %j", dpt);
-  throw "no such DPT: " + dpt;
+
+  return cloned_dpt;
 }
 
 /* POPULATE an APDU object from a given Javascript value for the given DPT
