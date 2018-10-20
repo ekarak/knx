@@ -10,27 +10,27 @@ const assert = require('assert');
 test('resolve', function(t) {
   t.throws(() => {
     DPTLib.resolve('invalid input');
-  }, /no such DPT: .*/, 'Invalid format of a DPT');
+  }, /Invalid DPT format: .*/, 'Invalid format of a DPT');
 
   t.throws(() => {
     DPTLib.resolve({dpt: 9});
-  }, /no such DPT: .*/, 'Invalid format of a DPT');
+  }, /Invalid DPT format: .*/, 'Invalid format of a DPT');
 
   t.throws(() => {
     DPTLib.resolve([9,9]);
-  }, /no such DPT: .*/, 'Invalid format of a DPT');
+  }, /Invalid DPT format: .*/, 'Invalid format of a DPT');
 
   t.throws(() => {
     DPTLib.resolve('29.010');
-  }, /no such DPT: .*/, 'Unsupported/unknown DPT');
+  }, /Unsupported DPT: .*/, 'Unsupported/unknown DPT');
 
   t.throws(() => {
     DPTLib.resolve(29);
-  }, /no such DPT: .*/, 'Unsupported/unknown Int DPT');
+  }, /Unsupported DPT: .*/, 'Unsupported/unknown Int DPT');
 
   t.throws(() => {
     DPTLib.resolve([29]);
-  }, /no such DPT: .*/, 'Unsupported/unknown Int DPT');
+  }, /Unsupported DPT: .*/, 'Unsupported/unknown Int DPT');
 
   let d0 = DPTLib.resolve(1)
   t.equal(d0.id, 'DPT1')

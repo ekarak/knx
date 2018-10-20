@@ -60,10 +60,10 @@ for (var i = 0; i < dirEntries.length; i++) {
 // DPTs might come in as 9/"9"/"9.001"/"DPT9.001"
 dpts.resolve = function(dptid) {
   var m = dptid.toString().toUpperCase().match(/^(?:DPT)?(\d+)(\.(\d+))?$/);
-  if (m === null) { throw "no such DPT: " + dptid; }
+  if (m === null) { throw "Invalid DPT format: " + dptid; }
 
   var dpt = dpts[util.format('DPT%s', m[1])];
-  if (!dpt) { throw "no such DPT: " + dptid; }
+  if (!dpt) { throw "Unsupported DPT: " + dptid; }
 
   var cloned_dpt = cloneDpt(dpt);
   if (m[3]) {
