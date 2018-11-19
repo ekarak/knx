@@ -22,6 +22,8 @@ module.exports = machina.Fsm.extend({
     // set the local IP endpoint
     this.localAddress = null;
     this.ThreeLevelGroupAddressing = true;
+    // reconnection cycle counter
+    this.reconnection_cycles = 0;
     // a cache of recently sent requests
     this.sentTunnRequests = {};
     this.useTunneling = options.forceTunneling || false;
@@ -59,15 +61,24 @@ module.exports = machina.Fsm.extend({
       }
     },
 
+    jumptoconnecting: {
+      _onEnter: function( ) {
+        this.transition("connecting");
+      }
+    },
+
     connecting: {
       _onEnter: function( ) {
+        // tell listeners that we disconnected
+        // putting this here will result in a correct state for our listeners
+        this.emit('error', 'disconnected');
         var sm = this;
         this.log.debug(util.format('useTunneling=%j', this.useTunneling));
         if (this.useTunneling) {
           sm.connection_attempts = 0;
           if (!this.localAddress) throw "Not bound to an IPv4 non-loopback interface";
           this.log.debug(util.format('Connecting via %s...', sm.localAddress));
-          // set a connection timer for 3 seconds, 3 retries
+          // we retry 3 times, then restart the whole cycle using a slower and slower rate (max delay is 5 minutes)
           this.connecttimer = setInterval( function() {
             sm.connection_attempts += 1;
             if (sm.connection_attempts >= 3) {
@@ -78,20 +89,25 @@ module.exports = machina.Fsm.extend({
                 sm.usingMulticastTunneling = true;
                 sm.transition('connected');
               } else {
-                sm.transition('uninitialized');
+                // we restart the connection cycle with a growing delay (max 5 minutes)
+                sm.reconnection_cycles += 1;
+                var delay = Math.min(sm.reconnection_cycles * 3, 300);
+                this.log.debug('reattempting connection in ' + delay + ' seconds');
+                setTimeout(function() {
+                  // restart connecting cycle (cannot jump straight to 'connecting' so we use an intermediate state)
+                  sm.transition("jumptoconnecting");
+                }, delay * 1000);
               }
             } else {
               this.log.warn('connection timed out, retrying...');
               this.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
             }
-            // TODO: handle send err
           }.bind( this ), 3000 );
           delete this.channel_id;
           delete this.conntime;
           delete this.lastSentTime;
           // send connect request directly
           this.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
-          // TODO: handle send err
         } else {
           // no connection sequence needed in pure multicast routing
           this.transition( "connected" );
@@ -111,7 +127,7 @@ module.exports = machina.Fsm.extend({
           this.connecttimer = setInterval( function() {
             sm.connection_attempts += 1;
             if (sm.connection_attempts >= 3) {
-              sm.transition('uninitialized');
+              sm.transition('jumptoconnecting');
             } else {
               this.log.debug("The KNXnet/IP server rejected the data connection (Maximum connections reached). Waiting 1 minute before retrying...");
               this.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
@@ -142,6 +158,8 @@ module.exports = machina.Fsm.extend({
 
     connected: {
       _onEnter: function() {
+        // Reset connection reattempts cycle counter for next disconnect
+        this.reconnection_cycles = 0;
         // Reset outgoing sequence counter..
         this.seqnum = -1;
         /* important note: the sequence counter is SEPARATE for incoming and
