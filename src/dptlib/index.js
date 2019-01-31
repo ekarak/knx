@@ -37,7 +37,7 @@ List 3-byte value                  3 Byte                  DPT 232	  DPT 232	RGB
 const fs = require('fs');
 const path = require('path');
 const util = require('util');
-const log = require('log-driver');
+const log = require('log-driver').logger;
 
 var matches;
 var dirEntries = fs.readdirSync(__dirname);

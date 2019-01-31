@@ -3,7 +3,7 @@
 * (C) 2016-2018 Elias Karakoulakis
 */
 
-const log = require('log-driver');
+const log = require('log-driver').logger;
 
 //
 // DPT16: ASCII string (max 14 chars)
