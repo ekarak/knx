@@ -17,7 +17,10 @@ function dateequals(d1, d2) {
 test('DPT11 date conversion', function(t) {
   var tests = [
     ['DPT11', [25, 12, 95], new Date('1995-12-25')],
-    ['DPT11', [0x16, 0x0B, 0x10], new Date('2016-11-22')]
+    ['DPT11', [0x19, 0x0C, 0x0F], new Date('2015-12-25')],
+    ['DPT11', [0x16, 0x0B, 0x10], new Date('2016-11-22')],
+    ['DPT11', [0x1B, 0x01, 0x13], new Date('2019-01-27')],
+    ['DPT11', [0x03, 0x02, 0x13], new Date('2019-02-03')]
   ]
   for (var i = 0; i < tests.length; i++) {
     var dpt = DPTLib.resolve(tests[i][0]);

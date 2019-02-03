@@ -71,7 +71,7 @@ module.exports = machina.Fsm.extend({
       _onEnter: function( ) {
         // tell listeners that we disconnected
         // putting this here will result in a correct state for our listeners
-        this.emit('error', 'disconnected');
+        this.emit('disconnected');
         var sm = this;
         this.log.debug(util.format('useTunneling=%j', this.useTunneling));
         if (this.useTunneling) {

@@ -1,7 +1,7 @@
 {
   "name": "knx",
   "description": "KNXnet/IP protocol implementation for Node(>=4.x)",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "engines": {
     "node": ">=4"
   },
@@ -57,6 +57,9 @@
     {
       "name": "Luca Lanziani",
       "url": "https://lanziani.com"
+    },
+    { 
+      "name": "Stefaan Seys"
     }
   ],
   "keywords": [
