@@ -3,7 +3,7 @@
 * (C) 2016-2018 Elias Karakoulakis
 */
 
-const log = require('log-driver');
+const log = require('log-driver').logger;
 
 //
 // DPT4: 8-bit character
