@@ -1,7 +1,7 @@
 {
   "name": "knx",
   "description": "KNXnet/IP protocol implementation for Node(>=4.x)",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "engines": {
     "node": ">=4"
   },
@@ -58,8 +58,11 @@
       "name": "Luca Lanziani",
       "url": "https://lanziani.com"
     },
-    { 
+    {
       "name": "Stefaan Seys"
+    },
+    {
+      "name": "Matthias Fechner"
     }
   ],
   "keywords": [
@@ -72,8 +75,8 @@
     "binary-parser": "1.1.5",
     "binary-protocol": "0.0.0",
     "ipaddr.js": "1.2.0",
-    "machina": "^2.0.0-1",
-    "log-driver": "1.2.7"
+    "log-driver": "1.2.7",
+    "machina": "^4.0.2"
   },
   "devDependencies": {
     "multi-tape": "^1.1.1",
