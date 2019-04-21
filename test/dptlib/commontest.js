@@ -34,7 +34,7 @@ function unmarshalTest(t, dptid, jsval, data) {
       t.deepEqual(unmarshalled, jsval, msg);
       break;
     case 'number':
-      t.equal(unmarshalled.toPrecision(15), jsval.toPrecision(15), msg);
+      t.equal(unmarshalled, jsval, msg);
       break;
     default:
       t.ok(unmarshalled == jsval, msg);
