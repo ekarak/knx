@@ -49,11 +49,11 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
           }, 500);
           // operation 3 - Do the same with writeRaw
           setTimeout(function() {
-            connection.writeRaw(options.wired_test_control_ga, Buffer.from('00', 'hex'), 1);
+            connection.writeRaw(options.wired_test_control_ga, new Buffer('00', 'hex'), 1);
           }, 1000);
           // operation 4 - Do the same with writeRaw
           setTimeout(function() {
-            connection.writeRaw(options.wired_test_control_ga, Buffer.from('01', 'hex'), 0);
+            connection.writeRaw(options.wired_test_control_ga, new Buffer('01', 'hex'), 0);
           }, 1500);
         },
         event: function(evt, src, dest, value) {

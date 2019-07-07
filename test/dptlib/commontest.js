@@ -47,7 +47,7 @@ module.exports = {
     var desc = (dpt.hasOwnProperty('subtype') && dpt.subtype.desc) || dpt.basetype.desc;
     test(`${dptid}: ${desc}`, function(t) {
       Object.keys(tests).forEach(function(key) {
-        var apdu = Buffer.from(tests[key].apdu_data);
+        var apdu = new Buffer(tests[key].apdu_data);
         var jsval = tests[key].jsval;
         //console.log(dptid + ': apdu=%j jsval=%j', apdu, jsval);
         // 1. marshalling test (JS value to APDU)

@@ -17,7 +17,7 @@ const options = require('./wiredtest-options.js');
 */
 if (process.env.hasOwnProperty('WIREDTEST')) {
   test('KNX wired test - control a DPT9 timer', function(t) {
-    let connection = new knx.Connection( {
+    var connection = new knx.Connection( {
       //debug: true,
       handlers: {
         connected: () => {

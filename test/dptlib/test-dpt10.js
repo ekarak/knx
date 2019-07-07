@@ -31,12 +31,12 @@ test('DPT10 time conversion', function(t) {
     ['DPT10', [15, 45, 56], '15:45:56']
   ]
   for (var i = 0; i < tests.length; i++) {
-    let dpt = DPTLib.resolve(tests[i][0]);
-    let buf = new Buffer(tests[i][1]);
-    let val = tests[i][2];
+    var dpt = DPTLib.resolve(tests[i][0]);
+    var buf = new Buffer(tests[i][1]);
+    var val = tests[i][2];
 
     // unmarshalling test (raw data to value)
-    let converted = DPTLib.fromBuffer(buf, dpt);
+    var converted = DPTLib.fromBuffer(buf, dpt);
     t.ok(converted == val,
       `${tests[i][0]} fromBuffer value ${val} => ${converted}`);
 
