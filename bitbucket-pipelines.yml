@@ -1,4 +1,4 @@
-image: node:6.9.1
+image: node:current
 pipelines:
   default:
     - step:

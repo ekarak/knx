@@ -5,9 +5,9 @@
 
 import * as knx from 'knx'
 
-let groupAddress = process.argv[2]
+var groupAddress = process.argv[2]
 
-let connection = new knx.Connection({
+var connection = new knx.Connection({
     ipAddr: process.env.KNXGW,
     handlers: {
         connected: onConnected
@@ -16,7 +16,7 @@ let connection = new knx.Connection({
 
 async function onConnected() {
     console.log('Connected')
-    let dp = new knx.Datapoint({
+    var dp = new knx.Datapoint({
         ga: groupAddress,
         dpt: 'DPT1.001'
     }, connection)
