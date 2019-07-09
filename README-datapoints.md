@@ -11,8 +11,8 @@
 |DPT7   	| 16-bit unsigned int  | Numeric  |   	|  0..65535 	|
 |DPT8   	| 16-bit signed integer | Numeric |   	|  -32768..32767 |
 |DPT9   	| 16-bit floating point | Numeric |   	|   	|
-|DPT10   	| 24-bit time 	|   Date	|  new Date() |   only the time part is used |
-|DPT11   	| 24-bit date 	|   Date	|  new Date() |   only the date part is used |
+|DPT10   	| 24-bit time + day of week 	|   Date	|  new Date() |   only the time part is used, see note |
+|DPT11   	| 24-bit date 	|   Date	|  new Date() |   only the date part is used, see note |
 |DPT12   	| 32-bit unsigned int | Numeric |   	|   	|
 |DPT13   	| 32-bit signed int   | Numeric |   	|   	|
 |DPT14   	| 32-bit floating point | Numeric |   	|  incomplete: subtypes |
@@ -54,3 +54,9 @@ commontest.do('DPT5.003', [
   { apdu_data:  [0xff], jsval: 360 }
 ]);
 ```
+
+## Date and time DPTs (DPT10, DPT11)
+Please have in mind that Javascript and KNX have very different base type for time and date.
+
+- DPT10 is time (hh:mm:ss) plus "day of week". This concept is unavailable in JS, so you'll be getting/setting a regular *Date* Js object, but  *please remember* you'll need to _ignore_ the date, month and year. The *exact same datagram* that converts to "Mon, Jul 1st 12:34:56", will evaluate to a wildly different JS Date of "Mon, Jul 8th 12:34:56" one week later. Be warned!
+- DPT11 is date (dd/mm/yyyy): the same applies for DPT11, you'll need to *ignore the time part*.
