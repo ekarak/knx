@@ -29,9 +29,11 @@ function timecompare(date1, sign, date2) {
 }
 
 test('DPT10 time conversion', function(t) {
-  var testdate = new Date('July 1, 2019 23:15:30'); // Monday
+
   var tests = [
-    ['DPT10', [32+23, 15, 30], testdate]
+    ['DPT10', [(1<<5)+23, 15, 30], new Date('July 1, 2019 23:15:30')], // Monday
+    ['DPT10', [(3<<5)+14, 55, 11], new Date('July 10, 2019 14:55:11')],// Wednesday
+    ['DPT10', [(7<<5)+23, 15, 30], new Date('July 7, 2019 23:15:30')]  // Sunday
   ];
   for (var i = 0; i < tests.length; i++) {
     var dpt = DPTLib.resolve(tests[i][0]);
