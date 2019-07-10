@@ -120,19 +120,13 @@ module.exports = machina.Fsm.extend({
         var sm = this;
         this.log.debug(util.format('got connect response'));
         if (datagram.hasOwnProperty('connstate') && datagram.connstate.status === KnxConstants.RESPONSECODE.E_NO_MORE_CONNECTIONS) {
-          clearInterval( sm.connecttimer );
-          this.log.debug("The KNXnet/IP server could not accept the new data connection (Maximum reached)");
-          this.log.debug("Waiting 1 minute before retrying...");
-          sm.connection_attempts = 0;
-          this.connecttimer = setInterval( function() {
-            sm.connection_attempts += 1;
-            if (sm.connection_attempts >= 3) {
-              sm.transition('jumptoconnecting');
-            } else {
-              this.log.debug("The KNXnet/IP server rejected the data connection (Maximum connections reached). Waiting 1 minute before retrying...");
-              this.send( sm.prepareDatagram( KnxConstants.SERVICE_TYPE.CONNECT_REQUEST ));
-            }
-          }.bind( this ), 60000 );
+          this.socket.close();
+          this.transition( 'uninitialized');
+          this.emit( 'disconnected' );
+          this.log.debug("The KNXnet/IP server rejected the data connection (Maximum connections reached). Waiting 1 minute before retrying...");
+          setTimeout(function(){
+            sm.Connect()
+          }, 60000)
         } else {
           // store channel ID into the Connection object
           this.channel_id = datagram.connstate.channel_id;
