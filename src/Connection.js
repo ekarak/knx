@@ -150,7 +150,7 @@ FSM.prototype.prepareDatagram = function(svcType) {
       this.AddTunnState(datagram);
       break;
     default:
-      log.debug('Do not know how to deal with svc type %d', svcType);
+      KnxLog.get().debug('Do not know how to deal with svc type %d', svcType);
   }
   return datagram;
 }
@@ -161,49 +161,58 @@ send the datagram over the wire
 FSM.prototype.send = function(datagram, callback) {
   var conn = this;
   var cemitype;
-  this.writer = KnxNetProtocol.createWriter();
-  switch (datagram.service_type) {
-    case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
-    case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
-      // append the CEMI service type if this is a tunneling request...
-      cemitype = KnxConstants.keyText('MESSAGECODES', datagram.cemi.msgcode);
-      break;
-  }
-  var packet = this.writer.KNXNetHeader(datagram);
-  var buf = packet.buffer;
-  var svctype = KnxConstants.keyText('SERVICE_TYPE', datagram.service_type);
-  var descr = this.datagramDesc(datagram);
-  KnxLog.get().trace('(%s): Sending %s ==> %j', this.compositeState(), descr, datagram);
-  this.socket.send(
-    buf, 0, buf.length,
-    conn.remoteEndpoint.port, conn.remoteEndpoint.addr.toString(),
-    function(err) {
-      KnxLog.get().trace('(%s): UDP sent %s: %s %s', conn.compositeState(),
-        (err ? err.toString() : 'OK'), descr, buf.toString('hex')
-      );
-      if (typeof callback === 'function') callback(err);
+  try {
+    this.writer = KnxNetProtocol.createWriter();
+    switch (datagram.service_type) {
+      case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
+      case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
+        // append the CEMI service type if this is a tunneling request...
+        cemitype = KnxConstants.keyText('MESSAGECODES', datagram.cemi.msgcode);
+        break;
     }
-  );
+    var packet = this.writer.KNXNetHeader(datagram);
+    var buf = packet.buffer;
+    var svctype = KnxConstants.keyText('SERVICE_TYPE', datagram.service_type);
+    var descr = this.datagramDesc(datagram);
+    KnxLog.get().trace('(%s): Sending %s ==> %j', this.compositeState(), descr, datagram);
+    this.socket.send(
+      buf, 0, buf.length,
+      conn.remoteEndpoint.port, conn.remoteEndpoint.addr.toString(),
+      function(err) {
+        KnxLog.get().trace('(%s): UDP sent %s: %s %s', conn.compositeState(),
+          (err ? err.toString() : 'OK'), descr, buf.toString('hex')
+        );
+        if (typeof callback === 'function') callback(err);
+      }
+    );
+  } catch (e) {
+    KnxLog.get().warn(e);
+    if (typeof callback === 'function') callback(e);
+  } 
 }
 
 FSM.prototype.write = function(grpaddr, value, dptid, callback) {
   if (grpaddr == null || value == null) {
-    log.warn('You must supply both grpaddr and value!');
+    KnxLog.get().warn('You must supply both grpaddr and value!');
     return;
   }
-  // outbound request onto the state machine
-  var serviceType = this.useTunneling ?
-    KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
-    KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
-  this.Request(serviceType, function(datagram) {
-    DPTLib.populateAPDU(value, datagram.cemi.apdu, dptid);
-    datagram.cemi.dest_addr = grpaddr;
-  }, callback);
+  try {
+    // outbound request onto the state machine
+    var serviceType = this.useTunneling ?
+      KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
+      KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
+    this.Request(serviceType, function(datagram) {
+      DPTLib.populateAPDU(value, datagram.cemi.apdu, dptid);
+      datagram.cemi.dest_addr = grpaddr;
+    }, callback);
+  } catch (e) {
+    KnxLog.get().warn(e);
+  }
 }
 
 FSM.prototype.respond = function(grpaddr, value, dptid) {
   if (grpaddr == null || value == null) {
-    log.warn('You must supply both grpaddr and value!');
+    KnxLog.get().warn('You must supply both grpaddr and value!');
     return;
   }
   var serviceType = this.useTunneling ?
@@ -220,11 +229,11 @@ FSM.prototype.respond = function(grpaddr, value, dptid) {
 
 FSM.prototype.writeRaw = function(grpaddr, value, bitlength, callback) {
   if (grpaddr == null || value == null) {
-    log.warn('You must supply both grpaddr and value!');
+    KnxLog.get().warn('You must supply both grpaddr and value!');
     return;
   }
   if (!Buffer.isBuffer(value)) {
-    log.warn('Value must be a buffer!');
+    KnxLog.get().warn('Value must be a buffer!');
     return;
   }
   // outbound request onto the state machine

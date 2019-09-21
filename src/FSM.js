@@ -326,7 +326,7 @@ module.exports = machina.Fsm.extend({
         }
       },
       "*": function ( data ) {
-        this.log.debug(util.format('*** deferring %s until transition to idle', data.inputType));
+        this.log.debug(util.format('*** deferring %s until transition from requestingConnState => idle', data.inputType));
         this.deferUntilTransition( 'idle' );
       },
     },
@@ -354,7 +354,7 @@ module.exports = machina.Fsm.extend({
         }
       },
       "*": function ( data ) {
-        this.log.debug(util.format('*** deferring %s until transition to idle', data.inputType));
+        this.log.debug(util.format('*** deferring %s until transition sendDatagram => idle', data.inputType));
         this.deferUntilTransition( 'idle' );
       }
     },
@@ -381,7 +381,7 @@ module.exports = machina.Fsm.extend({
         this.transition( 'idle' );
       },
       "*": function ( data ) {
-        this.log.debug(util.format('*** deferring %s until transition to idle', data.inputType));
+        this.log.debug(util.format('*** deferring %s until transition sendTunnReq_waitACK => idle', data.inputType));
         this.deferUntilTransition( 'idle' );
       },
     },
