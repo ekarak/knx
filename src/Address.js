@@ -80,24 +80,24 @@ Address.parse = function (addr /*string*/, addrtype /*TYPE*/, twoLevelAddressing
   var midnibble = parseInt(tokens[1]);
   if (group && twoLevelAddressing) {
     // 2 level group address
-    if (hinibble < 0 || hinibble > 31)     throw "Invalid KNX 2-level main group";
-    if (midnibble < 0 || midnibble > 2047) throw "Invalid KNX 2-level sub group";
+    if (hinibble < 0 || hinibble > 31)     throw "Invalid KNX 2-level main group: "+addr;
+    if (midnibble < 0 || midnibble > 2047) throw "Invalid KNX 2-level sub group: "+addr;
     address.writeUInt16BE((hinibble << 11) + midnibble, 0);
   } else {
     if (tokens.length < 3) throw "Invalid address - missing 3rd token";
     var lonibble = parseInt(tokens[2]);
     if (group) {
       // 3 level group address
-      if (hinibble < 0  || hinibble > 31)  throw "Invalid KNX 3-level main group";
-      if (midnibble < 0 || midnibble > 7)  throw "Invalid KNX 3-level mid group";
-      if (lonibble < 0  || lonibble > 255) throw "Invalid KNX 3-level sub group";
+      if (hinibble < 0  || hinibble > 31)  throw "Invalid KNX 3-level main group: "+addr;
+      if (midnibble < 0 || midnibble > 7)  throw "Invalid KNX 3-level mid group: "+addr;
+      if (lonibble < 0  || lonibble > 255) throw "Invalid KNX 3-level sub group: "+addr;
       address.writeUInt8((hinibble << 3) + midnibble, 0);
       address.writeUInt8(lonibble ,1);
     } else {
       // 3 level physical address
-      if (hinibble < 0  || hinibble > 15)  throw "Invalid KNX area address";
-      if (midnibble < 0 || midnibble > 15) throw "Invalid KNX line address";
-      if (lonibble < 0  || lonibble > 255) throw "Invalid KNX device address";
+      if (hinibble < 0  || hinibble > 15)  throw "Invalid KNX area address: "+addr;
+      if (midnibble < 0 || midnibble > 15) throw "Invalid KNX line address: "+addr;
+      if (lonibble < 0  || lonibble > 255) throw "Invalid KNX device address: "+addr;
       address.writeUInt8((hinibble << 4) + midnibble, 0);
       address.writeUInt8(lonibble, 1);
     }

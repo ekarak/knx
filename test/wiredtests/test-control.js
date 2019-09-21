@@ -47,6 +47,8 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
           setTimeout(function() {
             light.write(1);
           }, 500);
+          // issue #71 - writing to an invalid address should not stall the FSM
+          connection.write('10/10/5', 1);
           // operation 3 - Do the same with writeRaw
           setTimeout(function() {
             connection.writeRaw(options.wired_test_control_ga, new Buffer('00', 'hex'), 1);
