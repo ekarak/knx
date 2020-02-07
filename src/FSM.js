@@ -341,17 +341,24 @@ module.exports = machina.Fsm.extend({
         this.seqnum += 1;
         if (this.useTunneling) datagram.tunnstate.seqnum = this.seqnum & 0xFF;
         this.send( datagram, function(err) {
-          // TODO: handle send err
+          if (err) {
+            //console.trace('error sending datagram, going idle');
+            sm.seqnum -= 1;
+            sm.transition( 'idle' );
+          } else {
+            // successfully sent the datagram
+            if (sm.useTunneling) sm.sentTunnRequests[datagram.cemi.dest_addr] = datagram;
+            sm.lastSentTime = Date.now();
+            sm.log.debug('(%s):\t>>>>>>> successfully sent seqnum: %d', sm.compositeState(), sm.seqnum);
+            if (sm.useTunneling) {
+              // and then wait for the acknowledgement
+              sm.transition( 'sendTunnReq_waitACK', datagram );
+            } else {
+              sm.transition( 'idle' );
+            }
+          }
           if (sm.useTunneling) sm.sentTunnRequests[datagram.cemi.dest_addr] = datagram;
         });
-        this.lastSentTime = Date.now();
-        this.log.debug(util.format('>>>>>>> seqnum: %d', this.seqnum));
-        if (this.useTunneling) {
-          // and then wait for the acknowledgement
-          this.transition( 'sendTunnReq_waitACK', datagram );
-        } else {
-          this.transition( 'idle' );
-        }
       },
       "*": function ( data ) {
         this.log.debug(util.format('*** deferring %s until transition sendDatagram => idle', data.inputType));
