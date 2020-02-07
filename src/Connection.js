@@ -33,6 +33,13 @@ FSM.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
     } else {
       // ... to drive the state machine (eg "inbound_TUNNELING_REQUEST_L_Data.ind")
       var signal = util.format('inbound_%s', descr);
+      if (descr === "DISCONNECT_REQUEST") {
+        KnxLog.get().info("empty internal fsm queue due to %s: ", signal);
+        setInterval(() => {
+          KnxLog.get().info("triggered %s: ", signal);
+        }, 500);
+        this.clearQueue();
+      }
       this.handle(signal, dg);
     }
   } catch(err) {
@@ -188,7 +195,7 @@ FSM.prototype.send = function(datagram, callback) {
   } catch (e) {
     KnxLog.get().warn(e);
     if (typeof callback === 'function') callback(e);
-  } 
+  }
 }
 
 FSM.prototype.write = function(grpaddr, value, dptid, callback) {
