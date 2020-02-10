@@ -35,9 +35,6 @@ FSM.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
       var signal = util.format('inbound_%s', descr);
       if (descr === "DISCONNECT_REQUEST") {
         KnxLog.get().info("empty internal fsm queue due to %s: ", signal);
-        setInterval(() => {
-          KnxLog.get().info("triggered %s: ", signal);
-        }, 500);
         this.clearQueue();
       }
       this.handle(signal, dg);
