@@ -123,10 +123,10 @@ module.exports = machina.Fsm.extend({
         this.log.debug(util.format('got connect response'));
         if (datagram.hasOwnProperty('connstate') && datagram.connstate.status === KnxConstants.RESPONSECODE.E_NO_MORE_CONNECTIONS) {
           try {
-+            this.socket.close();
-+          } catch (error) {
-+            
-+          }
+            this.socket.close();
+          } catch (error) {
+            
+          }
           this.transition( 'uninitialized');
           this.emit( 'disconnected' );
           this.log.debug("The KNXnet/IP server rejected the data connection (Maximum connections reached). Waiting 1 minute before retrying...");
