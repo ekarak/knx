@@ -121,10 +121,10 @@ module.exports = machina.Fsm.extend({
         this.log.debug(util.format('got connect response'));
         if (datagram.hasOwnProperty('connstate') && datagram.connstate.status === KnxConstants.RESPONSECODE.E_NO_MORE_CONNECTIONS) {
           try {
-+            this.socket.close();
-+          } catch (error) {
-+            
-+          }
+            this.socket.close();
+          } catch (error) {
+            
+          }
           this.transition( 'uninitialized');
           this.emit( 'disconnected' );
           this.log.debug("The KNXnet/IP server rejected the data connection (Maximum connections reached). Waiting 1 minute before retrying...");
@@ -180,10 +180,10 @@ module.exports = machina.Fsm.extend({
           this.disconnecttimer = setTimeout( function() {
             KnxLog.get().debug('(%s):\tconnection timed out', sm.compositeState());
             try {
-+              sm.socket.close();
-+            } catch (error) {
-+              
-+            }
+              sm.socket.close();
+            } catch (error) {
+              
+            }
             sm.transition( 'uninitialized');
             sm.emit( 'disconnected' );
           }.bind( this ), 3000 );
@@ -201,10 +201,10 @@ module.exports = machina.Fsm.extend({
         if (this.useTunneling) {
           KnxLog.get().debug('(%s):\tgot disconnect response', this.compositeState());
           try {
-+            this.socket.close();
-+          } catch (error) {
-+            
-+          }
+            this.socket.close();
+          } catch (error) {
+            
+          }
           this.transition( 'uninitialized');
           this.emit( 'disconnected' );
         }
