@@ -1,7 +1,7 @@
 /**
-* knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2018 Elias Karakoulakis
-*/
+ * knx.js - a KNX protocol stack in pure Javascript
+ * (C) 2016-2018 Elias Karakoulakis
+ */
 
 /*
 Datatypes
@@ -33,46 +33,47 @@ Unlimited string 8859_1            .                       DPT 24	    DPT 24
 List 3-byte value                  3 Byte                  DPT 232	  DPT 232	RGB[0,0,0]...[255,255,255]
 */
 
-
 const fs = require('fs');
 const path = require('path');
 const util = require('util');
 const log = require('log-driver').logger;
 
-var matches;
-var dirEntries = fs.readdirSync(__dirname);
-var dpts = {};
-for (var i = 0; i < dirEntries.length; i++) {
-  if (matches = dirEntries[i].match(/(dpt.*)\.js/)) {
-    var dptid = matches[1].toUpperCase(); // DPT1..DPTxxx
-    var mod = require(__dirname + path.sep + dirEntries[i]);
-    if (!mod.hasOwnProperty('basetype') ||
-      !mod.basetype.hasOwnProperty('bitlength')) {
-      throw 'incomplete ' + dptid + ', missing basetype and/or bitlength!';
-    }
-    mod.id = dptid;
-    dpts[dptid] = mod;
-    //log.trace('DPT library: loaded %s (%s)', dptid, dpts[dptid].basetype.desc);
-  }
+const dpts = {};
+for (const entry of fs.readdirSync(__dirname)) {
+  const matches = entry.match(/(dpt.*)\.js/);
+  if (!matches) continue;
+  const dptid = matches[1].toUpperCase(); // DPT1..DPTxxx
+  const mod = require(__dirname + path.sep + entry);
+  if (
+    !mod.hasOwnProperty('basetype') ||
+    !mod.basetype.hasOwnProperty('bitlength')
+  )
+    throw 'incomplete ' + dptid + ', missing basetype and/or bitlength!';
+  mod.id = dptid;
+  dpts[dptid] = mod;
+  //log.trace('DPT library: loaded %s (%s)', dptid, dpts[dptid].basetype.desc);
 }
 
 // a generic DPT resolution function
 // DPTs might come in as 9/"9"/"9.001"/"DPT9.001"
-dpts.resolve = function(dptid) {
-  var m = dptid.toString().toUpperCase().match(/^(?:DPT)?(\d+)(\.(\d+))?$/);
-  if (m === null) { throw "Invalid DPT format: " + dptid; }
+dpts.resolve = (dptid) => {
+  const m = dptid
+    .toString()
+    .toUpperCase()
+    .match(/^(?:DPT)?(\d+)(\.(\d+))?$/);
+  if (m === null) throw 'Invalid DPT format: ' + dptid;
 
-  var dpt = dpts[util.format('DPT%s', m[1])];
-  if (!dpt) { throw "Unsupported DPT: " + dptid; }
+  const dpt = dpts[util.format('DPT%s', m[1])];
+  if (!dpt) throw 'Unsupported DPT: ' + dptid;
 
-  var cloned_dpt = cloneDpt(dpt);
+  const cloned_dpt = cloneDpt(dpt);
   if (m[3]) {
     cloned_dpt.subtypeid = m[3];
     cloned_dpt.subtype = cloned_dpt.subtypes[m[3]];
   }
 
   return cloned_dpt;
-}
+};
 
 /* POPULATE an APDU object from a given Javascript value for the given DPT
  * - either by a custom DPT formatAPDU function
@@ -80,104 +81,123 @@ dpts.resolve = function(dptid) {
  * --  1) checks if the value adheres to the range set from the DPT's bitlength
  *
  */
-dpts.populateAPDU = function(value, apdu, dptid) {
-  var dpt = dpts.resolve(dptid || 'DPT1');
-  var nbytes = Math.ceil(dpt.basetype.bitlength / 8);
-  apdu.data = new Buffer(nbytes);
-  apdu.bitlength = dpt.basetype && dpt.basetype.bitlength || 1;
-  var tgtvalue = value;
+dpts.populateAPDU = (value, apdu, dptid) => {
+  const dpt = dpts.resolve(dptid || 'DPT1');
+  const nbytes = Math.ceil(dpt.basetype.bitlength / 8);
+  apdu.data = Buffer.alloc(nbytes);
+  apdu.bitlength = (dpt.basetype && dpt.basetype.bitlength) || 1;
+  let tgtvalue = value;
   // get the raw APDU data for the given JS value
   if (typeof dpt.formatAPDU == 'function') {
     // nothing to do here, DPT-specific formatAPDU implementation will handle everything
     // log.trace('>>> custom formatAPDU(%s): %j', dptid, value);
     apdu.data = dpt.formatAPDU(value);
     // log.trace('<<< custom formatAPDU(%s): %j', dptid, apdu.data);
-  } else {
-    if (!isFinite(value)) throw util.format("Invalid value, expected a %s",
-      dpt.desc);
-    // check if value is in range, be it explicitly defined or implied from bitlength
-    var range = (dpt.basetype.hasOwnProperty('range')) ?
-      dpt.basetype.range : [0, Math.pow(2, dpt.basetype.bitlength) - 1];
-    // is there a scalar range? eg. DPT5.003 angle degrees (0=0, ff=360)
-    if (dpt.hasOwnProperty('subtype') && dpt.subtype.hasOwnProperty(
-        'scalar_range')) {
-      var scalar = dpt.subtype.scalar_range;
-      if (value < scalar[0] || value > scalar[1]) {
-        log.trace(
-          "Value %j(%s) out of scalar range(%j) for %s",
-          value, (typeof value), scalar, dpt.id);
-      } else {
-        // convert value from its scalar representation
-        // e.g. in DPT5.001, 50(%) => 0x7F , 100(%) => 0xFF
-        var a = (scalar[1] - scalar[0]) / (range[1] - range[0]);
-        var b = (scalar[0] - range[0]);
-        tgtvalue = Math.round((value - b) / a);
-      }
+    return apdu;
+  }
+
+  if (!isFinite(value))
+    throw util.format('Invalid value, expected a %s', dpt.desc);
+  // check if value is in range, be it explicitly defined or implied from bitlength
+  const [r_min, r_max] = dpt.basetype.hasOwnProperty('range')
+    ? dpt.basetype.range
+    : [0, Math.pow(2, dpt.basetype.bitlength) - 1]; // TODO: Maybe bitshift instead of pow?
+  // is there a scalar range? eg. DPT5.003 angle degrees (0=0, ff=360)
+  if (
+    dpt.hasOwnProperty('subtype') &&
+    dpt.subtype.hasOwnProperty('scalar_range')
+  ) {
+    const [s_min, s_max] = dpt.subtype.scalar_range;
+    if (value < s_min || value > s_max) {
+      log.trace(
+        'Value %j(%s) out of scalar range(%j) for %s',
+        value,
+        typeof value,
+        scalar,
+        dpt.id
+      );
     } else {
-      // just a plain numeric value, only check if within bounds
-      if (value < range[0] || value > range[1]) {
-        log.trace("Value %j(%s) out of bounds(%j) for %s.%s",
-          value, (typeof value), range, dpt.id, dpt.subtypeid);
-      }
-    }
-    // generic APDU is assumed to convey an unsigned integer of arbitrary bitlength
-    if (dpt.basetype.hasOwnProperty('signedness') && dpt.basetype.signedness == 'signed') {
-      apdu.data.writeIntBE(tgtvalue, 0, nbytes);
-    } else {
-      apdu.data.writeUIntBE(tgtvalue, 0, nbytes);
+      // convert value from its scalar representation
+      // e.g. in DPT5.001, 50(%) => 0x7F , 100(%) => 0xFF
+      const a = (s_max - s_min) / (r_max - r_min);
+      const b = s_min - r_min;
+      tgtvalue = Math.round((value - b) / a);
     }
   }
+  // just a plain numeric value, only check if within bounds
+  else if (value < r_min || value > r_max) {
+    log.trace(
+      'Value %j(%s) out of bounds(%j) for %s.%s',
+      value,
+      typeof value,
+      range,
+      dpt.id,
+      dpt.subtypeid
+    );
+  }
+
+  // generic APDU is assumed to convey an unsigned integer of arbitrary bitlength
+  if (
+    dpt.basetype.hasOwnProperty('signedness') &&
+    dpt.basetype.signedness == 'signed'
+  ) {
+    apdu.data.writeIntBE(tgtvalue, 0, nbytes);
+  } else {
+    apdu.data.writeUIntBE(tgtvalue, 0, nbytes);
+  }
+
   // log.trace('generic populateAPDU tgtvalue=%j(%s) nbytes=%d => apdu=%j', tgtvalue, typeof tgtvalue, nbytes, apdu);
-  return apdu;
-}
+};
 
 /* get the correct Javascript value from a APDU buffer for the given DPT
  * - either by a custom DPT formatAPDU function
  * - or by this generic version, which:
  * --  1) checks if the value adheres to the range set from the DPT's bitlength
  */
-dpts.fromBuffer = function(buf, dpt) {
+dpts.fromBuffer = (buf, dpt) => {
   // sanity check
-  if (!dpt) throw util.format("DPT %s not found", dpt);
-  var value = 0;
+  if (!dpt) throw util.format('DPT %s not found', dpt);
   // get the raw APDU data for the given JS value
   if (typeof dpt.fromBuffer == 'function') {
     // nothing to do here, DPT-specific fromBuffer implementation will handle everything
-    value = dpt.fromBuffer(buf);
-  } else {
-    // log.trace('%s buflength == %d => %j', typeof buf, buf.length, JSON.stringify(buf) );
-    // get a raw unsigned integer from the buffer
-    if (buf.length > 6) {
-      throw "cannot handle unsigned integers more then 6 bytes in length"
-    }
-    if (dpt.basetype.hasOwnProperty('signedness') && dpt.basetype.signedness == 'signed') {
-      value = buf.readIntBE(0,buf.length);
-    } else {
-      value = buf.readUIntBE(0,buf.length);
-    }
- // log.trace(' ../knx/src/index.js : DPT : ' + JSON.stringify(dpt));   // for exploring dpt and implementing description
-    if (dpt.hasOwnProperty('subtype') && dpt.subtype.hasOwnProperty(
-        'scalar_range')) {
-      var range = (dpt.basetype.hasOwnProperty('range')) ?
-        dpt.basetype.range : [0, Math.pow(2, dpt.basetype.bitlength) - 1];
-      var scalar = dpt.subtype.scalar_range;
-      // convert value from its scalar representation
-      // e.g. in DPT5.001, 50(%) => 0x7F , 100(%) => 0xFF
-      var a = (scalar[1] - scalar[0]) / (range[1] - range[0]);
-      var b = (scalar[0] - range[0]);
-      value = Math.round(a * value + b);
-      //log.trace('fromBuffer scalar a=%j b=%j %j', a,b, value);
-    }
+    return dpt.fromBuffer(buf);
   }
+  // log.trace('%s buflength == %d => %j', typeof buf, buf.length, JSON.stringify(buf) );
+  if (buf.length > 6) {
+    throw 'cannot handle unsigned integers more then 6 bytes in length';
+  }
+  let value = 0;
+  if (
+    dpt.basetype.hasOwnProperty('signedness') &&
+    dpt.basetype.signedness == 'signed'
+  )
+    value = buf.readIntBE(0, buf.length);
+  else value = buf.readUIntBE(0, buf.length);
+
+  // log.trace(' ../knx/src/index.js : DPT : ' + JSON.stringify(dpt));   // for exploring dpt and implementing description
+  if (
+    dpt.hasOwnProperty('subtype') &&
+    dpt.subtype.hasOwnProperty('scalar_range')
+  ) {
+    const [r_min, r_max] = dpt.basetype.hasOwnProperty('range')
+      ? dpt.basetype.range
+      : [0, Math.pow(2, dpt.basetype.bitlength) - 1];
+    const [s_min, s_max] = dpt.subtype.scalar_range;
+    // convert value from its scalar representation
+    // e.g. in DPT5.001, 50(%) => 0x7F , 100(%) => 0xFF
+    const a = (s_max - s_min) / (r_max - r_min);
+    const b = s_min - r_min;
+    value = Math.round(a * value + b);
+    //log.trace('fromBuffer scalar a=%j b=%j %j', a,b, value);
+  }
+
   //  log.trace('generic fromBuffer buf=%j, value=%j', buf, value);
   return value;
-}
+};
 
-function cloneDpt(d) {
-  result = JSON.parse(JSON.stringify(d));
-  result.fromBuffer = d.fromBuffer;
-  result.formatAPDU = d.formatAPDU;
-  return result;
-}
+const cloneDpt = (d) => {
+  const { fromBuffer, formatAPDU } = d;
+  return { ...JSON.parse(JSON.stringify(d)), fromBuffer, formatAPDU };
+};
 
 module.exports = dpts;
