@@ -21,6 +21,8 @@ var connection = new knx.Connection( {
   minimumDelay: 10,
   // enable this option to suppress the acknowledge flag with outgoing L_Data.req requests. LoxOne needs this
   suppress_ack_ldatareq: false,
+  // 14/03/2020 In tunneling mode, echoes the sent message by emitting a new emitEvent, so other object with same group address, can receive the sent message. Default is false.
+  localEchoInTunneling:false,
   // define your event handlers here:
   handlers: {
     // wait for connection establishment before sending anything!

@@ -33,9 +33,11 @@ module.exports = machina.Fsm.extend({
       port: options.ipPort || 3671
     };
     var range = this.remoteEndpoint.addr.range();
+    this.localEchoInTunneling = typeof options.localEchoInTunneling !== "undefined" ? options.localEchoInTunneling : false; // 14=73/2020 Supergiovane (local echo of emitEvent if in tunneling mode)
     this.log.debug('initializing %s connection to %s', range, this.remoteEndpoint.addrstring);
     switch (range) {
       case 'multicast':
+        if (this.localEchoInTunneling) { this.localEchoInTunneling = false; this.log.debug('localEchoInTunneling: true but DISABLED because i am on multicast'); }; // 14/03/2020 Supergiovane: if multicast, disable the localEchoInTunneling, because there is already an echo
         IpRoutingConnection(this, options);
         break;
       case 'unicast':
@@ -369,7 +371,20 @@ module.exports = machina.Fsm.extend({
               sm.transition( 'idle' );
             }
           }
-          if (sm.useTunneling) sm.sentTunnRequests[datagram.cemi.dest_addr] = datagram;
+          // 14/03/2020 Supergiovane: In multicast mode, other node-red nodes receives the echo of the telegram sent (the groupaddress_write event). If in tunneling, force the emit of the echo datagram (so other node-red nodes can receive the echo), because in tunneling, there is no echo.
+          // ########################
+          //if (sm.useTunneling) sm.sentTunnRequests[datagram.cemi.dest_addr] = datagram;
+          if (sm.useTunneling) {
+            sm.sentTunnRequests[datagram.cemi.dest_addr] = datagram;
+            if (typeof sm.localEchoInTunneling !== "undefined" && sm.localEchoInTunneling) {
+              try {
+                sm.emitEvent(datagram);
+                sm.log.debug('(%s):\t>>>>>>> localEchoInTunneling: echoing by emitting %d', sm.compositeState(), sm.seqnum);
+              } catch (error) {
+                sm.log.debug('(%s):\t>>>>>>> localEchoInTunneling: error echoing by emitting %d ' + error , sm.compositeState(), sm.seqnum);            }
+            }
+          }
+          // ########################
         });
       },
       "*": function ( data ) {
