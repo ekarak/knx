@@ -619,7 +619,7 @@ module.exports = machina.Fsm.extend({
     }
     // just return the first available IPv4 non-loopback interface
     const first = Object.values(candidateInterfaces)[0];
-    if (first) return first;
+    if (first) return first.address;
 
     // no local IpV4 interfaces?
     throw 'No valid IPv4 interfaces detected';
