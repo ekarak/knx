@@ -3,10 +3,7 @@
 * (C) 2016-2018 Elias Karakoulakis
 */
 
-const os = require('os');
 const util = require('util');
-const dgram = require('dgram');
-const machina = require('machina');
 
 const FSM = require('./FSM');
 const DPTLib = require('./dptlib');
@@ -18,10 +15,10 @@ const KnxNetProtocol = require('./KnxProtocol');
 FSM.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
   // get the incoming packet's service type ...
   try {
-    var reader = KnxNetProtocol.createReader(msg);
+    const reader = KnxNetProtocol.createReader(msg);
     reader.KNXNetHeader('tmp');
-    var dg = reader.next()['tmp'];
-    var descr = this.datagramDesc(dg);
+    const dg = reader.next()['tmp'];
+    const descr = datagramDesc(dg);
     KnxLog.get().trace('(%s): Received %s message: %j', this.compositeState(), descr, dg);
     if (!isNaN(this.channel_id) &&
       ((dg.hasOwnProperty('connstate') &&
@@ -32,7 +29,7 @@ FSM.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
         this.compositeState(), descr, this.channel_id);
     } else {
       // ... to drive the state machine (eg "inbound_TUNNELING_REQUEST_L_Data.ind")
-      var signal = util.format('inbound_%s', descr);
+      const signal = util.format('inbound_%s', descr);
       if (descr === "DISCONNECT_REQUEST") {
         KnxLog.get().info("empty internal fsm queue due to %s: ", signal);
         this.clearQueue();
@@ -61,7 +58,7 @@ FSM.prototype.AddTunnState = function(datagram) {
   }
 }
 
-FSM.prototype.AddCRI = function(datagram) {
+const AddCRI = (datagram) => {
   // add the CRI
   datagram.cri = {
     connection_type: KnxConstants.CONNECTION_TYPE.TUNNEL_CONNECTION,
@@ -71,7 +68,7 @@ FSM.prototype.AddCRI = function(datagram) {
 }
 
 FSM.prototype.AddCEMI = function(datagram, msgcode) {
-  var sendAck = ((msgcode || 0x11) == 0x11) && !this.options.suppress_ack_ldatareq; // only for L_Data.req
+  const sendAck = ((msgcode || 0x11) == 0x11) && !this.options.suppress_ack_ldatareq; // only for L_Data.req
   datagram.cemi = {
     msgcode: msgcode || 0x11, // default: L_Data.req for tunneling
     ctrl: {
@@ -108,36 +105,35 @@ FSM.prototype.AddCEMI = function(datagram, msgcode) {
  *    if NULL, then just make a new empty datagram. Look at AddXXX methods
  */
 FSM.prototype.Request = function(type, datagram_template, callback) {
-  var self = this;
   // populate skeleton datagram
-  var datagram = this.prepareDatagram(type);
+  const datagram = this.prepareDatagram(type);
   // decorate the datagram, if a function is passed
   if (typeof datagram_template == 'function') {
     datagram_template(datagram);
   }
   // make sure that we override the datagram service type!
   datagram.service_type = type;
-  var st = KnxConstants.keyText('SERVICE_TYPE', type);
+  const st = KnxConstants.keyText('SERVICE_TYPE', type);
   // hand off the outbound request to the state machine
-  self.handle('outbound_' + st, datagram);
+  this.handle('outbound_' + st, datagram);
   if (typeof callback === 'function') callback();
 }
 
 // prepare a datagram for the given service type
 FSM.prototype.prepareDatagram = function(svcType) {
-  var datagram = {
+  const datagram = {
       "header_length": 6,
       "protocol_version": 16, // 0x10 == version 1.0
       "service_type": svcType,
       "total_length": null, // filled in automatically
     }
     //
-  this.AddHPAI(datagram);
+  AddHPAI(datagram);
   //
   switch (svcType) {
     case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST:
-      this.AddTunn(datagram);
-      this.AddCRI(datagram); // no break!
+      AddTunn(datagram);
+      AddCRI(datagram); // no break!
     case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST:
     case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST:
       this.AddConnState(datagram);
@@ -146,7 +142,7 @@ FSM.prototype.prepareDatagram = function(svcType) {
       this.AddCEMI(datagram, KnxConstants.MESSAGECODES['L_Data.ind']);
       break;
     case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
-      this.AddTunn(datagram);
+      AddTunn(datagram);
       this.AddTunnState(datagram);
       this.AddCEMI(datagram);
       break;
@@ -163,8 +159,7 @@ FSM.prototype.prepareDatagram = function(svcType) {
 send the datagram over the wire
 */
 FSM.prototype.send = function(datagram, callback) {
-  var conn = this;
-  var cemitype;
+  var cemitype; // TODO: set, but unused
   try {
     this.writer = KnxNetProtocol.createWriter();
     switch (datagram.service_type) {
@@ -174,16 +169,16 @@ FSM.prototype.send = function(datagram, callback) {
         cemitype = KnxConstants.keyText('MESSAGECODES', datagram.cemi.msgcode);
         break;
     }
-    var packet = this.writer.KNXNetHeader(datagram);
-    var buf = packet.buffer;
-    var svctype = KnxConstants.keyText('SERVICE_TYPE', datagram.service_type);
-    var descr = this.datagramDesc(datagram);
+    const packet = this.writer.KNXNetHeader(datagram);
+    const buf = packet.buffer;
+    const svctype = KnxConstants.keyText('SERVICE_TYPE', datagram.service_type); // TODO: unused
+    const descr = datagramDesc(datagram);
     KnxLog.get().trace('(%s): Sending %s ==> %j', this.compositeState(), descr, datagram);
     this.socket.send(
       buf, 0, buf.length,
-      conn.remoteEndpoint.port, conn.remoteEndpoint.addr.toString(),
-      function(err) {
-        KnxLog.get().trace('(%s): UDP sent %s: %s %s', conn.compositeState(),
+      this.remoteEndpoint.port, this.remoteEndpoint.addr.toString(),
+      (err) => {
+        KnxLog.get().trace('(%s): UDP sent %s: %s %s', this.compositeState(),
           (err ? err.toString() : 'OK'), descr, buf.toString('hex')
         );
         if (typeof callback === 'function') callback(err);
@@ -202,7 +197,7 @@ FSM.prototype.write = function(grpaddr, value, dptid, callback) {
   }
   try {
     // outbound request onto the state machine
-    var serviceType = this.useTunneling ?
+    const serviceType = this.useTunneling ?
       KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
       KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
     this.Request(serviceType, function(datagram) {
@@ -219,7 +214,7 @@ FSM.prototype.respond = function(grpaddr, value, dptid) {
     KnxLog.get().warn('You must supply both grpaddr and value!');
     return;
   }
-  var serviceType = this.useTunneling ?
+  const serviceType = this.useTunneling ?
     KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
     KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
   this.Request(serviceType, function(datagram) {
@@ -241,7 +236,7 @@ FSM.prototype.writeRaw = function(grpaddr, value, bitlength, callback) {
     return;
   }
   // outbound request onto the state machine
-  var serviceType = this.useTunneling ?
+  const serviceType = this.useTunneling ?
     KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
     KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
   this.Request(serviceType, function(datagram) {
@@ -255,24 +250,21 @@ FSM.prototype.writeRaw = function(grpaddr, value, bitlength, callback) {
 // you can pass a callback function which gets bound to the RESPONSE datagram event
 FSM.prototype.read = function(grpaddr, callback) {
   if (typeof callback == 'function') {
-    var conn = this;
     // when the response arrives:
-    var responseEvent = 'GroupValue_Response_' + grpaddr;
+    const responseEvent = 'GroupValue_Response_' + grpaddr;
     KnxLog.get().trace('Binding connection to ' + responseEvent);
-    var binding = function(src, data) {
+    const binding = (src, data) => {
         // unbind the event handler
-        conn.off(responseEvent, binding);
+        this.off(responseEvent, binding);
         // fire the callback
         callback(src, data);
       }
       // prepare for the response
     this.on(responseEvent, binding);
     // clean up after 3 seconds just in case no one answers the read request
-    setTimeout(function() {
-      conn.off(responseEvent, binding);
-    }, 3000);
+    setTimeout( () => this.off(responseEvent, binding), 3000);
   }
-  var serviceType = this.useTunneling ?
+  const serviceType = this.useTunneling ?
     KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
     KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
   this.Request(serviceType, function(datagram) {
@@ -290,8 +282,8 @@ FSM.prototype.Disconnect = function(cb) {
 }
 
 // return a descriptor for this datagram (TUNNELING_REQUEST_L_Data.ind)
-FSM.prototype.datagramDesc = function(dg) {
-  var blurb = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
+const datagramDesc = (dg) => {
+  let blurb = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
   if (dg.service_type == KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST ||
       dg.service_type == KnxConstants.SERVICE_TYPE.ROUTING_INDICATION) {
     blurb += '_' + KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode);
@@ -300,7 +292,7 @@ FSM.prototype.datagramDesc = function(dg) {
 }
 
 // add the control udp local endpoint. UPDATE: not needed apparnently?
-FSM.prototype.AddHPAI = function(datagram) {
+const AddHPAI = (datagram) => {
   datagram.hpai = {
     protocol_type: 1, // UDP
     //tunnel_endpoint: this.localAddress + ":" + this.control.address().port
@@ -309,7 +301,7 @@ FSM.prototype.AddHPAI = function(datagram) {
 }
 
 // add the tunneling udp local endpoint UPDATE: not needed apparently?
-FSM.prototype.AddTunn = function(datagram) {
+const AddTunn = (datagram) => {
   datagram.tunn = {
     protocol_type: 1, // UDP
     tunnel_endpoint: '0.0.0.0:0'
@@ -317,19 +309,20 @@ FSM.prototype.AddTunn = function(datagram) {
   };
 }
 
-Connection = function(options) {
-  var conn = new FSM(options);
+// TODO: Conncetion is obviously not a constructor, but tests call it with `new`. That should be deprecated.
+function Connection(options) {
+  const conn = new FSM(options);
   // register with the FSM any event handlers passed into the options object
   if (typeof options.handlers === 'object') {
-    Object.keys(options.handlers).forEach(function(key) {
-      if (typeof options.handlers[key] === 'function') {
-        conn.on(key, options.handlers[key]);
+    for (const [key, value] of Object.entries(options.handlers)) {
+      if (typeof value === 'function') {
+        conn.on(key, value);
       }
-    });
+    }
   }
   // boot up the KNX connection unless told otherwise
   if (!options.manualConnect) conn.Connect();
-  return (conn);
-}
+  return conn;
+};
 
 module.exports = Connection;

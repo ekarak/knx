@@ -3,13 +3,12 @@
 * (C) 2016-2017 Elias Karakoulakis
 */
 
-const fs = require('fs');
 const path = require('path');
 const util = require('util');
 const log = require('log-driver').logger;
 
-var knx_path = path.join(__dirname, 'package.json');
-var pkginfo = JSON.parse(fs.readFileSync(knx_path));
+const knx_path = path.join(__dirname, 'package.json');
+const pkginfo = require(knx_path);
 
 log.info(util.format('Loading %s: %s, version: %s',
   pkginfo.name, pkginfo.description, pkginfo.version));
