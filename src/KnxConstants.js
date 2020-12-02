@@ -110,7 +110,6 @@ const KnxConstants = {
   FRAMETYPE,
   RESPONSECODE,
   MESSAGECODES,
-  APCICODES,
 };
 
 /* TODO helper function to print enum keys */
@@ -118,12 +117,13 @@ const keyText = (mapref, value) => {
   // pass in map by name or value
   const map = KnxConstants[mapref] || mapref;
   if (typeof map !== 'object') throw 'Unknown map: ' + mapref;
-  for (const [key, v] in Object.entries(map)) if (v == value) return key;
+  for (const [key, v] of Object.entries(map)) if (v == value) return key;
 
   KnxLog.get().trace('not found: %j', value);
 };
 
 module.exports = {
   ...KnxConstants,
+  APCICODES,
   keyText,
 };
