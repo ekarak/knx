@@ -24,9 +24,10 @@ exports.formatAPDU = function(value) {
     //apdu_data[0] = value;
     if ( typeof value === 'object' ) 
         return Buffer.from([(value.outofservice) +
-            (value.overridden << 1) +
-            (value.inalarm << 2) +
-            (value.alarmeunack << 3) ]);
+            (value.fault << 1) +
+            (value.overridden << 2) +
+            (value.inalarm << 3) +
+            (value.alarmeunack << 4) ]);
 
     log.error('DPT21: Must supply a value which is an object');
     //return apdu_data;
@@ -42,9 +43,10 @@ exports.fromBuffer = function(buf) {
 
     return {
         outofservice: (buf[0] & 0b00000001),
-        overridden: (buf[0] &   0b00000010) >> 1,
-        inalarm: (buf[0] &      0b00000100) >> 2,
-        alarmunack: (buf[0] &   0b00001000) >> 3 };
+        fault: (buf[0] &        0b00000010) >> 1,
+        overridden: (buf[0] &   0b00000100) >> 2,
+        inalarm: (buf[0] &      0b00001000) >> 3,
+        alarmunack: (buf[0] &   0b00010000) >> 4 };
     //return ret;
 }
 
@@ -57,7 +59,7 @@ exports.basetype = {
 }
 
 exports.subtypes = {
-    // 21.001 status - 4 bits
+    // 21.001 status - 5 bits
     "001" : {
         "name" : "DPT_StatusGen",
 	"desc" : "General Status",
