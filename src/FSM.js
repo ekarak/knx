@@ -87,7 +87,6 @@ module.exports = machina.Fsm.extend({
         // tell listeners that we disconnected
         // putting this here will result in a correct state for our listeners
         this.emit('disconnected');
-        this.log.debug(util.format('useTunneling=%j', this.useTunneling));
         if (this.useTunneling) {
           let connection_attempts = 0;
           if (!this.localAddress)
@@ -270,11 +269,14 @@ module.exports = machina.Fsm.extend({
     idle: {
       _onEnter() {
         if (this.useTunneling) {
-          // time out on inactivity...
-          this.idletimer = setTimeout(
-            () => this.transition('requestingConnState'),
-            10000
-          );
+            if (this.idletimer == null) { // set one
+                // time out on inactivity...
+                this.idletimer = setTimeout( () => {
+                    this.transition('requestingConnState');
+                    clearTimeout(this.idletimer);
+                    this.idletimer = null;
+                }, 60000);
+            }
         }
         // debuglog the current FSM state plus a custom message
         KnxLog.get().debug('(%s):\t%s', this.compositeState(), ' zzzz...');
@@ -282,7 +284,7 @@ module.exports = machina.Fsm.extend({
         this.processQueue();
       },
       _onExit() {
-        clearTimeout(this.idletimer);
+        //clearTimeout(this.idletimer);
       },
       // while idle we can either...
 
@@ -377,6 +379,8 @@ module.exports = machina.Fsm.extend({
     // if idle for too long, request connection state from the KNX IP router
     requestingConnState: {
       _onEnter() {
+        // added to note sending connectionstate_request
+        KnxLog.get().debug( 'Requesting Connection State');
         KnxLog.get().trace(
           '(%s): Requesting Connection State',
           this.compositeState()
