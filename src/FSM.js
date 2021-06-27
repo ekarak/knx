@@ -87,6 +87,7 @@ module.exports = machina.Fsm.extend({
         // tell listeners that we disconnected
         // putting this here will result in a correct state for our listeners
         this.emit('disconnected');
+        this.log.debug(util.format('useTunneling=%j', this.useTunneling));
         if (this.useTunneling) {
           let connection_attempts = 0;
           if (!this.localAddress)
