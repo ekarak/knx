@@ -4,6 +4,7 @@ import * as events from 'events'
 
 type HandlersSpec = {
     connected?: () => void,
+    disconnected?: () => void,
     event?: (evt: string, src: KnxDeviceAddress, dest: KnxGroupAddress, value: Buffer ) => void,
     error?: (connstatus: any) => void
 }
@@ -31,7 +32,8 @@ type DPT = string
 
 type DatapointOptions = {
     ga: KnxGroupAddress,
-    dpt: DPT
+    dpt?: DPT,
+    autoread?: boolean,
 }
 
 interface DatapointEvent {
