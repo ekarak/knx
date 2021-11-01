@@ -44,6 +44,7 @@ interface DatapointEvent {
 declare module 'knx' {
     export interface IConnection extends events.EventEmitter {
         debug: boolean
+        Connect(): void
         Disconnect(): void
         read( ga: KnxGroupAddress, cb?: (value: Buffer) => void ): void
         write( ga: KnxGroupAddress, value: Buffer, dpt: DPT, cb?: () => void): void
@@ -52,6 +53,7 @@ declare module 'knx' {
     export class Connection extends events.EventEmitter implements IConnection {
         public debug: boolean
         constructor( conf: ConnectionSpec )
+        Connect(): void
         Disconnect(): void
         read( ga: KnxGroupAddress, cb?: (value: Buffer) => void ): void
         write( ga: KnxGroupAddress, value: Buffer, dpt: DPT, cb?: () => void): void
