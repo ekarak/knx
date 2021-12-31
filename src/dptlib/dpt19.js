@@ -12,7 +12,7 @@ const log = require('log-driver').logger;
 //
 
 exports.formatAPDU = (value) => {
-  if (!value instanceof Date)
+  if (!(value instanceof Date))
     return log.error('DPT19: Must supply a Date object');
 
   // Sunday is 0 in Javascript, but 7 in KNX.
