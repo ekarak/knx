@@ -281,6 +281,21 @@ FSM.prototype.Disconnect = function(cb) {
   // this.off();
 }
 
+FSM.prototype.onIdle = function(cb) {
+  if(this.state === 'idle') {
+    KnxLog.get().trace('Connection is already Idle');
+    cb();
+  }
+  else {
+    this.on("transition", function(data) {
+      if(data.toState === 'idle') {
+        KnxLog.get().trace('Connection just transitioned to Idle');
+        cb();
+      }
+    });
+  }
+}
+
 // return a descriptor for this datagram (TUNNELING_REQUEST_L_Data.ind)
 const datagramDesc = (dg) => {
   let blurb = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
