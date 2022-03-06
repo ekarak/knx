@@ -276,7 +276,21 @@ FSM.prototype.read = function(grpaddr, callback) {
 }
 
 FSM.prototype.Disconnect = function(cb) {
-  this.transition("disconnecting");
+  var that = this;
+
+  KnxLog.get().debug('waiting for Idle-State');
+  this.onIdle(function() {
+    KnxLog.get().trace('In Idle-State');
+
+    that.on('disconnected', () => {
+      KnxLog.get().debug('Disconnected from KNX');
+      cb();
+    });
+
+    KnxLog.get().debug('Disconnecting from KNX');
+    that.transition("disconnecting");
+  });
+
   // machina.js removeAllListeners equivalent:
   // this.off();
 }
