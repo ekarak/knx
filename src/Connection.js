@@ -278,6 +278,13 @@ FSM.prototype.read = function(grpaddr, callback) {
 FSM.prototype.Disconnect = function(cb) {
   var that = this;
 
+  if(this.state === 'connecting') {
+      KnxLog.get().debug('Disconnecting directly');
+      that.transition("uninitialized");
+      cb()
+      return
+  }
+
   KnxLog.get().debug('waiting for Idle-State');
   this.onIdle(function() {
     KnxLog.get().trace('In Idle-State');
