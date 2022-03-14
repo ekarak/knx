@@ -17,7 +17,7 @@ type ConnectionSpec = {
     debug?: boolean,
     manualConnect?: true,
     minimumDelay?: number,
-    handlers: HandlersSpec,
+    handlers?: HandlersSpec,
 }
 
 type KnxDeviceAddress = string
