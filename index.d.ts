@@ -65,7 +65,7 @@ declare module 'knx' {
     export interface IConnection extends MachinaEvents {
         debug: boolean
         Connect(): void
-        Disconnect(): void
+        Disconnect(cb: Function): void
         read( ga: KnxGroupAddress, cb?: (value: Buffer) => void ): void
         write( ga: KnxGroupAddress, value: Buffer, dpt: DPT, cb?: () => void): void
     }
@@ -74,7 +74,7 @@ declare module 'knx' {
         public debug: boolean
         constructor( conf: ConnectionSpec )
         Connect(): void
-        Disconnect(): void
+        Disconnect(cb: Function): void
         read( ga: KnxGroupAddress, cb?: (value: Buffer) => void ): void
         write( ga: KnxGroupAddress, value: Buffer, dpt: DPT, cb?: () => void): void
         writeRaw( ga: KnxGroupAddress, value: Buffer, bitlength?: number, cb?: () => void): void
