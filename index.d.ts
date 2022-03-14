@@ -42,7 +42,27 @@ interface DatapointEvent {
 }
 
 declare module 'knx' {
-    export interface IConnection extends events.EventEmitter {
+    type MachinaEventsCallback = (...args: any[]) => void
+
+    interface MachinaEventsReturn {
+        eventName: string
+        callback: MachinaEventsCallback
+        off: () => void
+    }
+
+    class MachinaEvents {
+        emit(eventName: string): void
+        on(eventName: string, callback: MachinaEventsCallback): MachinaEventsReturn
+        off(eventName?: string, callback?: MachinaEventsCallback): void
+    }
+
+    interface MachinaEventsReturn {
+        eventName: string
+        callback: MachinaEventsCallback
+        off: () => void
+    }
+
+    export interface IConnection extends MachinaEvents {
         debug: boolean
         Connect(): void
         Disconnect(): void
@@ -50,7 +70,7 @@ declare module 'knx' {
         write( ga: KnxGroupAddress, value: Buffer, dpt: DPT, cb?: () => void): void
     }
 
-    export class Connection extends events.EventEmitter implements IConnection {
+    export class Connection extends MachinaEvents implements IConnection {
         public debug: boolean
         constructor( conf: ConnectionSpec )
         Connect(): void
