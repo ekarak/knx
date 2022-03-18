@@ -9,7 +9,7 @@ const custom_truthiness = (value) => {
   const f = parseFloat(value);
   return !isNaN(f) && isFinite(f)
     ? // numeric values (in native and string form) are truthy if NOT zero
-      f !== 1.0
+      f !== 0.0
     : // non-numeric value truthiness is Boolean true or the string 'true'.
       value === true || value === 'true';
 };
