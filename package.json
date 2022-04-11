@@ -1,7 +1,7 @@
 {
   "name": "knx",
   "description": "KNXnet/IP protocol implementation for Node(>=4.x)",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "engines": {
     "node": ">=6"
   },
@@ -70,7 +70,13 @@
     {
       "name": "Peter Körner",
       "email": "pkoerner@seibert-media.net"
-    }
+    },
+    {
+      "name": "Tomasz Kulpa"
+    },
+    {
+      "name": "Greg Brougham"
+    } 
   ],
   "keywords": [
     "knx",
