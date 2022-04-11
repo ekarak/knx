@@ -281,7 +281,9 @@ FSM.prototype.Disconnect = function(cb) {
   if(this.state === 'connecting') {
       KnxLog.get().debug('Disconnecting directly');
       that.transition("uninitialized");
-      cb()
+      if(cb) {
+        cb()
+      }
       return
   }
 
@@ -291,7 +293,9 @@ FSM.prototype.Disconnect = function(cb) {
 
     that.on('disconnected', () => {
       KnxLog.get().debug('Disconnected from KNX');
-      cb();
+      if(cb) {
+        cb()
+      }
     });
 
     KnxLog.get().debug('Disconnecting from KNX');
