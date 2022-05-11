@@ -636,7 +636,7 @@ module.exports = machina.Fsm.extend({
     const interfaces = os.networkInterfaces();
     for (const [iface, addrs] of Object.entries(interfaces)) {
       for (const addr of addrs) {
-        if (addr.family == 'IPv4' && !addr.internal) {
+        if ([4, 'IPv4'].indexOf(addr.family) > -1 && !addr.internal) {
           this.log.trace(
             util.format('candidate interface: %s (%j)', iface, addr)
           );
