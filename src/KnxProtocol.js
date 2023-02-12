@@ -479,7 +479,12 @@ KnxProtocol.define('CEMI', {
     })
       .UInt8('msgcode')
       .UInt8('addinfo_length')
-      .raw('ctrl', 2)
+      .tap(function (hdr) {
+        if (hdr.addinfo_length !== 0) {
+          this.raw('addinfo', hdr.addinfo_length);
+        }
+       })
+     .raw('ctrl', 2)
       .raw('src_addr', 2)
       .raw('dest_addr', 2)
       .tap(function (hdr) {
