@@ -1,7 +1,7 @@
 {
   "name": "knx",
   "description": "KNXnet/IP protocol implementation for Node(>=4.x)",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "engines": {
     "node": ">=6"
   },
