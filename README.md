@@ -1,6 +1,6 @@
 ## KNXnet/IP for Node.JS
 
-[![ci](https://github.com/ekarak/knx/workflows/ci/badge.svg?branch=master)](https://github.com/ekarak/knx/actions?query=workflow%3Aci+branch%3Amaster)
+[![ci](https://github.com/ekarak/knx/workflows/CI/badge.svg?branch=ci)](https://github.com/ekarak/knx/actions?query=workflow%3ACI+branch%3Aci)
 
 **New:** [Join the Gitter.im chatroom!](https://gitter.im/knx-js/Lobby)
 
