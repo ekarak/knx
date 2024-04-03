@@ -4,7 +4,7 @@
 */
 Error.stackTraceLimit = Infinity;
 
-import { Connection, LogLevel } from '../../src';
+import { Connection } from '../../src';
 import test from 'tape';
 
 /*
@@ -18,7 +18,7 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
   //
   test('KNX connect routing hybrid', function(t) {
     var connection = new Connection({
-      loglevel: LogLevel.Debug,
+      loglevel: 'debug',
       forceTunneling: true,
       handlers: {
         connected: function() {

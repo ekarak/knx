@@ -6,7 +6,7 @@
 import util from "util";
 import ipaddr from "ipaddr.js";
 import { Parser } from 'binary-parser'
-import { BinaryProtocol } from "binary-protocol";
+import BinaryProtocol from "binary-protocol";
 import * as KnxAddress from "./Address";
 import { APCICODES, keyText, KnxConstants } from "./KnxConstants";
 import KnxLog from "./KnxLog";

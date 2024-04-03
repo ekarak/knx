@@ -1,7 +1,7 @@
 import * as util from 'util';
 import * as dgram from 'dgram';
-import KnxLog from './KnxLog.js';
-import { KnxFSM } from './FSM.js';
+import KnxLog from './KnxLog';
+import { KnxFSM } from './FSM';
 
 function IpRoutingConnection(instance: KnxFSM): KnxFSM {
   const log = KnxLog.get();

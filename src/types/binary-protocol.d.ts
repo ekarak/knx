@@ -45,7 +45,7 @@ declare module "binary-protocol" {
     createWriteStream(options: any): Writer;
   }
 
-  export class BinaryProtocol {
+  export default class BinaryProtocol {
     define(name: string, config: ProtocolConfig): this;
     createReader(buffer: Buffer, offset?: number): Reader;
     createWriter(buffer?: Buffer, offset?: number): Writer;

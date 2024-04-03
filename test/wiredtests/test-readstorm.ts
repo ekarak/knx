@@ -3,7 +3,7 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { Connection, Datapoint, LogLevel } from "../../src";
+import { Connection, Datapoint } from "../../src";
 import test from "tape";
 import util from "util";
 import options from "./wiredtest-options.js";
@@ -53,7 +53,7 @@ if (process.env.hasOwnProperty("WIREDTEST")) {
       }
     }
     var connection = new Connection({
-      loglevel: LogLevel.Warn,
+      loglevel: 'warn',
       //forceTunneling: true,
       //      minimumDelay: 100,
       handlers: {

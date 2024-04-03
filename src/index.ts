@@ -4,16 +4,16 @@
 */
 
 import { format } from 'util';
-import log from 'log-driver';
+import { logger } from 'log-driver';
 
 import Connection from './FSM';
 import Datapoint from './Datapoint';
 import Devices from './devices';
-import Log, { LogLevel } from './KnxLog';
+import Log from './KnxLog';
 
 const pkgJson = require('../package.json');
 
-log.info(format('Loading %s: %s, version: %s',
+logger.info(format('Loading %s: %s, version: %s',
 pkgJson.name, pkgJson.description, pkgJson.version));
 
-export { Connection, Datapoint, Devices, Log, LogLevel };
+export { Connection, Datapoint, Devices, Log };

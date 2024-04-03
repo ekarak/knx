@@ -5,13 +5,13 @@
 
 Error.stackTraceLimit = Infinity;
 
-import { Connection, LogLevel } from '../../src';
+import { Connection } from '../../src';
 import test from 'tape';
 
 //
 test('KNX connect routing', function(t) {
   var connection = new Connection({
-    loglevel: LogLevel.Trace,
+    loglevel: 'trace',
     handlers: {
       connected: function() {
         console.log('----------');

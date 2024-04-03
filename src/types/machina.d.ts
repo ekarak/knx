@@ -41,7 +41,7 @@ declare module "machina" {
     transition(client: BehavioralFsm, newState: string): void;
   }
 
-  export class FSM extends BehavioralFsm {
+  export class Fsm extends BehavioralFsm {
     compositeState(): any;
     clearQueue(name?: string): void;
     handle(...args: any[]): any;

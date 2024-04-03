@@ -1,17 +1,19 @@
 import os from "os";
 import util from "util";
 import * as ipaddr from "ipaddr.js";
-import * as machina from "machina";
-import { keyText, KnxConstants } from "./KnxConstants.js";
-import IpRoutingConnection from "./IpRoutingConnection.js";
-import IpTunnelingConnection from "./IpTunnelingConnection.js";
-import KnxLog, { KnxLogOptions } from "./KnxLog.js";
+import machina from "machina";
+import { keyText, KnxConstants } from "./KnxConstants";
+import IpRoutingConnection from "./IpRoutingConnection";
+import IpTunnelingConnection from "./IpTunnelingConnection";
+import KnxLog, { KnxLogOptions } from "./KnxLog";
 import KnxNetProtocol from "./KnxProtocol";
 import { Writer } from "binary-protocol";
 import { Socket } from "dgram";
-import { populateAPDU } from "./dptlib/index.js";
+import { populateAPDU } from "./dptlib";
+import { LogLevel } from "log-driver";
 
 type KnxDeviceAddress = string;
+
 
 type KnxGroupAddress = string;
 
@@ -40,7 +42,7 @@ export type KnxOptions = {
   /**  the KNX physical address we'd like to use */
   physAddr?: string;
   /**  set the log level for messsages printed on the console. This can be 'error', 'warn', 'info' (default), 'debug', or 'trace'. */
-  loglevel?: string;
+  loglevel?: LogLevel;
   /**  do not automatically connect, but use connection.Connect() to establish connection */
   manualConnect?: boolean;
   /** use tunneling with multicast (router) - this is NOT supported by all routers! See README-resilience.md */
@@ -113,7 +115,7 @@ export interface Datagram {
   };
 }
 
-export class KnxFSM extends machina.FSM {
+export class KnxFSM extends machina.Fsm {
   private options: KnxOptions;
   private log: any;
   private ThreeLevelGroupAddressing: boolean;
@@ -1074,6 +1076,6 @@ const AddTunn = (datagram: Datagram): void => {
   };
 };
 
-const KnxFSMConnection = machina.FSM.extend(KnxFSM)
+const KnxFSMConnection = machina.Fsm.extend(KnxFSM)
 
 export default KnxFSMConnection;
