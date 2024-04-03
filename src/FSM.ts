@@ -904,7 +904,7 @@ export class KnxFSMConnection extends KnxFSM {
 		if (typeof callback === 'function') callback()
 	}
 
-	// prepare a datagram for the given service type
+	/** prepare a datagram for the given service type */
 	prepareDatagram(svcType: number): Datagram {
 		const datagram: Datagram = {
 			header_length: 6,
