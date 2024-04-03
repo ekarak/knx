@@ -3,7 +3,7 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import logger from '../KnxLog'
+import { logger } from 'log-driver'
 import type { DatapointConfig } from '.'
 import { hasProp } from 'src/utils'
 
@@ -27,7 +27,7 @@ import { hasProp } from 'src/utils'
 
 // TODO: implement fromBuffer, formatAPDU
 
-const log = logger.get()
+const log = logger
 
 const config: DatapointConfig = {
 	id: 'DPT18',

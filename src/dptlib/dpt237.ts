@@ -3,11 +3,11 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import logger from '../KnxLog'
+import { logger } from 'log-driver'
 import type { DatapointConfig } from '.'
 import { hasProp } from 'src/utils'
 
-const log = logger.get()
+const log = logger
 
 //
 // DPT237: 2-byte unsigned value

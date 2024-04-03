@@ -3,10 +3,10 @@
  * (C) 2016-2019 Elias Karakoulakis
  */
 
-import logger from '../KnxLog'
+import { logger } from 'log-driver'
 import type { DatapointConfig } from '.'
 
-const log = logger.get()
+const log = logger
 
 //
 // DPT232: 3-byte RGB color array

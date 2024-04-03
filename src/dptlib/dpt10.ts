@@ -4,10 +4,10 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import logger from '../KnxLog'
+import { logger } from 'log-driver'
 import type { DatapointConfig } from '.'
 
-const log = logger.get()
+const log = logger
 
 //
 // DPT10.*: time (3 bytes)

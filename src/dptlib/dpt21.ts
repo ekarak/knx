@@ -2,10 +2,10 @@
  * knx.js - a KNX protocol stack in pure Javascript
  * (C) 2016-2018 Elias Karakoulakis
  */
-import logger from '../KnxLog'
+import { logger } from 'log-driver'
 import type { DatapointConfig } from '.'
 
-const log = logger.get()
+const log = logger
 
 //
 // DPT21: 1-byte status
