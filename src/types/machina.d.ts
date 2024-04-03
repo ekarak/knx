@@ -41,8 +41,10 @@ declare module 'machina' {
 		compositeState(client: BehavioralFsm): any
 		clearQueue(client: BehavioralFsm, name?: string): void
 		handle(client: BehavioralFsm, ...args: any[]): any
-		transition(client: BehavioralFsm, newState: string): void
+		transition(client: BehavioralFsm, newState: string, ...args: any[]): void
+		deferUntilTransition(client: BehavioralFsm, state: string): void
 		initialize(...args: any): void
+		processQueue(client: BehavioralFsm): void
 	}
 
 	export class Fsm extends BehavioralFsm {
@@ -50,6 +52,8 @@ declare module 'machina' {
 		compositeState(): any
 		clearQueue(name?: string): void
 		handle(...args: any[]): any
-		transition(newState: string): void
+		transition(newState: string, ...args: any[]): void
+		deferUntilTransition(state: string): void
+		processQueue(): void
 	}
 }

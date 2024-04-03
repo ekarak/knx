@@ -10,7 +10,7 @@ import KnxNetProtocol from './KnxProtocol'
 import { Writer } from 'binary-protocol'
 import { Socket } from 'dgram'
 import { populateAPDU } from './dptlib'
-import { LogLevel } from 'log-driver'
+import { Logger, LogLevel } from 'log-driver'
 import { hasProp } from './utils'
 
 type KnxDeviceAddress = string
@@ -120,19 +120,19 @@ const KnxFSM = machina.Fsm.extend({
 	initialState: 'uninitialized',
 	states: {
 		uninitialized: {
-			'*': function () {
+			'*': function (this: KnxFSMConnection) {
 				this.transition('connecting')
 			},
 		},
 
 		jumptoconnecting: {
-			_onEnter() {
+			_onEnter(this: KnxFSMConnection) {
 				this.transition('connecting')
 			},
 		},
 
 		connecting: {
-			_onEnter() {
+			_onEnter(this: KnxFSMConnection) {
 				this.emit('disconnected')
 				this.log.debug(
 					util.format('useTunneling=%j', this.useTunneling),
@@ -193,10 +193,10 @@ const KnxFSM = machina.Fsm.extend({
 					this.transition('connected')
 				}
 			},
-			_onExit() {
+			_onExit(this: KnxFSMConnection) {
 				clearInterval(this.connecttimer)
 			},
-			inbound_CONNECT_RESPONSE(datagram: any) {
+			inbound_CONNECT_RESPONSE(this: KnxFSMConnection, datagram: any) {
 				this.log.debug(util.format('got connect response'))
 				if (
 					hasProp(datagram, 'connstate') &&
@@ -225,7 +225,7 @@ const KnxFSM = machina.Fsm.extend({
 					)
 				}
 			},
-			inbound_CONNECTIONSTATE_RESPONSE(datagram: any) {
+			inbound_CONNECTIONSTATE_RESPONSE(this: KnxFSMConnection, datagram: any) {
 				if (this.useTunneling) {
 					const str = keyText(
 						'RESPONSECODE',
@@ -241,7 +241,7 @@ const KnxFSM = machina.Fsm.extend({
 					this.transition('connected')
 				}
 			},
-			'*': function (data: any) {
+			'*': function (this: KnxFSMConnection, data: any) {
 				this.log.debug(
 					util.format('*** deferring Until Transition %j', data),
 				)
@@ -250,7 +250,7 @@ const KnxFSM = machina.Fsm.extend({
 		},
 
 		connected: {
-			_onEnter() {
+			_onEnter(this: KnxFSMConnection) {
 				this.reconnection_cycles = 0
 				this.seqnum = -1
 				this.lastSentTime = Date.now()
@@ -267,7 +267,7 @@ const KnxFSM = machina.Fsm.extend({
 		},
 
 		disconnecting: {
-			_onEnter() {
+			_onEnter(this: KnxFSMConnection) {
 				if (this.useTunneling) {
 					const aliveFor = this.conntime
 						? Date.now() - this.conntime
@@ -303,10 +303,10 @@ const KnxFSM = machina.Fsm.extend({
 					)
 				}
 			},
-			_onExit() {
+			_onExit(this: KnxFSMConnection) {
 				clearTimeout(this.disconnecttimer)
 			},
-			inbound_DISCONNECT_RESPONSE(datagram: any) {
+			inbound_DISCONNECT_RESPONSE(this: KnxFSMConnection, datagram: any) {
 				if (this.useTunneling) {
 					KnxLog.get().debug(
 						'(%s):\tgot disconnect response',
@@ -324,7 +324,7 @@ const KnxFSM = machina.Fsm.extend({
 		},
 
 		idle: {
-			_onEnter() {
+			_onEnter(this: KnxFSMConnection) {
 				if (this.useTunneling) {
 					if (this.idletimer == null) {
 						this.idletimer = setTimeout(() => {
@@ -341,8 +341,8 @@ const KnxFSM = machina.Fsm.extend({
 				)
 				this.processQueue()
 			},
-			_onExit() {},
-			outbound_ROUTING_INDICATION(datagram: Datagram) {
+			_onExit(this: KnxFSMConnection) {},
+			outbound_ROUTING_INDICATION(this: KnxFSMConnection, datagram: Datagram) {
 				const elapsed = Date.now() - this.lastSentTime
 				if (
 					!this.options.minimumDelay ||
@@ -360,7 +360,7 @@ const KnxFSM = machina.Fsm.extend({
 					)
 				}
 			},
-			outbound_TUNNELING_REQUEST(datagram: Datagram) {
+			outbound_TUNNELING_REQUEST(this: KnxFSMConnection, datagram: Datagram) {
 				if (this.useTunneling) {
 					const elapsed = Date.now() - this.lastSentTime
 					if (
@@ -386,14 +386,14 @@ const KnxFSM = machina.Fsm.extend({
 				}
 			},
 			'inbound_TUNNELING_REQUEST_L_Data.ind': function (
-				datagram: Datagram,
+				this: KnxFSMConnection, datagram: Datagram,
 			) {
 				if (this.useTunneling) {
 					this.transition('recvTunnReqIndication', datagram)
 				}
 			},
 			'inbound_TUNNELING_REQUEST_L_Data.con': function (
-				datagram: Datagram,
+				this: KnxFSMConnection, datagram: Datagram,
 			) {
 				if (this.useTunneling) {
 					const confirmed =
@@ -414,11 +414,11 @@ const KnxFSM = machina.Fsm.extend({
 				}
 			},
 			'inbound_ROUTING_INDICATION_L_Data.ind': function (
-				datagram: Datagram,
+				this: KnxFSMConnection, datagram: Datagram,
 			) {
 				this.emitEvent(datagram)
 			},
-			inbound_DISCONNECT_REQUEST(datagram: any) {
+			inbound_DISCONNECT_REQUEST(this: KnxFSMConnection, datagram: any) {
 				if (this.useTunneling) {
 					this.transition('connecting')
 				}
@@ -426,7 +426,7 @@ const KnxFSM = machina.Fsm.extend({
 		},
 
 		requestingConnState: {
-			_onEnter() {
+			_onEnter(this: KnxFSMConnection) {
 				KnxLog.get().debug('Requesting Connection State')
 				KnxLog.get().trace(
 					'(%s): Requesting Connection State',
@@ -444,10 +444,10 @@ const KnxFSM = machina.Fsm.extend({
 					this.emit('error', msg)
 				}, 1000)
 			},
-			_onExit() {
+			_onExit(this: KnxFSMConnection) {
 				clearTimeout(this.connstatetimer)
 			},
-			inbound_CONNECTIONSTATE_RESPONSE(datagram: any) {
+			inbound_CONNECTIONSTATE_RESPONSE(this: KnxFSMConnection, datagram: any) {
 				const state = keyText('RESPONSECODE', datagram.connstate.status)
 				switch (datagram.connstate.status) {
 					case 0:
@@ -465,7 +465,7 @@ const KnxFSM = machina.Fsm.extend({
 						this.emit('error', state)
 				}
 			},
-			'*': function (data: any) {
+			'*': function (this: KnxFSMConnection, data: any) {
 				this.log.debug(
 					util.format(
 						'*** deferring %s until transition from requestingConnState => idle',
@@ -477,7 +477,7 @@ const KnxFSM = machina.Fsm.extend({
 		},
 
 		sendDatagram: {
-			_onEnter(datagram: Datagram) {
+			_onEnter(this: KnxFSMConnection, datagram: Datagram) {
 				this.seqnum += 1
 				if (this.useTunneling)
 					datagram.tunnstate.seqnum = this.seqnum & 0xff
@@ -503,7 +503,7 @@ const KnxFSM = machina.Fsm.extend({
 					}
 				})
 			},
-			'*': function (data: any) {
+			'*': function (this: KnxFSMConnection, data: any) {
 				this.log.debug(
 					util.format(
 						'*** deferring %s until transition sendDatagram => idle',
@@ -514,17 +514,17 @@ const KnxFSM = machina.Fsm.extend({
 			},
 		},
 		sendTunnReq_waitACK: {
-			_onEnter(datagram: Datagram) {
+			_onEnter(this: KnxFSMConnection, datagram: Datagram) {
 				this.tunnelingAckTimer = setTimeout(() => {
 					this.log.debug('timed out waiting for TUNNELING_ACK')
 					this.transition('idle')
 					this.emit('tunnelreqfailed', datagram)
 				}, 2000)
 			},
-			_onExit() {
+			_onExit(this: KnxFSMConnection) {
 				clearTimeout(this.tunnelingAckTimer)
 			},
-			inbound_TUNNELING_ACK(datagram: Datagram) {
+			inbound_TUNNELING_ACK(this: KnxFSMConnection, datagram: Datagram) {
 				this.log.debug(
 					util.format(
 						'===== datagram %d acknowledged by IP router',
@@ -533,7 +533,7 @@ const KnxFSM = machina.Fsm.extend({
 				)
 				this.transition('idle')
 			},
-			'*': function (data: any) {
+			'*': function (this: KnxFSMConnection, data: any) {
 				this.log.debug(
 					util.format(
 						'*** deferring %s until transition sendTunnReq_waitACK => idle',
@@ -544,13 +544,13 @@ const KnxFSM = machina.Fsm.extend({
 			},
 		},
 		recvTunnReqIndication: {
-			_onEnter(datagram: Datagram) {
+			_onEnter(this: KnxFSMConnection, datagram: Datagram) {
 				this.seqnumRecv = datagram.tunnstate.seqnum
 				this.acknowledge(datagram)
 				this.transition('idle')
 				this.emitEvent(datagram)
 			},
-			'*': function (data: any) {
+			'*': function (this: KnxFSMConnection, data: any) {
 				this.log.debug(
 					util.format('*** deferring Until Transition %j', data),
 				)
@@ -561,50 +561,54 @@ const KnxFSM = machina.Fsm.extend({
 })
 
 export class KnxFSMConnection extends KnxFSM {
-	private options: KnxOptions
+	protected options: KnxOptions
 
-	private log: any
+	protected log: Logger
 
-	private ThreeLevelGroupAddressing: boolean
+	protected ThreeLevelGroupAddressing: boolean
 
-	private reconnection_cycles: number
+	protected reconnection_cycles: number
 
-	private sentTunnRequests: { [key: string]: Datagram }
+	protected sentTunnRequests: { [key: string]: Datagram }
 
-	private useTunneling: boolean
+	protected useTunneling: boolean
 
-	private remoteEndpoint: {
+	protected remoteEndpoint: {
 		addrstring: string
 		addr: any
 		port: number
 	}
 
-	private localEchoInTunneling: boolean | undefined
+	protected localEchoInTunneling: boolean | undefined
 
-	private channel_id?: any
+	protected channel_id?: any
 
-	private conntime?: number
+	protected conntime?: number
 
-	private lastSentTime?: number
+	protected lastSentTime?: number
 
-	private connecttimer?: NodeJS.Timeout
+	protected connecttimer?: NodeJS.Timeout
 
-	private disconnecttimer?: NodeJS.Timeout
+	protected disconnecttimer?: NodeJS.Timeout
 
-	private connstatetimer?: NodeJS.Timeout
+	protected connstatetimer?: NodeJS.Timeout
 
-	private idletimer?: NodeJS.Timeout
+	protected idletimer?: NodeJS.Timeout
 
-	private tunnelingAckTimer?: NodeJS.Timeout
+	protected tunnelingAckTimer?: NodeJS.Timeout
 
-	private seqnum: number
+	protected seqnum: number
+	
+	protected seqnumRecv: number
 
-	private seqnumRecv: number
+	protected writer: Writer
 
-	private writer: Writer
-
-	private socket: Socket
-
+	protected socket: Socket
+	
+	protected usingMulticastTunneling: boolean
+	
+	protected minimumDelay: number
+	
 	public localAddress: string | null
 
 	constructor(options: KnxOptions) {
@@ -936,7 +940,7 @@ export class KnxFSMConnection extends KnxFSM {
 	/*
   send the datagram over the wire
   */
-	send(datagram: Datagram, callback: (err?: Error) => void): void {
+	send(datagram: Datagram, callback?: (err?: Error) => void): void {
 		let cemitype: string // TODO: set, but unused
 		try {
 			this.writer = KnxNetProtocol.createWriter()
