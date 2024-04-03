@@ -3,7 +3,7 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { DatapointConfig } from ".";
+import type { DatapointConfig } from '.'
 
 //
 // DPT13: 4-byte signed value
@@ -11,79 +11,79 @@ import { DatapointConfig } from ".";
 
 // DPT13 base type info
 const config: DatapointConfig = {
-  id: "DPT13",
-  basetype: {
-    bitlength: 32,
-    signedness: "signed",
-    valuetype: "basic",
-    desc: "4-byte signed value",
-    range: [-Math.pow(2, 31), Math.pow(2, 31) - 1],
-  },
+	id: 'DPT13',
+	basetype: {
+		bitlength: 32,
+		signedness: 'signed',
+		valuetype: 'basic',
+		desc: '4-byte signed value',
+		range: [-(2 ** 31), 2 ** 31 - 1],
+	},
 
-  // DPT13 subtypes
-  subtypes: {
-    // 13.001 counter pulses (signed)
-    "001": {
-      name: "DPT_Value_4_Count",
-      desc: "counter pulses (signed)",
-      unit: "pulses",
-    },
+	// DPT13 subtypes
+	subtypes: {
+		// 13.001 counter pulses (signed)
+		'001': {
+			name: 'DPT_Value_4_Count',
+			desc: 'counter pulses (signed)',
+			unit: 'pulses',
+		},
 
-    "002": {
-      name: "DPT_Value_Activation_Energy",
-      desc: "activation energy (J/mol)",
-      unit: "J/mol",
-    },
+		'002': {
+			name: 'DPT_Value_Activation_Energy',
+			desc: 'activation energy (J/mol)',
+			unit: 'J/mol',
+		},
 
-    // 13.010 active energy (Wh)
-    "010": {
-      name: "DPT_ActiveEnergy",
-      desc: "active energy (Wh)",
-      unit: "Wh",
-    },
+		// 13.010 active energy (Wh)
+		'010': {
+			name: 'DPT_ActiveEnergy',
+			desc: 'active energy (Wh)',
+			unit: 'Wh',
+		},
 
-    // 13.011 apparent energy (VAh)
-    "011": {
-      name: "DPT_ApparantEnergy",
-      desc: "apparent energy (VAh)",
-      unit: "VAh",
-    },
+		// 13.011 apparent energy (VAh)
+		'011': {
+			name: 'DPT_ApparantEnergy',
+			desc: 'apparent energy (VAh)',
+			unit: 'VAh',
+		},
 
-    // 13.012 reactive energy (VARh)
-    "012": {
-      name: "DPT_ReactiveEnergy",
-      desc: "reactive energy (VARh)",
-      unit: "VARh",
-    },
+		// 13.012 reactive energy (VARh)
+		'012': {
+			name: 'DPT_ReactiveEnergy',
+			desc: 'reactive energy (VARh)',
+			unit: 'VARh',
+		},
 
-    // 13.013 active energy (KWh)
-    "013": {
-      name: "DPT_ActiveEnergy_kWh",
-      desc: "active energy (kWh)",
-      unit: "kWh",
-    },
+		// 13.013 active energy (KWh)
+		'013': {
+			name: 'DPT_ActiveEnergy_kWh',
+			desc: 'active energy (kWh)',
+			unit: 'kWh',
+		},
 
-    // 13.014 apparent energy (kVAh)
-    "014": {
-      name: "DPT_ApparantEnergy_kVAh",
-      desc: "apparent energy (kVAh)",
-      unit: "VAh",
-    },
+		// 13.014 apparent energy (kVAh)
+		'014': {
+			name: 'DPT_ApparantEnergy_kVAh',
+			desc: 'apparent energy (kVAh)',
+			unit: 'VAh',
+		},
 
-    // 13.015 reactive energy (kVARh)
-    "015": {
-      name: "DPT_ReactiveEnergy_kVARh",
-      desc: "reactive energy (kVARh)",
-      unit: "kVARh",
-    },
+		// 13.015 reactive energy (kVARh)
+		'015': {
+			name: 'DPT_ReactiveEnergy_kVARh',
+			desc: 'reactive energy (kVARh)',
+			unit: 'kVARh',
+		},
 
-    // 13.100 time lag(s)
-    "100": {
-      name: "DPT_LongDeltaTimeSec",
-      desc: "time lag(s)",
-      unit: "s",
-    },
-  },
-};
+		// 13.100 time lag(s)
+		'100': {
+			name: 'DPT_LongDeltaTimeSec',
+			desc: 'time lag(s)',
+			unit: 's',
+		},
+	},
+}
 
-export default config;
+export default config

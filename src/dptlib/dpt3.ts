@@ -3,61 +3,66 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { DatapointConfig } from ".";
-import KnxLog from "../KnxLog";
+import { hasProp } from 'src/utils'
+import type { DatapointConfig } from '.'
 
-const log = KnxLog.get();
+import KnxLog from '../KnxLog'
+
+const log = KnxLog.get()
 
 interface Dpt3Value {
-  decr_incr: number;
-  data: number;
+	decr_incr: number
+	data: number
 }
 
 const config: DatapointConfig = {
-  id: "DPT3",
-  formatAPDU: (value: Dpt3Value) => {
-    if (value == null) return log.warn("DPT3: cannot write null value");
+	id: 'DPT3',
+	formatAPDU: (value: Dpt3Value) => {
+		if (value == null) return log.warn('DPT3: cannot write null value')
 
-    if (
-      typeof value == "object" &&
-      value.hasOwnProperty("decr_incr") &&
-      value.hasOwnProperty("data")
-    )
-      return Buffer.from([(value.decr_incr << 3) + (value.data & 0b00000111)]);
+		if (
+			typeof value === 'object' &&
+			hasProp(value, 'decr_incr') &&
+			hasProp(value, 'data')
+		)
+			return Buffer.from([
+				(value.decr_incr << 3) + (value.data & 0b00000111),
+			])
 
-    log.error("Must supply a value object of {decr_incr, data}");
-    // FIXME: should this return zero buffer when error? Or nothing?
-    return Buffer.from([0]);
-  },
-  fromBuffer: (buf: Buffer) => {
-    if (buf.length != 1) return log.error("DPT3: Buffer should be 1 byte long");
+		log.error('Must supply a value object of {decr_incr, data}')
+		// FIXME: should this return zero buffer when error? Or nothing?
+		return Buffer.from([0])
+	},
+	fromBuffer: (buf: Buffer) => {
+		if (buf.length !== 1)
+			return log.error('DPT3: Buffer should be 1 byte long')
 
-    return {
-      decr_incr: (buf[0] & 0b00001000) >> 3,
-      data: buf[0] & 0b00000111,
-    };
-  },
-  basetype: {
-    bitlength: 4,
-    valuetype: "composite",
-    desc: "4-bit relative dimming control",
-  },
-  subtypes: {
-    // 3.007 dimming control
-    "007": {
-      name: "DPT_Control_Dimming",
-      desc: "dimming control",
-    },
+		return {
+			decr_incr: (buf[0] & 0b00001000) >> 3,
+			data: buf[0] & 0b00000111,
+		}
+	},
+	basetype: {
+		bitlength: 4,
+		valuetype: 'composite',
+		desc: '4-bit relative dimming control',
+	},
+	subtypes: {
+		// 3.007 dimming control
+		'007': {
+			name: 'DPT_Control_Dimming',
+			desc: 'dimming control',
+		},
 
-    // 3.008 blind control
-    "008": {
-      name: "DPT_Control_Blinds",
-      desc: "blinds control",
-    },
-  },
-};
+		// 3.008 blind control
+		'008': {
+			name: 'DPT_Control_Blinds',
+			desc: 'blinds control',
+		},
+	},
+}
 
-export default config;
+export default config
 
 /*
         2.6.3.5 Behavior

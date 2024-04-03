@@ -3,7 +3,7 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { DatapointConfig } from ".";
+import type { DatapointConfig } from '.'
 
 // Bitstruct to parse a DPT6 frame (8-bit signed integer)
 // Always 8-bit aligned.
@@ -11,33 +11,33 @@ import { DatapointConfig } from ".";
 // DPT Basetype info
 
 const config: DatapointConfig = {
-  id: "DPT6",
-  basetype: {
-    bitlength: 8,
-    signedness: "signed",
-    valuetype: "basic",
-    desc: "8-bit signed value",
-    range: [-128, 127],
-  },
+	id: 'DPT6',
+	basetype: {
+		bitlength: 8,
+		signedness: 'signed',
+		valuetype: 'basic',
+		desc: '8-bit signed value',
+		range: [-128, 127],
+	},
 
-  // DPT subtypes info
-  subtypes: {
-    // 6.001 percentage (-128%..127%)
-    "001": {
-      name: "DPT_Switch",
-      desc: "percent",
-      unit: "%",
-    },
+	// DPT subtypes info
+	subtypes: {
+		// 6.001 percentage (-128%..127%)
+		'001': {
+			name: 'DPT_Switch',
+			desc: 'percent',
+			unit: '%',
+		},
 
-    // 6.002 counter pulses (-128..127)
-    "010": {
-      name: "DPT_Bool",
-      desc: "counter pulses",
-      unit: "pulses",
-    },
+		// 6.002 counter pulses (-128..127)
+		'010': {
+			name: 'DPT_Bool',
+			desc: 'counter pulses',
+			unit: 'pulses',
+		},
 
-    //
-  },
-};
+		//
+	},
+}
 
-export default config;
+export default config

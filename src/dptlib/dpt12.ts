@@ -3,7 +3,7 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { DatapointConfig } from ".";
+import type { DatapointConfig } from '.'
 
 //
 // DPT12.*:  4-byte unsigned value
@@ -11,21 +11,21 @@ import { DatapointConfig } from ".";
 
 // DPT12 base type info
 const config: DatapointConfig = {
-  id: "DPT12",
-  basetype: {
-    bitlength: 32,
-    signedness: "unsigned",
-    valuetype: "basic",
-    desc: "4-byte unsigned value",
-  },
-  // DPT12 subtype info
-  subtypes: {
-    // 12.001 counter pulses
-    "001": {
-      name: "DPT_Value_4_Ucount",
-      desc: "counter pulses",
-    },
-  },
-};
+	id: 'DPT12',
+	basetype: {
+		bitlength: 32,
+		signedness: 'unsigned',
+		valuetype: 'basic',
+		desc: '4-byte unsigned value',
+	},
+	// DPT12 subtype info
+	subtypes: {
+		// 12.001 counter pulses
+		'001': {
+			name: 'DPT_Value_4_Ucount',
+			desc: 'counter pulses',
+		},
+	},
+}
 
-export default config;
+export default config

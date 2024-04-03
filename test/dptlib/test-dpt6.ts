@@ -1,13 +1,13 @@
 /**
-* knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2018 Elias Karakoulakis
-*/
+ * knx.js - a KNX protocol stack in pure Javascript
+ * (C) 2016-2018 Elias Karakoulakis
+ */
 
-import { run } from "./commontest";
+import { run } from './commontest'
 
 run('DPT6', [
-  { apdu_data: [0x00], jsval: 0},
-  { apdu_data: [0x7f], jsval: 127},
-  { apdu_data: [0x80], jsval: -128},
-  { apdu_data: [0xff], jsval: -1}
-]);
+	{ apdu_data: [0x00], jsval: 0 },
+	{ apdu_data: [0x7f], jsval: 127 },
+	{ apdu_data: [0x80], jsval: -128 },
+	{ apdu_data: [0xff], jsval: -1 },
+])

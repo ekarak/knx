@@ -1,5 +1,5 @@
-import BinarySwitch from './BinarySwitch';
+import BinarySwitch from './BinarySwitch'
 
 export default {
-    BinarySwitch,
-};
+	BinarySwitch,
+}
