@@ -605,10 +605,12 @@ KnxProtocol.define('KNXNetHeader', {
             this.CEMI('cemi');
             break;
           default: {
-            KnxLog.get().warn(
-              'read KNXNetHeader: unhandled serviceType = %s',
-              KnxConstants.keyText('SERVICE_TYPE', hdr.service_type)
-            );
+            if (KnxProtocol.debug) {
+              KnxLog.get().warn(
+                'read KNXNetHeader: unhandled serviceType = %s',
+                KnxConstants.keyText('SERVICE_TYPE', hdr.service_type)
+              );
+            }
           }
         }
       })
