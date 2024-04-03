@@ -6,7 +6,9 @@ import type { KnxFSMConnection } from './FSM'
 function IpRoutingConnection(instance: KnxFSMConnection): KnxFSMConnection {
 	const log = KnxLog.get()
 
-	instance.BindSocket = (cb: (socket: dgram.Socket) => void) => {
+	instance.BindSocket = function BindSocket(
+		cb: (socket: dgram.Socket) => void,
+	) {
 		const udpSocket = dgram.createSocket({ type: 'udp4', reuseAddr: true })
 		udpSocket.on('listening', () => {
 			log.debug(
@@ -37,7 +39,7 @@ function IpRoutingConnection(instance: KnxFSMConnection): KnxFSMConnection {
 	// <summary>
 	///     Start the connection
 	/// </summary>
-	instance.Connect = () => {
+	instance.Connect = function Connect() {
 		this.localAddress = this.getLocalAddress()
 		this.socket = this.BindSocket((socket: dgram.Socket) => {
 			socket.on('error', (errmsg: string) =>

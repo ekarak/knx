@@ -5,7 +5,9 @@ import type { KnxFSMConnection } from './FSM'
 function IpTunnelingConnection(instance: KnxFSMConnection) {
 	const log = KnxLog.get()
 
-	instance.BindSocket = (cb: (socket: dgram.Socket) => void) => {
+	instance.BindSocket = function BindSocket(
+		cb: (socket: dgram.Socket) => void,
+	) {
 		const udpSocket = dgram.createSocket('udp4')
 		udpSocket.bind(() => {
 			log.debug(
@@ -18,7 +20,7 @@ function IpTunnelingConnection(instance: KnxFSMConnection) {
 		return udpSocket
 	}
 
-	instance.Connect = () => {
+	instance.Connect = function Connect() {
 		this.localAddress = this.getLocalAddress()
 		// create the socket
 		this.socket = this.BindSocket((socket: dgram.Socket) => {
