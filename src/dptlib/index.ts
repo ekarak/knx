@@ -127,7 +127,8 @@ export function resolve(dptid: string | number) {
     .match(/^(?:DPT)?(\d+)(\.(\d+))?$/);
   if (m === null) throw "Invalid DPT format: " + dptid;
 
-  const dpt = dpts[util.format("DPT%s", m[1])];
+  const dptkey = util.format("DPT%s", m[1])
+  const dpt = dpts[dptkey];
   if (!dpt) throw "Unsupported DPT: " + dptid;
 
   const cloned_dpt = cloneDpt(dpt);

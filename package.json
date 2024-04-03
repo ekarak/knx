@@ -3,7 +3,7 @@
   "description": "KNXnet/IP protocol implementation for Node(>=6.x)",
   "version": "2.5.4",
   "engines": {
-    "node": ">=6"
+    "node": ">=16"
   },
   "private": false,
   "repository": {
@@ -12,7 +12,12 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "test": "node -r esbuild-register ./node_modules/.bin/multi-tape test/*/test-*.ts"
+    "test": "npm run test:conn && npm run test:dptlib && npm run test:proto",
+    "test:tape": "node -r esbuild-register ./node_modules/.bin/tape",
+    "test:conn": "npm run test:tape -- test/connection/*.ts",
+    "test:dptlib": "npm run test:tape -- test/dptlib/*.ts",
+    "test:proto": "npm run test:tape -- test/knxproto/*.ts",
+    "test:wired": "npm run test:tape -- test/wiredtests/*.ts"
   },
   "main": "./build/index.js",
   "license": "MIT",
@@ -92,16 +97,15 @@
   "dependencies": {
     "binary-parser": "^2.2.1",
     "binary-protocol": "0.0.0",
-    "ipaddr.js": "1.2.0",
+    "ipaddr.js": "2.1.0",
     "log-driver": "1.2.7",
     "machina": "^4.0.2"
   },
   "devDependencies": {
-    "@types/node": "^20.12.2",
+    "@types/node": "^20.12.3",
     "@types/tape": "^5.6.4",
     "esbuild-register": "^3.5.0",
-    "multi-tape": "^1.2.1",
-    "tape": "^4.10.1",
+    "tape": "^5.7.5",
     "typescript": "^5.4.3"
   }
 }

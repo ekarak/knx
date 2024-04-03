@@ -28,7 +28,7 @@ import { DatapointConfig } from ".";
 const log = logger.get();
 
 const config: DatapointConfig = {
-  id: "dpt18",
+  id: "DPT18",
   formatAPDU: function (value) {
     if (value == null) log.warn("DPT18: cannot write null value");
     else {

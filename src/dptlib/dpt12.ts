@@ -11,7 +11,7 @@ import { DatapointConfig } from ".";
 
 // DPT12 base type info
 const config: DatapointConfig = {
-  id: "dpt12",
+  id: "DPT12",
   basetype: {
     bitlength: 32,
     signedness: "unsigned",

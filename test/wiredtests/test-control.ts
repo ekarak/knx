@@ -12,10 +12,7 @@ import options from "./wiredtest-options";
            ==========                ==================
  this is a WIRED test and requires a real KNX IP router on the LAN
            ==========                ==================
-
- $ WIREDTEST=1 node test/wiredtests/<test>.js
 */
-if (process.env.hasOwnProperty('WIREDTEST')) {
 
   test('KNX wired test - control a basic DPT1 binary switch', function(t) {
     var counter = 0;
@@ -77,4 +74,3 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
     console.log('Exiting with timeout ...');
     process.exit(2);
   }, 2000);
-}

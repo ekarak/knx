@@ -14,7 +14,7 @@ interface Dpt2Value {
 }
 
 const config: DatapointConfig = {
-  id: "dpt2",
+  id: "DPT2",
 
   // DPT2 frame description.
   // Always 8-bit aligned.

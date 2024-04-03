@@ -9,7 +9,7 @@ import { DatapointConfig } from ".";
 // DPT7: 16-bit unsigned integer value
 //
 const config: DatapointConfig = {
-  id: "dpt7",
+  id: "DPT7",
   basetype: {
     bitlength: 16,
     signedness: "unsigned",

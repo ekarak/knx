@@ -13,7 +13,7 @@ const log = logger.get();
 //
 // DPT5 is the only (AFAIK) DPT with scalar datatypes (5.001 and 5.003)
 const config: DatapointConfig = {
-  id: "dpt238",
+  id: "DPT238",
   formatAPDU: (value) => {
     const apdu_data = Buffer.from([value]);
     log.trace(

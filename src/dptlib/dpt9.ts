@@ -35,7 +35,7 @@ const frexp = (value) => {
 };
 
 const config: DatapointConfig = {
-  id: "dpt9",
+  id: "DPT9",
   formatAPDU: (value) => {
     if (!isFinite(value))
       return log.warn("DPT9: cannot write non-numeric or undefined value");

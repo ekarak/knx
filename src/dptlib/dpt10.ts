@@ -17,7 +17,7 @@ const dowTimeRegexp = /((\d)\/)?(\d{1,2}):(\d{1,2}):(\d{1,2})/;
 // Always 8-bit aligned.
 
 const config: DatapointConfig = {
-  id: "dpt10",
+  id: "DPT10",
   formatAPDU: (value) => {
     let dow: number, hour: number, minute: number, second: number;
     // day of week. NOTE: JS Sunday = 0

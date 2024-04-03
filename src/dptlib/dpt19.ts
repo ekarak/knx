@@ -14,7 +14,7 @@ const log = logger.get();
 //
 
 const config: DatapointConfig = {
-  id: "dpt19",
+  id: "DPT19",
   formatAPDU: (value) => {
     if (!(value instanceof Date))
       return log.error("DPT19: Must supply a Date object");

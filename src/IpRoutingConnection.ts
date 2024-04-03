@@ -1,9 +1,9 @@
 import * as util from 'util';
 import * as dgram from 'dgram';
 import KnxLog from './KnxLog';
-import { KnxFSM } from './FSM';
+import KnxFSMConnection from './FSM';
 
-function IpRoutingConnection(instance: KnxFSM): KnxFSM {
+function IpRoutingConnection(instance: KnxFSMConnection): KnxFSMConnection {
   const log = KnxLog.get();
 
   instance.BindSocket = function (cb: (socket: dgram.Socket) => void): dgram.Socket {
@@ -34,7 +34,7 @@ function IpRoutingConnection(instance: KnxFSM): KnxFSM {
   // <summary>
   ///     Start the connection
   /// </summary>
-  instance.Connect = function (): KnxFSM {
+  instance.Connect = function (): KnxFSMConnection {
     this.localAddress = this.getLocalAddress();
     this.socket = this.BindSocket((socket: dgram.Socket) => {
       socket.on('error', (errmsg: string) =>

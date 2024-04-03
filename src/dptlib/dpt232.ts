@@ -13,7 +13,7 @@ const log = logger.get();
 // MSB: Red, Green, LSB: Blue
 //
 const config: DatapointConfig = {
-  id: "dpt232",
+  id: "DPT232",
   formatAPDU: (value) => {
     if (value == null) return log.error("DPT232: cannot write null value");
 

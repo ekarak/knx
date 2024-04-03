@@ -19,7 +19,7 @@ const log = logger.get();
 
 // FIXME: help needed
 const config: DatapointConfig = {
-  id: "dpt21",
+  id: "DPT21",
   formatAPDU: function (value) {
     if (value == null) return log.error("DPT21: cannot write null value");
     log.debug("./knx/src/dpt21.js : input value = " + value);

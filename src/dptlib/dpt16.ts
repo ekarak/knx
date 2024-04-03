@@ -13,7 +13,7 @@ const log = logger.get();
 //
 
 const config: DatapointConfig = {
-  id: "dpt16",
+  id: "DPT16",
   formatAPDU: (value) => {
     if (typeof value !== "string")
       return log.warn("Must supply a string value");

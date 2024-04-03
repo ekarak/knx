@@ -15,7 +15,7 @@ const log = logger.get();
  *  the case for 32-bit floating point is simple...
  */
 const config: DatapointConfig = {
-  id: "dpt14",
+  id: "DPT14",
   formatAPDU: (value) => {
     if (value == null || typeof value != "number")
       log.error("DPT14: Must supply a number value");

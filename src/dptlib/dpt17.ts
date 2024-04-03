@@ -12,7 +12,7 @@ import { DatapointConfig } from ".";
 // TODO: implement fromBuffer, formatAPDU
 
 const config: DatapointConfig = {
-  id: "dpt17",
+  id: "DPT17",
   // DPT17 basetype info
   basetype: {
     bitlength: 8,

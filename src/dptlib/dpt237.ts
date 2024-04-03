@@ -12,7 +12,7 @@ const log = logger.get();
 // DPT237: 2-byte unsigned value
 //
 const config: DatapointConfig = {
-  id: "dpt237",
+  id: "DPT237",
   formatAPDU: function (value) {
     if (value == null) return log.error("DPT237: cannot write null value");
 

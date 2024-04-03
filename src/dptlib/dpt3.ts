@@ -14,7 +14,7 @@ interface Dpt3Value {
 }
 
 const config: DatapointConfig = {
-  id: "dpt3",
+  id: "DPT3",
   formatAPDU: (value: Dpt3Value) => {
     if (value == null) return log.warn("DPT3: cannot write null value");
 

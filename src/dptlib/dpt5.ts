@@ -11,7 +11,7 @@ import { DatapointConfig } from ".";
 // DPT5 is the only (AFAIK) DPT with scalar datatypes (5.001 and 5.003)
 
 const config: DatapointConfig = {
-  id: "dpt5",
+  id: "DPT5",
   basetype: {
     bitlength: 8,
     signedness: "unsigned",

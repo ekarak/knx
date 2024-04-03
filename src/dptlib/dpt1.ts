@@ -18,7 +18,7 @@ const custom_truthiness = (value: string | boolean): boolean => {
 };
 
 const config: DatapointConfig = {
-  id: "dpt1",
+  id: "DPT1",
   formatAPDU: (value) => Buffer.from([custom_truthiness(value) ? 1 : 0]),
 
   fromBuffer: (buf) => {

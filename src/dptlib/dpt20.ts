@@ -14,7 +14,7 @@ const log = logger.get();
 // FIXME: help needed
 
 const config: DatapointConfig = {
-  id: "dpt20",
+  id: "DPT20",
   formatAPDU: (value) => {
     log.debug("./knx/src/dpt20.js : input value = " + value);
     return Buffer.from([value]);

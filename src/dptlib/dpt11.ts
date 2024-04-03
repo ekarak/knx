@@ -11,7 +11,7 @@ const log = logger.get();
 // DPT11.*: date
 //
 const config: DatapointConfig = {
-  id: "dpt11",
+  id: "DPT11",
   formatAPDU: (value) => {
     if (value == null) return log.error("cannot write null value for DPT11");
     switch (typeof value) {
