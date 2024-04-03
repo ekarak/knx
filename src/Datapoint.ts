@@ -7,6 +7,7 @@ interface Options {
   ga: string;
   dpt?: string;
   autoread?: boolean;
+  status_ga?: string;
 }
 
 class Datapoint extends EventEmitter {

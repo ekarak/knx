@@ -5,15 +5,13 @@
 
 Error.stackTraceLimit = Infinity;
 
-const knx = require('../..');
-const address = require('../../src/Address.js');
-const assert = require('assert');
-const test = require('tape');
+import { Connection, LogLevel } from '../../src';
+import test from 'tape';
 
 //
 test('KNX connect routing', function(t) {
-  var connection = knx.Connection({
-    loglevel: 'trace',
+  var connection = new Connection({
+    loglevel: LogLevel.Trace,
     handlers: {
       connected: function() {
         console.log('----------');

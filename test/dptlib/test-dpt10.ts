@@ -3,9 +3,9 @@
 * (C) 2016-2018 Elias Karakoulakis
 */
 
-const test = require('tape');
-const DPTLib = require('../../src/dptlib');
-const assert = require('assert');
+import test from 'tape';
+import { fromBuffer, populateAPDU, resolve } from '../../src/dptlib';
+import { Datagram } from 'src/FSM';
 
 function timecompare(date1, sign, date2) {
   var dow1 = date1.getDay();
@@ -36,18 +36,18 @@ test('DPT10 time conversion', function(t) {
     ['DPT10', [(7<<5)+23, 15, 30], new Date('July 7, 2019 23:15:30')]  // Sunday
   ];
   for (var i = 0; i < tests.length; i++) {
-    var dpt = DPTLib.resolve(tests[i][0]);
-    var buf = new Buffer(tests[i][1]);
+    var dpt = resolve(tests[i][0] as string);
+    var buf = Buffer.from(tests[i][1] as number[]);
     var val = tests[i][2];
 
     // unmarshalling test (raw data to value)
-    var converted = DPTLib.fromBuffer(buf, dpt);
+    var converted = fromBuffer(buf, dpt);
     t.ok(timecompare(converted, '===', val) ,
       `${tests[i][0]} fromBuffer value ${buf.toString('hex')} => expected ${val}, got ${converted}`);
 
     // marshalling test (value to raw data)
-    var apdu = {};
-    DPTLib.populateAPDU(val, apdu, 'dpt10');
+    var apdu = {} as Datagram["cemi"]["apdu"];
+    populateAPDU(val, apdu, 'dpt10');
     t.ok(Buffer.compare(buf, apdu.data) == 0,
       `${tests[i][0]} formatAPDU value ${val} => expected ${buf.toString('hex')}, got ${apdu.data.toString('hex')}`);
   }

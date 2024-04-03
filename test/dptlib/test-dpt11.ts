@@ -3,11 +3,11 @@
 * (C) 2016-2018 Elias Karakoulakis
 */
 
-const test = require('tape');
-const DPTLib = require('../../src/dptlib');
-const assert = require('assert');
+import test from 'tape';
+import { fromBuffer, populateAPDU, resolve } from '../../src/dptlib';
+import { Datagram } from 'src/FSM';
 
-function dateequals(d1, d2) {
+function dateequals(d1: Date, d2: Date) {
   var d = d1.getDate();
   var m = d1.getMonth();
   var y = d1.getFullYear();
@@ -23,19 +23,19 @@ test('DPT11 date conversion', function(t) {
     ['DPT11', [0x03, 0x02, 0x13], new Date('2019-02-03')]
   ]
   for (var i = 0; i < tests.length; i++) {
-    var dpt = DPTLib.resolve(tests[i][0]);
-    var buf = new Buffer(tests[i][1]);
-    var val = tests[i][2];
+    var dpt = resolve(tests[i][0] as string);
+    var buf = Buffer.from(tests[i][1] as number[]);
+    var val = tests[i][2] as Date;
 
     // unmarshalling test (raw data to value)
-    var converted = DPTLib.fromBuffer(buf, dpt);
+    var converted = fromBuffer(buf, dpt);
     t.ok(dateequals(val, converted),
       `${tests[i][0]} fromBuffer value ${val} => ${JSON.stringify(converted)}`
     );
 
     // marshalling test (value to raw data)
-    var apdu = {};
-    DPTLib.populateAPDU(val, apdu, 'dpt11');
+    var apdu = {} as Datagram["cemi"]["apdu"];
+    populateAPDU(val, apdu, 'dpt11');
     t.ok(Buffer.compare(buf, apdu.data) == 0,
       `${tests[i][0]} formatAPDU value ${val} => ${JSON.stringify(converted)}`
     );

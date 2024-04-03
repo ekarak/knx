@@ -3,7 +3,9 @@
 * (C) 2016-2018 Elias Karakoulakis
 */
 
-require('./commontest').do('DPT9', [
+import { run } from "./commontest";
+
+run('DPT9', [
   { apdu_data: [0x00, 0x02], jsval: 0.02},
   { apdu_data: [0x87, 0xfe], jsval: -0.02},
   { apdu_data: [0x02, 0xf8], jsval: 7.6},

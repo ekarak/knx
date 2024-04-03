@@ -3,20 +3,19 @@
 * (C) 2016-2018 Elias Karakoulakis
 */
 
-const address = require('../../src/Address.js');
-const assert = require('assert');
-const test = require('tape');
+import * as address from '../../src/Address';
+import test from 'tape';
 
 //
 test('KNX physical address test', function(t) {
   var tests = {
-    "0.0.0": new Buffer([0, 0]),
-    "0.0.10": new Buffer([0, 10]),
-    "0.0.255": new Buffer([0, 255]),
-    "0.1.0": new Buffer([1, 0]),
-    "1.0.0": new Buffer([16, 0]),
-    "15.14.0": new Buffer([254, 0]),
-    "15.15.0": new Buffer([255, 0]),
+    "0.0.0": Buffer.from([0, 0]),
+    "0.0.10": Buffer.from([0, 10]),
+    "0.0.255": Buffer.from([0, 255]),
+    "0.1.0": Buffer.from([1, 0]),
+    "1.0.0": Buffer.from([16, 0]),
+    "15.14.0": Buffer.from([254, 0]),
+    "15.15.0": Buffer.from([255, 0]),
   };
   Object.keys(tests).forEach((key, idx) => {
     var buf = tests[key];
@@ -39,14 +38,14 @@ test('KNX physical address test', function(t) {
 //
 test('KNX group address test', function(t) {
   var tests = {
-    "0/0/0": new Buffer([0, 0]),
-    "0/0/10": new Buffer([0, 10]),
-    "0/0/255": new Buffer([0, 255]),
-    "0/1/0": new Buffer([1, 0]),
-    "1/0/0": new Buffer([8, 0]),
-    "1/7/0": new Buffer([15, 0]),
-    "31/6/0": new Buffer([254, 0]),
-    "31/7/0": new Buffer([255, 0]),
+    "0/0/0": Buffer.from([0, 0]),
+    "0/0/10": Buffer.from([0, 10]),
+    "0/0/255": Buffer.from([0, 255]),
+    "0/1/0": Buffer.from([1, 0]),
+    "1/0/0": Buffer.from([8, 0]),
+    "1/7/0": Buffer.from([15, 0]),
+    "31/6/0": Buffer.from([254, 0]),
+    "31/7/0": Buffer.from([255, 0]),
   };
   Object.keys(tests).forEach((key, idx) => {
     var buf = tests[key];

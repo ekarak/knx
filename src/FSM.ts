@@ -688,7 +688,7 @@ export class KnxFSM extends machina.FSM {
     try {
       const reader = KnxNetProtocol.createReader(msg);
       // TODO: improve types for binary protocol
-      (reader as any).KNXNetHeader("tmp");
+      reader.KNXNetHeader("tmp");
       const dg = reader.next()["tmp"];
       const descr = datagramDesc(dg);
       KnxLog.get().trace(
@@ -861,7 +861,7 @@ export class KnxFSM extends machina.FSM {
           cemitype = keyText("MESSAGECODES", datagram.cemi.msgcode);
           break;
       }
-      const packet = (this.writer as any).KNXNetHeader(datagram);
+      const packet = this.writer.KNXNetHeader(datagram);
       const buf = packet.buffer;
       const svctype = keyText("SERVICE_TYPE", datagram.service_type); // TODO: unused
       const descr = datagramDesc(datagram);
@@ -897,8 +897,8 @@ export class KnxFSM extends machina.FSM {
   write(
     grpaddr: string,
     value: any,
-    dptid: number,
-    callback: () => void
+    dptid?: number,
+    callback?: () => void
   ): void {
     if (grpaddr == null || value == null) {
       KnxLog.get().warn("You must supply both grpaddr and value!");
@@ -942,8 +942,8 @@ export class KnxFSM extends machina.FSM {
   writeRaw(
     grpaddr: string,
     value: Buffer,
-    bitlength: number,
-    callback: () => void
+    bitlength?: number,
+    callback?: () => void
   ): void {
     if (grpaddr == null || value == null) {
       KnxLog.get().warn("You must supply both grpaddr and value!");

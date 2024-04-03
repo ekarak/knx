@@ -5,12 +5,10 @@
 
 Error.stackTraceLimit = Infinity;
 
-const knx = require('../..');
-const address = require('../../src/Address.js');
-const assert = require('assert');
-const test = require('tape');
+import { Connection } from '../../src';
+import test from 'tape';
 
-const options = require('./wiredtest-options.js');
+import options from './wiredtest-options';
 
 /*
            ==========                ==================
@@ -22,7 +20,7 @@ const options = require('./wiredtest-options.js');
 if (process.env.hasOwnProperty('WIREDTEST')) {
   //
   test('KNX connect tunneling', function(t) {
-    var connection = knx.Connection({
+    var connection = new Connection({
       // set up your KNX IP router's IP address (not multicast!)
       // for getting into tunnelling mode
       ipAddr: options.ipAddr,

@@ -6,7 +6,7 @@
 /*
   define the required options for running wired tests
 */
-module.exports = {
+ const options = {
   loglevel: 'trace',
   // your KNX IP router UNICAST ip address
   ipAddr: '192.168.8.4',
@@ -27,3 +27,5 @@ module.exports = {
   readstorm_status_ga_start: '1/1/100',
   readstorm_range: 8
 }
+
+export default options;

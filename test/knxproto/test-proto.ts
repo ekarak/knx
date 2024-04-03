@@ -3,10 +3,10 @@
 * (C) 2016-2018 Elias Karakoulakis
 */
 
-const knxnetprotocol = require('../../src/KnxProtocol.js');
-const assert = require('assert');
-const test = require('tape');
-knxnetprotocol.debug = true;
+import KnxNetProtocol from '../../src/KnxProtocol';
+import test from 'tape';
+
+KnxNetProtocol.debug = true;
 
 //
 test('KNX protocol unmarshaller', function(t) {
@@ -20,8 +20,8 @@ test('KNX protocol unmarshaller', function(t) {
   Object.keys(tests).forEach((key, idx) => {
     var buf = tests[key];
     // unmarshal from a buffer...
-    var reader = knxnetprotocol.createReader(buf);
-    var writer = knxnetprotocol.createWriter();
+    var reader = KnxNetProtocol.createReader(buf);
+    var writer = KnxNetProtocol.createWriter();
     reader.KNXNetHeader('tmp');
     var decoded = reader.next()['tmp'];
     console.log("\n=== %s: %j ===> %j", key, buf, decoded);
@@ -54,8 +54,8 @@ test('KNX protocol marshal+unmarshal', function(t) {
   Object.keys(tests).forEach((key, idx) => {
     var buf = tests[key];
     // unmarshal from a buffer...
-    var reader = knxnetprotocol.createReader(buf);
-    var writer = knxnetprotocol.createWriter();
+    var reader = KnxNetProtocol.createReader(buf);
+    var writer = KnxNetProtocol.createWriter();
     reader.KNXNetHeader('tmp');
     var decoded = reader.next()['tmp'];
     console.log("\n=== %s: %j ===> %j", key, buf, decoded);
@@ -238,14 +238,14 @@ test('KNX protocol marshaller', function(t) {
   Object.keys(tests).forEach((key, idx) => {
     var testcase = tests[key];
     var buf = typeof testcase.hexbuf == 'string' ?
-        new Buffer(testcase.hexbuf.replace(/\s/g, ''), 'hex') : hexbuf;
+        Buffer.from(testcase.hexbuf.replace(/\s/g, ''), 'hex') : testcase.hexbuf;
     console.log("\n=== %s", key);
     // marshal the test datagram
-    var writer = knxnetprotocol.createWriter();
+    var writer = KnxNetProtocol.createWriter();
     writer.KNXNetHeader(testcase.dgram);
     if (Buffer.compare(buf, writer.buffer) != 0) {
       // if this fails, unmarshal the buffer again to a datagram
-      var reader = knxnetprotocol.createReader(writer.buffer);
+      var reader = KnxNetProtocol.createReader(writer.buffer);
       reader.KNXNetHeader('tmp');
       var decoded = reader.next()['tmp'];
       console.log("\n\n========\n  FAIL: %s\n========\nbuffer is different:\n", key);

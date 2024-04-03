@@ -4,12 +4,8 @@
 */
 Error.stackTraceLimit = Infinity;
 
-const knx = require('../..');
-const address = require('../../src/Address.js');
-const assert = require('assert');
-const test = require('tape');
-
-const options = require('./wiredtest-options.js');
+import { Connection, LogLevel } from '../../src';
+import test from 'tape';
 
 /*
            ==========                ==================
@@ -21,8 +17,8 @@ const options = require('./wiredtest-options.js');
 if (process.env.hasOwnProperty('WIREDTEST')) {
   //
   test('KNX connect routing hybrid', function(t) {
-    var connection = knx.Connection({
-      loglevel: 'debug',
+    var connection = new Connection({
+      loglevel: LogLevel.Debug,
       forceTunneling: true,
       handlers: {
         connected: function() {

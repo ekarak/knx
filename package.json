@@ -11,8 +11,10 @@
     "url": "https://github.com/ekarak/knx.git"
   },
   "scripts": {
-    "test": "multi-tape test/*/test-*.js"
+    "build": "tsc -p tsconfig.build.json",
+    "test": "multi-tape --node-arg='-r esbuild-register' test/*/test-*.ts"
   },
+  "main": "./build/index.js",
   "license": "MIT",
   "author": {
     "name": "Elias Karakoulakis",
@@ -96,6 +98,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.12.2",
+    "@types/tape": "^5.6.4",
     "esbuild-register": "^3.5.0",
     "multi-tape": "^1.2.1",
     "tape": "^4.10.1",

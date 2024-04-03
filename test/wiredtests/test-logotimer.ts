@@ -2,11 +2,10 @@
 * knx.js - a KNX protocol stack in pure Javascript
 * (C) 2016-2018 Elias Karakoulakis
 */
-
-const knx = require('../..');
-const test = require('tape');
-const util = require('util');
-const options = require('./wiredtest-options.js');
+import { Connection, Datapoint } from '../../src';
+import test from 'tape';
+import util from 'util';
+import options from './wiredtest-options';
 
 /*
            ==========                ==================
@@ -17,12 +16,12 @@ const options = require('./wiredtest-options.js');
 */
 if (process.env.hasOwnProperty('WIREDTEST')) {
   test('KNX wired test - control a DPT9 timer', function(t) {
-    var connection = new knx.Connection( {
+    var connection = new Connection( {
       //debug: true,
       handlers: {
         connected: () => {
-          var timer_control = new knx.Datapoint({ga: options.dpt9_timer_control_ga, dpt: 'DPT9.001', autoread: true}, connection);
-          var timer_status  = new knx.Datapoint({ga: options.dpt9_timer_status_ga, dpt: 'DPT9.001', autoread: true}, connection);
+          var timer_control = new Datapoint({ga: options.dpt9_timer_control_ga, dpt: 'DPT9.001', autoread: true}, connection);
+          var timer_status  = new Datapoint({ga: options.dpt9_timer_status_ga, dpt: 'DPT9.001', autoread: true}, connection);
           timer_control.on('change', function(oldvalue, newvalue) {
             t.pass(util.format("**** Timer control changed from: %j to: %j", oldvalue, newvalue));
           });

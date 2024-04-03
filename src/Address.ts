@@ -41,7 +41,7 @@ interface AddressType {
 //           +--+--------------------+-----------------------+
 // NOTE: ets4 can utilise all 5 bits for the main group (0..31)
 
-const TYPE: AddressType = {
+export const TYPE: AddressType = {
   PHYSICAL: 0x00,
   GROUP: 0x01,
 };
@@ -51,7 +51,7 @@ const threeLevelGroup = new Parser().bit5('l1').bit3('l2').uint8('l3');
 const twoLevel = new Parser().bit5('l1').bit11('l2');
 
 // convert address stored in two-byte buffer to string
-const toString = function (
+export function toString (
   buf: string | Buffer,
   addrtype: number,
   twoLevelAddressing = false
@@ -75,9 +75,9 @@ const toString = function (
 // check for out of range integer
 const r = (x: number, max: number): boolean => x < 0 || x > max;
 // parse address string to 2-byte Buffer
-const parse = function (
+export function parse(
   addr: string,
-  addrtype: number,
+  addrtype?: number,
   twoLevelAddressing = false
 ): Buffer {
   if (!addr) {
@@ -117,4 +117,3 @@ const parse = function (
   return address;
 };
 
-export default { TYPE, toString, parse };

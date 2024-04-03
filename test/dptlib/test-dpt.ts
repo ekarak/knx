@@ -3,48 +3,47 @@
 * (C) 2016-2018 Elias Karakoulakis
 */
 
-const test = require('tape');
-const DPTLib = require('../../src/dptlib');
-const assert = require('assert');
+import test from "tape";
+import { resolve } from "../../src/dptlib";
 
 test('resolve', function(t) {
   t.throws(() => {
-    DPTLib.resolve('invalid input');
+    resolve('invalid input');
   }, /Invalid DPT format: .*/, 'Invalid format of a DPT');
 
   t.throws(() => {
-    DPTLib.resolve({dpt: 9});
+    resolve({dpt: 9} as any);
   }, /Invalid DPT format: .*/, 'Invalid format of a DPT');
 
   t.throws(() => {
-    DPTLib.resolve([9,9]);
+    resolve([9,9] as any);
   }, /Invalid DPT format: .*/, 'Invalid format of a DPT');
 
   t.throws(() => {
-    DPTLib.resolve('29.010');
+    resolve('29.010');
   }, /Unsupported DPT: .*/, 'Unsupported/unknown DPT');
 
   t.throws(() => {
-    DPTLib.resolve(29);
+    resolve(29);
   }, /Unsupported DPT: .*/, 'Unsupported/unknown Int DPT');
 
   t.throws(() => {
-    DPTLib.resolve([29]);
+    resolve([29] as any);
   }, /Unsupported DPT: .*/, 'Unsupported/unknown Int DPT');
 
-  var d0 = DPTLib.resolve(1)
+  var d0 = resolve(1)
   t.equal(d0.id, 'DPT1')
   t.equal(d0.subtypeid, undefined)
 
-  var d1 = DPTLib.resolve('DPT9')
+  var d1 = resolve('DPT9')
   t.equal(d1.id, 'DPT9')
   t.equal(d1.subtypeid, undefined)
 
-  var d2 = DPTLib.resolve('DPT1.002')
+  var d2 = resolve('DPT1.002')
   t.equal(d2.id, 'DPT1')
   t.equal(d2.subtypeid, '002')
 
-  var d3 = DPTLib.resolve('DPT1.001')
+  var d3 = resolve('DPT1.001')
   t.equal(d3.id, 'DPT1')
   t.equal(d3.subtypeid, '001')
 
@@ -52,7 +51,7 @@ test('resolve', function(t) {
   t.equal(d2.id, 'DPT1')
   t.equal(d2.subtypeid, '002')
 
-  var d4 = DPTLib.resolve('1.002')
+  var d4 = resolve('1.002')
   t.equal(d4.id, 'DPT1')
   t.equal(d4.subtypeid, '002')
 

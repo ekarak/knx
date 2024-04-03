@@ -9,11 +9,11 @@ import log from 'log-driver';
 import Connection from './FSM';
 import Datapoint from './Datapoint';
 import Devices from './devices';
-import Log from './KnxLog';
+import Log, { LogLevel } from './KnxLog';
 
 const pkgJson = require('../package.json');
 
 log.info(format('Loading %s: %s, version: %s',
 pkgJson.name, pkgJson.description, pkgJson.version));
 
-export { Connection, Datapoint, Devices, Log };
+export { Connection, Datapoint, Devices, Log, LogLevel };

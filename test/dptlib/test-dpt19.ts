@@ -3,8 +3,9 @@
 * (C) 2016-2018 Elias Karakoulakis
 */
 
-const test = require('tape');
-const DPTLib = require('../../src/dptlib');
+import test from 'tape';
+import DPTLib, { fromBuffer, populateAPDU, resolve } from '../../src/dptlib';
+import { Datagram } from 'src/FSM';
 
 test('DPT19 datetime conversion', function(t) {
 
@@ -27,17 +28,17 @@ test('DPT19 datetime conversion', function(t) {
     ]);
 
     var name = 'DPT19';
-    var dpt = DPTLib.resolve(name);
+    var dpt = resolve(name);
 
     // unmarshalling test (raw data to value)
-    var converted = DPTLib.fromBuffer(buffer, dpt);
+    var converted = fromBuffer(buffer, dpt);
     t.equal(date.getTime(), converted.getTime(),
       `${name} fromBuffer value ${JSON.stringify(buffer)} => ${converted}`
     );
 
     // marshalling test (value to raw data)
-    var apdu = {};
-    DPTLib.populateAPDU(date, apdu, name);
+    var apdu = {} as Datagram["cemi"]["apdu"];
+    populateAPDU(date, apdu, name);
     t.ok(Buffer.compare(buffer, apdu.data) === 0,
       `${name} formatAPDU value ${date} => ${JSON.stringify(apdu)}`
     );
