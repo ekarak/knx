@@ -28,13 +28,23 @@ declare module "machina" {
   export class BehavioralFsm extends EventEmitter {
     initialState: string;
     namespace: string;
-    states: any// Record<string, States>;
+    states: any; // Record<string, States>;
+    state: string;
 
-    constructor(options: Options);
-    static extend<T>(protoProps: T, staticProps?: any): this;
+    static extend<T>(
+      protoProps: T,
+      staticProps?: any
+    ): T & BehavioralFsm;
+    compositeState(client: BehavioralFsm): any;
+    clearQueue(client: BehavioralFsm, name?: string): void;
+    handle(client: BehavioralFsm, ...args: any[]): any;
+    transition(client: BehavioralFsm, newState: string): void;
   }
 
   export class FSM extends BehavioralFsm {
-    constructor(options: Options);
+    compositeState(): any;
+    clearQueue(name?: string): void;
+    handle(...args: any[]): any;
+    transition(newState: string): void;
   }
 }

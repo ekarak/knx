@@ -6,7 +6,7 @@
 import { format } from 'util';
 import log from 'log-driver';
 
-import Connection from './Connection';
+import Connection from './FSM';
 import Datapoint from './Datapoint';
 import Devices from './devices';
 import Log from './KnxLog';

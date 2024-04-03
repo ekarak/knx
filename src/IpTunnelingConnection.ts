@@ -1,16 +1,17 @@
-import dgram from 'dgram';
-import KnxLog from './KnxLog';
-import KnxNet from './FSM';
+import dgram from "dgram";
+import KnxLog from "./KnxLog";
+import { KnxFSM } from "./FSM";
 
-
-function IpTunnelingConnection(instance: KnxNet): KnxNet {
+function IpTunnelingConnection(instance: KnxFSM): KnxFSM {
   const log = KnxLog.get();
 
-  instance.BindSocket = function (cb: (socket: dgram.Socket) => void): dgram.Socket {
-    const udpSocket = dgram.createSocket('udp4');
+  instance.BindSocket = function (
+    cb: (socket: dgram.Socket) => void
+  ): dgram.Socket {
+    const udpSocket = dgram.createSocket("udp4");
     udpSocket.bind(() => {
       log.debug(
-        'IpTunnelingConnection.BindSocket %s:%d',
+        "IpTunnelingConnection.BindSocket %s:%d",
         instance.localAddress,
         udpSocket.address().port
       );
@@ -19,17 +20,22 @@ function IpTunnelingConnection(instance: KnxNet): KnxNet {
     return udpSocket;
   };
 
-  instance.Connect = function (): IpTunnelingConnectionInstance {
+  instance.Connect = function (): KnxFSM {
     this.localAddress = this.getLocalAddress();
     // create the socket
     this.socket = this.BindSocket((socket: dgram.Socket) => {
-      socket.on('error', (errmsg: string) => log.debug('Socket error: %j', errmsg));
-      socket.on('message', (msg: Buffer, rinfo: dgram.RemoteInfo, callback: () => void) => {
-        log.debug('Inbound message: %s', msg.toString('hex'));
-        this.onUdpSocketMessage(msg, rinfo, callback);
-      });
+      socket.on("error", (errmsg: string) =>
+        log.debug("Socket error: %j", errmsg)
+      );
+      socket.on(
+        "message",
+        (msg: Buffer, rinfo: dgram.RemoteInfo, callback: () => void) => {
+          log.debug("Inbound message: %s", msg.toString("hex"));
+          this.onUdpSocketMessage(msg, rinfo, callback);
+        }
+      );
       // start connection sequence
-      this.transition('connecting');
+      this.transition("connecting");
     });
     return this;
   };

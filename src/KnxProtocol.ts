@@ -554,6 +554,7 @@ KnxProtocol.define("CEMI", {
     }
   },
 });
+
 KnxProtocol.lengths["CEMI"] = (value: Datagram["cemi"]) => {
   if (!value) return 0;
   const apdu_length = knxlen("APDU", value.apdu);
