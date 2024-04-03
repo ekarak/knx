@@ -14,7 +14,6 @@ import { LogLevel } from "log-driver";
 
 type KnxDeviceAddress = string;
 
-
 type KnxGroupAddress = string;
 
 /** The type of the KnxValue depends on the DPT that it is associated with */
@@ -115,104 +114,10 @@ export interface Datagram {
   };
 }
 
-export class KnxFSM extends machina.Fsm {
-  private options: KnxOptions;
-  private log: any;
-  private ThreeLevelGroupAddressing: boolean;
-  private reconnection_cycles: number;
-  private sentTunnRequests: { [key: string]: Datagram };
-  private useTunneling: boolean;
-  private remoteEndpoint: {
-    addrstring: string;
-    addr: any;
-    port: number;
-  };
-  private localEchoInTunneling: boolean | undefined;
-  private channel_id?: any;
-  private conntime?: number;
-  private lastSentTime?: number;
-  private connecttimer?: NodeJS.Timeout;
-  private disconnecttimer?: NodeJS.Timeout;
-  private connstatetimer?: NodeJS.Timeout;
-  private idletimer?: NodeJS.Timeout;
-  private tunnelingAckTimer?: NodeJS.Timeout;
-  private seqnum: number;
-  private seqnumRecv: number;
-
-  private writer: Writer;
-  private socket: Socket;
-
-  public localAddress: string | null;
-
-  constructor(options: KnxOptions) {
-    super();
-  
-    this.options = options || {};
-
-    if (typeof options.handlers === "object") {
-      for (const [key, value] of Object.entries(options.handlers)) {
-        if (typeof value === "function") {
-          this.on(key, value);
-        }
-      }
-    }
-    // boot up the KNX connection unless told otherwise
-    if (!options.manualConnect) this.Connect();
-  }
-
-  initialize(options: KnxOptions) {
-    this.options = options || {};
-    this.log = KnxLog.get(options);
-    this.localAddress = null;
-    this.ThreeLevelGroupAddressing = true;
-    this.reconnection_cycles = 0;
-    this.sentTunnRequests = {};
-    this.useTunneling = options.forceTunneling || false;
-    this.remoteEndpoint = {
-      addrstring: options.ipAddr || "224.0.23.12",
-      addr: ipaddr.parse(options.ipAddr || "224.0.23.12"),
-      port: options.ipPort || 3671,
-    };
-    const range = this.remoteEndpoint.addr.range();
-    this.localEchoInTunneling =
-      typeof options.localEchoInTunneling !== "undefined"
-        ? options.localEchoInTunneling
-        : false;
-    this.log.debug(
-      "initializing %s connection to %s",
-      range,
-      this.remoteEndpoint.addrstring
-    );
-    switch (range) {
-      case "multicast":
-        if (this.localEchoInTunneling) {
-          this.localEchoInTunneling = false;
-          this.log.debug(
-            "localEchoInTunneling: true but DISABLED because i am on multicast"
-          );
-        }
-        IpRoutingConnection(this);
-        break;
-      case "unicast":
-      case "private":
-      case "loopback":
-        this.useTunneling = true;
-        IpTunnelingConnection(this);
-        break;
-      default:
-        throw util.format(
-          "IP address % (%s) cannot be used for KNX",
-          options.ipAddr,
-          range
-        );
-    }
-  }
-
-  namespace: string = "knxnet";
-
-  initialState: string = "uninitialized";
-
-  states = {
+const KnxFSM = machina.Fsm.extend({
+  namespace: "knxnet",
+  initialState: "uninitialized",
+  states: {
     uninitialized: {
       ["*"]() {
         this.transition("connecting");
@@ -599,7 +504,103 @@ export class KnxFSM extends machina.Fsm {
         this.deferUntilTransition("idle");
       },
     },
+  },
+});
+
+export class KnxFSMConnection extends KnxFSM {
+  private options: KnxOptions;
+  private log: any;
+  private ThreeLevelGroupAddressing: boolean;
+  private reconnection_cycles: number;
+  private sentTunnRequests: { [key: string]: Datagram };
+  private useTunneling: boolean;
+  private remoteEndpoint: {
+    addrstring: string;
+    addr: any;
+    port: number;
   };
+  private localEchoInTunneling: boolean | undefined;
+  private channel_id?: any;
+  private conntime?: number;
+  private lastSentTime?: number;
+  private connecttimer?: NodeJS.Timeout;
+  private disconnecttimer?: NodeJS.Timeout;
+  private connstatetimer?: NodeJS.Timeout;
+  private idletimer?: NodeJS.Timeout;
+  private tunnelingAckTimer?: NodeJS.Timeout;
+  private seqnum: number;
+  private seqnumRecv: number;
+
+  private writer: Writer;
+  private socket: Socket;
+
+  public localAddress: string | null;
+
+  constructor(options: KnxOptions) {
+    super();
+
+    this.options = options || {};
+    this.log = KnxLog.get(options);
+    this.localAddress = null;
+    this.ThreeLevelGroupAddressing = true;
+    this.reconnection_cycles = 0;
+    this.sentTunnRequests = {};
+    this.useTunneling = options.forceTunneling || false;
+    this.remoteEndpoint = {
+      addrstring: options.ipAddr || "224.0.23.12",
+      addr: ipaddr.parse(options.ipAddr || "224.0.23.12"),
+      port: options.ipPort || 3671,
+    };
+    const range = this.remoteEndpoint.addr.range();
+    this.localEchoInTunneling =
+      typeof options.localEchoInTunneling !== "undefined"
+        ? options.localEchoInTunneling
+        : false;
+    this.log.debug(
+      "initializing %s connection to %s",
+      range,
+      this.remoteEndpoint.addrstring
+    );
+    switch (range) {
+      case "multicast":
+        if (this.localEchoInTunneling) {
+          this.localEchoInTunneling = false;
+          this.log.debug(
+            "localEchoInTunneling: true but DISABLED because i am on multicast"
+          );
+        }
+        IpRoutingConnection(this);
+        break;
+      case "unicast":
+      case "private":
+      case "loopback":
+        this.useTunneling = true;
+        IpTunnelingConnection(this);
+        break;
+      default:
+        throw util.format(
+          "IP address % (%s) cannot be used for KNX",
+          options.ipAddr,
+          range
+        );
+    }
+
+    if (typeof options.handlers === "object") {
+      for (const [key, value] of Object.entries(options.handlers)) {
+        if (typeof value === "function") {
+          this.on(key, value);
+        }
+      }
+    }
+    // boot up the KNX connection unless told otherwise
+    if (!options.manualConnect) this.Connect();
+  }
+
+  /**
+   * --------------------------------
+   * KNX FSM Utils methods
+   * --------------------------------
+   */
 
   acknowledge(datagram: Datagram) {
     const ack = this.prepareDatagram(KnxConstants.SERVICE_TYPE.TUNNELING_ACK);
@@ -680,7 +681,7 @@ export class KnxFSM extends machina.Fsm {
 
   /**
    * --------------------------------
-   * CONNECTION MANAGEMENT
+   * Connection management methods
    * --------------------------------
    */
 
@@ -1002,7 +1003,6 @@ export class KnxFSM extends machina.Fsm {
   }
 
   Disconnect(cb: () => void): void {
-
     if (this.state === "connecting") {
       KnxLog.get().debug("Disconnecting directly");
       this.transition("uninitialized");
@@ -1075,7 +1075,5 @@ const AddTunn = (datagram: Datagram): void => {
     //tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
   };
 };
-
-const KnxFSMConnection = machina.Fsm.extend(KnxFSM)
 
 export default KnxFSMConnection;

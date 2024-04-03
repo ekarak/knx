@@ -31,17 +31,22 @@ declare module "machina" {
     states: any; // Record<string, States>;
     state: string;
 
-    static extend<T>(
-      protoProps: T,
+    static extend(
+      protoProps: Partial<BehavioralFsm>,
       staticProps?: any
-    ): T & BehavioralFsm;
+    ): typeof BehavioralFsm;
     compositeState(client: BehavioralFsm): any;
     clearQueue(client: BehavioralFsm, name?: string): void;
     handle(client: BehavioralFsm, ...args: any[]): any;
     transition(client: BehavioralFsm, newState: string): void;
+    initialize(...args: any): void;
   }
 
   export class Fsm extends BehavioralFsm {
+    static extend(
+      protoProps: Partial<Fsm>,
+      staticProps?: any
+    ): typeof Fsm;
     compositeState(): any;
     clearQueue(name?: string): void;
     handle(...args: any[]): any;
