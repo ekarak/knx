@@ -1083,7 +1083,7 @@ export class KnxFSMConnection extends KnxFSM {
 		})
 	}
 
-	Disconnect(cb: () => void): void {
+	Disconnect(cb?: () => void): void {
 		if (this.state === 'connecting') {
 			KnxLog.get().debug('Disconnecting directly')
 			this.transition('uninitialized')

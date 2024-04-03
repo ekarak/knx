@@ -3,11 +3,11 @@
 * (C) 2016-2017 Elias Karakoulakis
 */
 
-import * as knx from 'knx'
+import { Connection, Datapoint } from 'knx'
 
 var groupAddress = process.argv[2]
 
-var connection = new knx.Connection({
+var connection = new Connection({
     ipAddr: process.env.KNXGW,
     handlers: {
         connected: onConnected
@@ -16,7 +16,7 @@ var connection = new knx.Connection({
 
 async function onConnected() {
     console.log('Connected')
-    var dp = new knx.Datapoint({
+    var dp = new Datapoint({
         ga: groupAddress,
         dpt: 'DPT1.001'
     }, connection)

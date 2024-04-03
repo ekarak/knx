@@ -3,4 +3,3 @@ manualtest
 bitbucket-pipelines.yml
 README*.md
 typescript-sample
-run-wired-tests.sh
