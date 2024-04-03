@@ -77,7 +77,7 @@ const MESSAGECODES = {
 	'ETS.Dummy1': 0xc1,
 }
 
-const APCICODES: string[] = [
+export const APCICODES: string[] = [
 	'GroupValue_Read',
 	'GroupValue_Response',
 	'GroupValue_Write',
@@ -96,7 +96,7 @@ const APCICODES: string[] = [
 	'OTHER',
 ]
 
-const KnxConstants = {
+export const KnxConstants = {
 	SERVICE_TYPE,
 	CONNECTION_TYPE,
 	PROTOCOL_TYPE,
@@ -107,7 +107,7 @@ const KnxConstants = {
 }
 
 /* TODO helper function to print enum keys */
-const keyText = (mapref: string | object, value: number): string => {
+export function keyText(mapref: string | object, value: number): string {
 	const map = typeof mapref === 'string' ? KnxConstants[mapref] : mapref
 
 	if (typeof map !== 'object') throw Error(`Unknown map: ${mapref}`)
@@ -115,5 +115,3 @@ const keyText = (mapref: string | object, value: number): string => {
 
 	KnxLog.get().trace('not found: %j', value)
 }
-
-export { KnxConstants, APCICODES, keyText }
