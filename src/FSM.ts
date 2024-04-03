@@ -225,7 +225,10 @@ const KnxFSM = machina.Fsm.extend({
 					)
 				}
 			},
-			inbound_CONNECTIONSTATE_RESPONSE(this: KnxFSMConnection, datagram: any) {
+			inbound_CONNECTIONSTATE_RESPONSE(
+				this: KnxFSMConnection,
+				datagram: any,
+			) {
 				if (this.useTunneling) {
 					const str = keyText(
 						'RESPONSECODE',
@@ -342,7 +345,10 @@ const KnxFSM = machina.Fsm.extend({
 				this.processQueue()
 			},
 			_onExit(this: KnxFSMConnection) {},
-			outbound_ROUTING_INDICATION(this: KnxFSMConnection, datagram: Datagram) {
+			outbound_ROUTING_INDICATION(
+				this: KnxFSMConnection,
+				datagram: Datagram,
+			) {
 				const elapsed = Date.now() - this.lastSentTime
 				if (
 					!this.options.minimumDelay ||
@@ -360,7 +366,10 @@ const KnxFSM = machina.Fsm.extend({
 					)
 				}
 			},
-			outbound_TUNNELING_REQUEST(this: KnxFSMConnection, datagram: Datagram) {
+			outbound_TUNNELING_REQUEST(
+				this: KnxFSMConnection,
+				datagram: Datagram,
+			) {
 				if (this.useTunneling) {
 					const elapsed = Date.now() - this.lastSentTime
 					if (
@@ -386,14 +395,16 @@ const KnxFSM = machina.Fsm.extend({
 				}
 			},
 			'inbound_TUNNELING_REQUEST_L_Data.ind': function (
-				this: KnxFSMConnection, datagram: Datagram,
+				this: KnxFSMConnection,
+				datagram: Datagram,
 			) {
 				if (this.useTunneling) {
 					this.transition('recvTunnReqIndication', datagram)
 				}
 			},
 			'inbound_TUNNELING_REQUEST_L_Data.con': function (
-				this: KnxFSMConnection, datagram: Datagram,
+				this: KnxFSMConnection,
+				datagram: Datagram,
 			) {
 				if (this.useTunneling) {
 					const confirmed =
@@ -414,7 +425,8 @@ const KnxFSM = machina.Fsm.extend({
 				}
 			},
 			'inbound_ROUTING_INDICATION_L_Data.ind': function (
-				this: KnxFSMConnection, datagram: Datagram,
+				this: KnxFSMConnection,
+				datagram: Datagram,
 			) {
 				this.emitEvent(datagram)
 			},
@@ -447,7 +459,10 @@ const KnxFSM = machina.Fsm.extend({
 			_onExit(this: KnxFSMConnection) {
 				clearTimeout(this.connstatetimer)
 			},
-			inbound_CONNECTIONSTATE_RESPONSE(this: KnxFSMConnection, datagram: any) {
+			inbound_CONNECTIONSTATE_RESPONSE(
+				this: KnxFSMConnection,
+				datagram: any,
+			) {
 				const state = keyText('RESPONSECODE', datagram.connstate.status)
 				switch (datagram.connstate.status) {
 					case 0:
@@ -598,17 +613,17 @@ export class KnxFSMConnection extends KnxFSM {
 	protected tunnelingAckTimer?: NodeJS.Timeout
 
 	protected seqnum: number
-	
+
 	protected seqnumRecv: number
 
 	protected writer: Writer
 
 	protected socket: Socket
-	
+
 	protected usingMulticastTunneling: boolean
-	
+
 	protected minimumDelay: number
-	
+
 	public localAddress: string | null
 
 	constructor(options: KnxOptions) {

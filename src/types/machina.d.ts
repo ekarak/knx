@@ -41,7 +41,11 @@ declare module 'machina' {
 		compositeState(client: BehavioralFsm): any
 		clearQueue(client: BehavioralFsm, name?: string): void
 		handle(client: BehavioralFsm, ...args: any[]): any
-		transition(client: BehavioralFsm, newState: string, ...args: any[]): void
+		transition(
+			client: BehavioralFsm,
+			newState: string,
+			...args: any[]
+		): void
 		deferUntilTransition(client: BehavioralFsm, state: string): void
 		initialize(...args: any): void
 		processQueue(client: BehavioralFsm): void
