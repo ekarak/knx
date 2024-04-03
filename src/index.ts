@@ -10,6 +10,7 @@ import Connection from './FSM'
 import Datapoint from './Datapoint'
 import Devices from './devices'
 import Log from './KnxLog'
+import dpts from './dptlib'
 
 // do not use import here or package.json would be loaded twice
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -24,4 +25,4 @@ logger.info(
 	),
 )
 
-export { Connection, Datapoint, Devices, Log }
+export { Connection, Datapoint, Devices, Log, dpts }
