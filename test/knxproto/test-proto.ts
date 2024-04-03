@@ -11,7 +11,7 @@ KnxNetProtocol.debug = true;
 //
 test('KNX protocol unmarshaller', function(t) {
   var tests = {
-    "ETS5 programming request": new Buffer([
+    "ETS5 programming request": Buffer.from([
       6, 16,   4,  32,  0,  20,  4,  34,
       1,  0, 197,   0, 17, 252, 17, 253,
       17, 1,   0, 238
@@ -32,21 +32,21 @@ test('KNX protocol unmarshaller', function(t) {
 
 test('KNX protocol marshal+unmarshal', function(t) {
   var tests = {
-    CONNECT_REQUEST: new Buffer(
+    CONNECT_REQUEST: Buffer.from(
       "06100205001a0801c0a80ab3d96d0801c0a80ab3d83604040200", 'hex'),
-    CONNECT_RESPONSE: new Buffer(
+    CONNECT_RESPONSE: Buffer.from(
       "061002060014030008010a0c17350e5704040000", 'hex'),
-    "CONNECT_RESPONSE, failure E_NO_MORE_CONNECTIONS: 0x24": new Buffer(
+    "CONNECT_RESPONSE, failure E_NO_MORE_CONNECTIONS: 0x24": Buffer.from(
       "0610020600080024", 'hex'),
-    "tunneling request (GroupValue_Read) apdu=1byte": new Buffer(
+    "tunneling request (GroupValue_Read) apdu=1byte": Buffer.from(
       "061004200015040200002e00bce000000832010000", 'hex'),
-    "tunneling request (GroupValue_Write) apdu=1byte": new Buffer(
+    "tunneling request (GroupValue_Write) apdu=1byte": Buffer.from(
       "061004200015040200002e00bce000000832010081", 'hex'),
-    "tunneling request (GroupValue_Write) apdu=2byte": new Buffer(
+    "tunneling request (GroupValue_Write) apdu=2byte": Buffer.from(
       "061004200016040201002900bce00000083b0200804a", 'hex'),
-    "routing indication": new Buffer(
+    "routing indication": Buffer.from(
       "0610053000112900bce0ff0f0908010000", 'hex'),
-    DISCONNECT_REQUEST: new Buffer([
+    DISCONNECT_REQUEST: Buffer.from([
       6,  16,   2, 9, 0, 16, 142, 142,
       8, 1,  192, 168, 2, 222, 14, 87
     ]),

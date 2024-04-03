@@ -32,7 +32,7 @@ const config: DatapointConfig = {
   formatAPDU: function (value) {
     if (value == null) log.warn("DPT18: cannot write null value");
     else {
-      var apdu_data = new Buffer(1);
+      var apdu_data = Buffer.alloc(1);
       if (
         typeof value == "object" &&
         value.hasOwnProperty("save_recall") &&

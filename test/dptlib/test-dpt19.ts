@@ -16,7 +16,7 @@ test('DPT19 datetime conversion', function(t) {
     date.setMilliseconds(0);
 
     var day = (date.getDay() === 0) ? 7 : date.getDay();
-    var buffer = new Buffer([
+    var buffer = Buffer.from([
         date.getFullYear() - 1900,    // year with offset 1900
         date.getMonth() + 1,          // month from 1 - 12
         date.getDate(),               // day of month from 1 - 31

@@ -24,7 +24,7 @@ const config: DatapointConfig = {
     if (value == null) return log.error("DPT21: cannot write null value");
     log.debug("./knx/src/dpt21.js : input value = " + value);
 
-    //var apdu_data = new Buffer(1);
+    //var apdu_data = Buffer.alloc(1);
     //apdu_data[0] = value;
     if (typeof value === "object")
       return Buffer.from([
