@@ -847,15 +847,6 @@ export class KnxFSMConnection extends KnxFSM {
 		}
 	}
 
-	AddCRI = (datagram: Datagram): void => {
-		// add the CRI
-		datagram.cri = {
-			connection_type: KnxConstants.CONNECTION_TYPE.TUNNEL_CONNECTION,
-			knx_layer: KnxConstants.KNX_LAYER.LINK_LAYER,
-			unused: 0,
-		}
-	}
-
 	AddCEMI(datagram: Datagram, msgcode?: number): void {
 		const sendAck =
 			(msgcode || 0x11) === 0x11 && !this.options.suppress_ack_ldatareq // only for L_Data.req
@@ -927,7 +918,7 @@ export class KnxFSMConnection extends KnxFSM {
 		switch (svcType) {
 			case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST:
 				AddTunn(datagram)
-				this.AddCRI(datagram) // no break!
+				AddCRI(datagram) // no break!
 			// eslint-disable-next-line no-fallthrough
 			case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_REQUEST:
 			case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST:
@@ -953,9 +944,9 @@ export class KnxFSMConnection extends KnxFSM {
 		return datagram
 	}
 
-	/*
-  send the datagram over the wire
-  */
+	/**
+	 * Send the datagram over the wire
+	 */
 	send(datagram: Datagram, callback?: (err?: Error) => void): void {
 		let cemitype: string // TODO: set, but unused
 		try {
@@ -1074,8 +1065,10 @@ export class KnxFSMConnection extends KnxFSM {
 		)
 	}
 
-	// send a READ request to the bus
-	// you can pass a callback function which gets bound to the RESPONSE datagram event
+	/**
+	 * Send a READ request to the bus
+	 * you can pass a callback function which gets bound to the RESPONSE datagram event
+	 * */
 	read(grpaddr: string, callback: (src: any, data: any) => void): void {
 		if (typeof callback === 'function') {
 			// when the response arrives:
@@ -1103,6 +1096,9 @@ export class KnxFSMConnection extends KnxFSM {
 		})
 	}
 
+	/**
+	 * Disconnect from the KNX bus
+	 */
 	Disconnect(cb?: () => void): void {
 		if (this.state === 'connecting') {
 			KnxLog.get().debug('Disconnecting directly')
@@ -1174,6 +1170,15 @@ const AddTunn = (datagram: Datagram): void => {
 		protocol_type: 1, // UDP
 		tunnel_endpoint: '0.0.0.0:0',
 		// tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
+	}
+}
+
+const AddCRI = (datagram: Datagram): void => {
+	// add the CRI
+	datagram.cri = {
+		connection_type: KnxConstants.CONNECTION_TYPE.TUNNEL_CONNECTION,
+		knx_layer: KnxConstants.KNX_LAYER.LINK_LAYER,
+		unused: 0,
 	}
 }
 
