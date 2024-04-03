@@ -694,6 +694,7 @@ export class KnxFSMConnection extends KnxFSM {
 	 * --------------------------------
 	 */
 
+	/** ACK a datagram */
 	acknowledge(datagram: Datagram) {
 		const ack = this.prepareDatagram(
 			KnxConstants.SERVICE_TYPE.TUNNELING_ACK,
