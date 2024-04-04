@@ -3,7 +3,7 @@
 * (C) 2016-2017 Elias Karakoulakis
 */
 Error.stackTraceLimit = Infinity;
-import { Devices, KnxClient } from "src";
+import { Devices, KnxClient } from "../src";
 
 if (process.argv.length < 2) {
   console.log('usage: %s <0/1> (off/on) to write to a set of binary switches', process.argv[1]);

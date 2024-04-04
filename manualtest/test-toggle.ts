@@ -3,7 +3,7 @@
 * (C) 2016-2017 Elias Karakoulakis
 */
 
-import { Datapoint, KnxClient } from "src";
+import { Datapoint, KnxClient } from "../src";
 
 if (process.argv.length < 3) {
 	console.log('usage: %s <ga> <optional: status_ga> to toggle a light on & off',
