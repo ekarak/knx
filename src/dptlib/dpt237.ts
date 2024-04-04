@@ -5,7 +5,7 @@
 
 import { logger } from 'log-driver'
 import type { DatapointConfig } from '.'
-import { hasProp } from 'src/utils'
+import { hasProp } from '../utils'
 
 const log = logger
 

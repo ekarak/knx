@@ -3,7 +3,7 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { hasProp } from 'src/utils'
+import { hasProp } from '../utils'
 import type { DatapointConfig } from '.'
 
 import KnxLog from '../KnxLog'

@@ -22,7 +22,7 @@ class Datapoint extends EventEmitter {
 
 	private conn: any
 
-	constructor(options: Options, conn: any) {
+	constructor(options: Options, conn?: any) {
 		if (options == null || options.ga == null)
 			throw new Error('must supply at least { ga, dpt }!')
 		super()

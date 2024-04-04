@@ -4,8 +4,8 @@
  */
 
 import test from 'tape'
-import DPTLib, { fromBuffer, populateAPDU, resolve } from '../../src/dptlib'
-import { Datagram } from 'src/KnxClient'
+import { fromBuffer, populateAPDU, resolve } from '../../src/dptlib'
+import { Datagram } from '../../src/KnxClient'
 
 test('DPT19 datetime conversion', function (t) {
 	const tests = ['1995-12-17T03:24:00', '1996-07-17T03:24:00']

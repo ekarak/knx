@@ -5,7 +5,7 @@
 
 import { logger } from 'log-driver'
 import type { DatapointConfig } from '.'
-import { hasProp } from 'src/utils'
+import { hasProp } from '../utils'
 
 //
 // DPT18: 8-bit Scene Control
