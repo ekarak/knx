@@ -10,21 +10,21 @@ if (process.argv.length < 2) {
   process.exit(1);
 }
 
-function setupSwitch(groupaddress, statusga) {
-  var sw = new Devices.BinarySwitch({ga: groupaddress, status_ga: statusga}, connection);
+function setupSwitch(groupaddress: string, statusga: string) {
+  const sw = new Devices.BinarySwitch({ga: groupaddress, status_ga: statusga}, connection);
   sw.on('change', (oldvalue: boolean, newvalue: boolean, ga: string) => {
     console.log(" %s: **** %s current value: %j", Date.now(), ga, newvalue);
   });
   return sw;
 }
 
-var connection = new KnxClient({
+const connection = new KnxClient({
   //debug: true,
   //minimumDelay: 10,
   handlers: {
     connected: function() {
       console.log('===========\nConnected! %s \n===========', Date.now());
-      var v = parseInt(process.argv[2]);
+      const v = parseInt(process.argv[2]);
       console.log('---- Writing %d ---', v);
       setupSwitch('1/1/0', '1/1/100').write(v);
       setupSwitch('1/1/1', '1/1/101').write(v);

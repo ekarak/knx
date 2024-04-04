@@ -18,12 +18,12 @@ const connection = new KnxClient({
 			console.log('Connected!');
 			console.log('----------');
 			// define a datapoint:
-			var dp = new Datapoint({
+			const dp = new Datapoint({
 				ga: process.argv[2],
 				dpt: 'DPT1.001'
 			}, connection);
 			if (process.argv[3]) {
-				var status_ga = new Datapoint({
+				const status_ga = new Datapoint({
 					ga: process.argv[3],
 					dpt: 'DPT1.001'
 				}, connection);
@@ -36,14 +36,13 @@ const connection = new KnxClient({
 			console.log('\n\n\n');
 			console.log('PRESS ANY KEY TO TOGGLE %s AND "q" TO QUIT.', process.argv[2]);
 			console.log('\n\n\n');
-			var dpVal = false;
+			let dpVal = false;
 			process.stdin.setRawMode(true);
 			process.stdin.resume();
 			process.stdin.on('data', (data) => {
 				console.log(JSON.stringify(data));
 				if (data[0] === 113) {
 					process.exit(0);
-					return;
 				}
 				dpVal = !dpVal;
 				console.log("Sending " + dpVal);
