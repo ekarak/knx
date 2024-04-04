@@ -62,7 +62,7 @@ import DPT21 from './dpt21'
 import DPT232 from './dpt232'
 import DPT237 from './dpt237'
 import DPT238 from './dpt238'
-import { Datagram } from 'src/FSM'
+import { Datagram } from 'src/KnxClient'
 import { hasProp } from 'src/utils'
 
 const log = KnxLog.get()

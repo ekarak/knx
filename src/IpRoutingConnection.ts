@@ -1,9 +1,9 @@
 import * as util from 'util'
 import * as dgram from 'dgram'
 import KnxLog from './KnxLog'
-import type { KnxFSMConnection } from './FSM'
+import type { KnxClient } from './KnxClient'
 
-function IpRoutingConnection(instance: KnxFSMConnection): KnxFSMConnection {
+function IpRoutingConnection(instance: KnxClient): KnxClient {
 	const log = KnxLog.get()
 
 	instance.BindSocket = function BindSocket(

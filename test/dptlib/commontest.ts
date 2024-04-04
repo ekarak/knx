@@ -6,7 +6,7 @@
 
 import test, { Test } from 'tape'
 import DPTLib, { fromBuffer, populateAPDU, resolve } from '../../src/dptlib'
-import { Datagram } from '../../src/FSM'
+import { Datagram } from '../../src/KnxClient'
 
 /* common DPT unit test. Tries to
 - 1. marshal a JS value into an apdu.data (Buffer) and compare it output to the expected value

@@ -5,7 +5,7 @@
 
 import test from 'tape'
 import { fromBuffer, populateAPDU, resolve } from '../../src/dptlib'
-import { Datagram } from 'src/FSM'
+import { Datagram } from 'src/KnxClient'
 
 function dateequals(d1: Date, d2: Date) {
 	const d = d1.getDate()

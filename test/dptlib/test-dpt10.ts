@@ -5,7 +5,7 @@
 
 import test from 'tape'
 import { fromBuffer, populateAPDU, resolve } from '../../src/dptlib'
-import { Datagram } from 'src/FSM'
+import { Datagram } from 'src/KnxClient'
 
 function timecompare(date1, sign, date2) {
 	const dow1 = date1.getDay()

@@ -6,7 +6,7 @@
 import { format } from 'util'
 import { logger } from 'log-driver'
 
-import Connection from './FSM'
+import { KnxClient } from './KnxClient'
 import Datapoint from './Datapoint'
 import Devices from './devices'
 import Log from './KnxLog'
@@ -25,4 +25,4 @@ logger.info(
 	),
 )
 
-export { Connection, Datapoint, Devices, Log, dpts }
+export { KnxClient, Datapoint, Devices, Log, dpts }

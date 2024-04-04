@@ -10,7 +10,7 @@ import BinaryProtocol from 'binary-protocol'
 import * as KnxAddress from './Address'
 import { APCICODES, keyText, KnxConstants } from './KnxConstants'
 import KnxLog from './KnxLog'
-import type { Datagram } from './FSM'
+import type { Datagram } from './KnxClient'
 
 export interface KnxProtocolI extends BinaryProtocol {
 	lengths: { [key: string]: (value: any) => number }
