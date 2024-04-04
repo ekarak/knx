@@ -3,14 +3,14 @@
 * (C) 2016-2017 Elias Karakoulakis
 */
 
-var knx = require('knx');
+import { Datapoint, KnxClient } from "src";
 
 if (process.argv.length < 3) {
 	console.log('usage: %s <ga> <optional: status_ga> to toggle a light on & off',
 		process.argv[1]);
 	process.exit(1);
 }
-var connection = knx.Connection({
+const connection = new KnxClient({
 	debug: true,
 	handlers: {
 		connected: function() {
@@ -18,12 +18,12 @@ var connection = knx.Connection({
 			console.log('Connected!');
 			console.log('----------');
 			// define a datapoint:
-			var dp = new knx.Datapoint({
+			var dp = new Datapoint({
 				ga: process.argv[2],
 				dpt: 'DPT1.001'
 			}, connection);
 			if (process.argv[3]) {
-				var status_ga = new knx.Datapoint({
+				var status_ga = new Datapoint({
 					ga: process.argv[3],
 					dpt: 'DPT1.001'
 				}, connection);

@@ -2,7 +2,7 @@
  * knx.js - a KNX protocol stack in pure Javascript
  * (C) 2016-2018 Elias Karakoulakis
  */
-import { Connection, Datapoint } from '../../src'
+import { KnxClient, Datapoint } from '../../src'
 import test from 'tape'
 
 import options from './wiredtest-options'
@@ -16,7 +16,7 @@ Error.stackTraceLimit = Infinity
 
 test('KNX wired test - control a basic DPT1 binary switch', function (t) {
 	let counter = 0
-	const connection = new Connection({
+	const connection = new KnxClient({
 		debug: true,
 		physAddr: options.physAddr,
 		handlers: {

@@ -3,7 +3,7 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { Connection, Datapoint } from '../../src'
+import { KnxClient, Datapoint } from '../../src'
 import test from 'tape'
 import util from 'util'
 import options from './wiredtest-options.js'
@@ -49,7 +49,7 @@ test('KNX wired test - read multiple statuses from a consecutive GA range', func
 			setupDatapoint(ctrl_ga, stat_ga)
 		}
 	}
-	const connection = new Connection({
+	const connection = new KnxClient({
 		loglevel: 'warn',
 		// forceTunneling: true,
 		//      minimumDelay: 100,

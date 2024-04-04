@@ -3,14 +3,14 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { Connection } from '../../src'
+import { KnxClient } from '../../src'
 import test from 'tape'
 
 Error.stackTraceLimit = Infinity
 
 //
 test('KNX connect routing', function (t) {
-	const connection = new Connection({
+	const connection = new KnxClient({
 		loglevel: 'trace',
 		handlers: {
 			connected() {

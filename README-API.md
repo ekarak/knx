@@ -2,9 +2,10 @@
 
 By default *you only need to specify a 'handlers' object* containing your functions to handle KNX events. All the other options have defaults that can be overridden according to your needs.
 
-
 ```js
-var connection = new knx.Connection( {
+var { KnxClient, DataPoint } = require('knx');
+
+var connection = new KnxClient( {
   // ip address and port of the KNX router or interface
   ipAddr: '127.0.0.1', ipPort: 3671,
   // in case you need to specify the multicast interface (say if you have more than one)
@@ -83,13 +84,15 @@ you start defining datapoints (and devices as we'll see later), your code
 *needs to ensure that the connection has been established*, usually by declaring them in the 'connected' handler:
 
 ```js
-var connection = knx.Connection({
+var { KnxClient, DataPoint } = require('knx');
+
+var connection = new KnxClient({
   handlers: {
     connected: function() {
       console.log('----------');
       console.log('Connected!');
       console.log('----------');
-      var dp = new knx.Datapoint({ga: '1/1/1'}, connection);
+      var dp = new Datapoint({ga: '1/1/1'}, connection);
       // Now send off a couple of requests:
       dp.read((src, value) => {
         console.log("**** RESPONSE %j reports current value: %j", src, value);

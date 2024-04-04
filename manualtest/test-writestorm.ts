@@ -3,7 +3,7 @@
 * (C) 2016-2017 Elias Karakoulakis
 */
 Error.stackTraceLimit = Infinity;
-var knx = require('knx');
+import { Devices, KnxClient } from "src";
 
 if (process.argv.length < 2) {
   console.log('usage: %s <0/1> (off/on) to write to a set of binary switches', process.argv[1]);
@@ -11,14 +11,14 @@ if (process.argv.length < 2) {
 }
 
 function setupSwitch(groupaddress, statusga) {
-  var sw = new knx.Devices.BinarySwitch({ga: groupaddress, status_ga: statusga}, connection);
-  sw.on('change', (oldvalue, newvalue, ga) => {
+  var sw = new Devices.BinarySwitch({ga: groupaddress, status_ga: statusga}, connection);
+  sw.on('change', (oldvalue: boolean, newvalue: boolean, ga: string) => {
     console.log(" %s: **** %s current value: %j", Date.now(), ga, newvalue);
   });
   return sw;
 }
 
-var connection = knx.Connection({
+var connection = new KnxClient({
   //debug: true,
   //minimumDelay: 10,
   handlers: {

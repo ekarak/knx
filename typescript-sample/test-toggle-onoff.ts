@@ -3,11 +3,11 @@
 * (C) 2016-2017 Elias Karakoulakis
 */
 
-import { Connection, Datapoint } from 'knx'
+import { KnxClient, Datapoint } from 'knx'
 
 var groupAddress = process.argv[2]
 
-var connection = new Connection({
+var connection = new KnxClient({
     ipAddr: process.env.KNXGW,
     handlers: {
         connected: onConnected

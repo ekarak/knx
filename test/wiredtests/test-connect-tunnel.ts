@@ -3,7 +3,7 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { Connection } from '../../src'
+import { KnxClient } from '../../src'
 import test from 'tape'
 
 import options from './wiredtest-options'
@@ -17,7 +17,7 @@ Error.stackTraceLimit = Infinity
 */
 //
 test('KNX connect tunneling', function (t) {
-	const connection = new Connection({
+	const connection = new KnxClient({
 		// set up your KNX IP router's IP address (not multicast!)
 		// for getting into tunnelling mode
 		ipAddr: options.ipAddr,

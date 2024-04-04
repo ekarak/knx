@@ -18,7 +18,6 @@ This library is, to the best of my knowledge, the only one that can handle the *
 27 Oct 15:45:36 - [info] [knx-in:input] GroupValue_Read {"srcphy":"15.15.15","dstgad":"0/0/15"}
 ```
 
-
 ## A note on resilience
 
 There are basically *two* ways to talk to KNX via UDP/IP:
@@ -30,7 +29,7 @@ There are basically *two* ways to talk to KNX via UDP/IP:
 - Finally, this library allows a **hybrid** approach, that's taking the best of the two methods above: You can use **multicast** transport with a **tunnelling** connection to ensure reliable communication. *Unfortunately this deviates from the official KNXnet/IP spec*, and is therefore not compatible with some IP routers. You can enable this "hybrid mode" by enabling the `forceTunneling` option when constructing a new Connection object as follows:
 
 ```js
-var connection = new knx.Connection( {
+var connection = new knx.KnxClient( {
   // use tunneling with multicast - this is NOT supported by all routers!
   forceTunneling: true,
 ...

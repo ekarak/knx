@@ -2,7 +2,7 @@
  * knx.js - a KNX protocol stack in pure Javascript
  * (C) 2016-2018 Elias Karakoulakis
  */
-import { Connection, Datapoint } from '../../src'
+import { KnxClient, Datapoint } from '../../src'
 import test from 'tape'
 import util from 'util'
 import options from './wiredtest-options'
@@ -13,7 +13,7 @@ import options from './wiredtest-options'
            ==========                ==================
 */
 test('KNX wired test - control a DPT9 timer', function (t) {
-	const connection = new Connection({
+	const connection = new KnxClient({
 		// debug: true,
 		handlers: {
 			connected: () => {

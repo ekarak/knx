@@ -3,7 +3,7 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { Connection, Datapoint } from '../../src'
+import { KnxClient, Datapoint } from '../../src'
 import test from 'tape'
 import util from 'util'
 import options from './wiredtest-options'
@@ -14,7 +14,7 @@ import options from './wiredtest-options'
            ==========                ==================
 */
 test('KNX wired test - read a temperature', function (t) {
-	const connection = new Connection({
+	const connection = new KnxClient({
 		debug: true,
 		physAddr: options.physAddr,
 		handlers: {
