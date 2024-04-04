@@ -6,9 +6,7 @@ import type { KnxClient } from './KnxClient'
 function IpRoutingConnection(instance: KnxClient): KnxClient {
 	const log = KnxLog.get()
 
-	instance.BindSocket = function BindSocket(
-		cb: (socket: dgram.Socket) => void,
-	) {
+	instance.BindSocket = function (cb) {
 		const udpSocket = dgram.createSocket({ type: 'udp4', reuseAddr: true })
 		udpSocket.on('listening', () => {
 			log.debug(
@@ -32,14 +30,16 @@ function IpRoutingConnection(instance: KnxClient): KnxClient {
 			}
 		})
 		// ROUTING multicast connections need to bind to the default port, 3671
-		udpSocket.bind(3671, () => cb && cb(udpSocket))
+		udpSocket.bind(3671, () => {
+			if (cb) cb(udpSocket)
+		})
 		return udpSocket
 	}
 
 	// <summary>
 	///     Start the connection
 	/// </summary>
-	instance.Connect = function Connect() {
+	instance.Connect = function () {
 		this.localAddress = this.getLocalAddress()
 		this.socket = this.BindSocket((socket: dgram.Socket) => {
 			socket.on('error', (errmsg: string) =>

@@ -5,9 +5,7 @@ import type { KnxClient } from './KnxClient'
 function IpTunnelingConnection(instance: KnxClient) {
 	const log = KnxLog.get()
 
-	instance.BindSocket = function BindSocket(
-		cb: (socket: dgram.Socket) => void,
-	) {
+	instance.BindSocket = function (cb) {
 		const udpSocket = dgram.createSocket('udp4')
 		udpSocket.bind(() => {
 			log.debug(
@@ -20,7 +18,7 @@ function IpTunnelingConnection(instance: KnxClient) {
 		return udpSocket
 	}
 
-	instance.Connect = function Connect() {
+	instance.Connect = function () {
 		this.localAddress = this.getLocalAddress()
 		// create the socket
 		this.socket = this.BindSocket((socket: dgram.Socket) => {

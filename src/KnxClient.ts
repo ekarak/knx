@@ -128,12 +128,6 @@ export class KnxClient extends KnxFSM {
 
 	protected useTunneling: boolean
 
-	protected remoteEndpoint: {
-		addrstring: string
-		addr: any
-		port: number
-	}
-
 	protected localEchoInTunneling: boolean | undefined
 
 	protected channel_id?: any
@@ -158,13 +152,23 @@ export class KnxClient extends KnxFSM {
 
 	protected writer: Writer
 
-	protected socket: Socket
-
 	protected usingMulticastTunneling: boolean
 
 	protected minimumDelay: number
 
+	public remoteEndpoint: {
+		addrstring: string
+		addr: any
+		port: number
+	}
+
+	public socket: Socket
+
 	public localAddress: string | null
+
+	public BindSocket: (this: this, cb: (socket: Socket) => void) => Socket
+
+	public Connect: (this: this) => void
 
 	constructor(options: KnxOptions) {
 		super()
@@ -308,14 +312,6 @@ export class KnxClient extends KnxFSM {
 		return candidateInterfaces
 	}
 
-	BindSocket(cb: (socket: any) => void) {
-		// THIS IS A STUB and should be overridden by the connection type
-	}
-
-	Connect() {
-		// THIS IS A STUB and should be overridden by the connection type
-	}
-
 	/**
 	 * --------------------------------
 	 * Connection management methods
@@ -327,9 +323,8 @@ export class KnxClient extends KnxFSM {
 		// get the incoming packet's service type ...
 		try {
 			const reader = KnxNetProtocol.createReader(msg)
-			// TODO: improve types for binary protocol
 			reader.KNXNetHeader('tmp')
-			const dg = reader.next()['tmp']
+			const dg = reader.next()['tmp'] as Datagram
 			const descr = datagramDesc(dg)
 			KnxLog.get().trace(
 				'(%s): Received %s message: %j',
