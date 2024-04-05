@@ -33,7 +33,7 @@ test('resolve', function (t) {
 
 	t.throws(
 		() => {
-			resolve('29.010')
+			resolve('1111111.010')
 		},
 		/Unsupported DPT: .*/,
 		'Unsupported/unknown DPT',
@@ -41,7 +41,7 @@ test('resolve', function (t) {
 
 	t.throws(
 		() => {
-			resolve(29)
+			resolve(1111111)
 		},
 		/Unsupported DPT: .*/,
 		'Unsupported/unknown Int DPT',
@@ -49,7 +49,7 @@ test('resolve', function (t) {
 
 	t.throws(
 		() => {
-			resolve([29] as any)
+			resolve([1111111] as any)
 		},
 		/Unsupported DPT: .*/,
 		'Unsupported/unknown Int DPT',
