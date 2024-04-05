@@ -25,14 +25,12 @@ import { hasProp } from '../utils'
     end
 */
 
-// TODO: implement fromBuffer, formatAPDU
-
 const log = logger
 
 const config: DatapointConfig = {
 	id: 'DPT18',
 	formatAPDU(value) {
-		if (value == null) log.warn('DPT18: cannot write null value')
+		if (!value) log.warn('DPT18: cannot write null value')
 		else {
 			const apdu_data = Buffer.alloc(1)
 			if (
@@ -47,7 +45,6 @@ const config: DatapointConfig = {
 				const sVal = `${
 					value.save_recall
 				}0${sSceneNumberbinary.padStart(6, '0')}`
-				// console.log("BANANA SEND HEX " + sVal.toString("hex").toUpperCase())
 				apdu_data[0] = parseInt(sVal, 2) // 0b10111111;
 			} else {
 				log.error(
@@ -59,14 +56,12 @@ const config: DatapointConfig = {
 	},
 
 	fromBuffer(buf) {
-		// console.log("BANANA BUFF RECEIVE HEX " + buf.toString("hex").toUpperCase())
 		if (buf.length !== 1) {
 			log.error('DP18: Buffer should be 1 byte long')
 		} else {
 			const sBit = parseInt(buf.toString('hex').toUpperCase(), 16)
 				.toString(2)
 				.padStart(8, '0') // Get bit from hex
-			// console.log("BANANA BUFF RECEIVE BIT " + sBit)
 			return {
 				save_recall: sBit.substring(0, 1),
 				scenenumber: parseInt(sBit.substring(2), 2) + 1,
@@ -91,12 +86,3 @@ const config: DatapointConfig = {
 }
 
 export default config
-
-/*
-02/April/2020 Supergiovane
-USE:
-Input must be an object: {save_recall, scenenumber}
-save_recall: 0 = recall scene, 1 = save scene
-scenenumber: the scene number, example 1
-Example: {save_recall=0, scenenumber=2}
-*/

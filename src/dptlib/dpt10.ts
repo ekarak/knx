@@ -65,33 +65,42 @@ const config: DatapointConfig = {
 	// return a JS Date from a DPT10 payload, with DOW/hour/month/seconds set to the buffer values.
 	// The week/month/year are inherited from the current timestamp.
 	fromBuffer: (buf) => {
-		if (buf.length !== 3)
-			return log.warn('DPT10: Buffer should be 3 bytes long')
-		const [dnh, minutes, seconds] = buf
-		const dow = (dnh & 0b11100000) >> 5
-		const hours = dnh & 0b00011111
+		if (buf.length !== 3) {
+			log.error('DPT10: Buffer should be 3 bytes long, got', buf.length)
+			return null
+		}
+
+		const d = new Date()
+		let dow = (buf[0] & 0b11100000) >> 5 // Day of week
+		const hours = buf[0] & 0b00011111
+		const minutes = buf[1]
+		const seconds = buf[2]
 		if (
-			hours < 0 ||
-			hours > 23 ||
-			minutes < 0 ||
-			minutes > 59 ||
-			seconds < 0 ||
-			seconds > 59
-		)
-			return log.warn(
+			hours >= 0 &&
+			hours <= 23 &&
+			minutes >= 0 &&
+			minutes <= 59 &&
+			seconds >= 0 &&
+			seconds <= 59
+		) {
+			// 18/10/2021 if dow = 0, then the KNX device has not sent this optional value.
+			if (d.getDay() !== dow && dow > 0) {
+				if (dow === 7) dow = 0 // 18/10/2021 fix for the Sunday
+				// adjust day of month to get the day of week right
+				d.setDate(d.getDate() + dow - d.getDay())
+			}
+			d.setHours(hours)
+			d.setMinutes(minutes)
+			d.setSeconds(seconds)
+		} else {
+			log.warn(
 				'DPT10: buffer %j (decoded as %d:%d:%d) is not a valid time',
 				buf,
 				hours,
 				minutes,
 				seconds,
 			)
-
-		const d = new Date()
-		if (d.getDay() !== dow)
-			// adjust day of month to get the day of week right
-			d.setDate(d.getDate() + dow - d.getDay())
-		// TODO: Shouldn't this be UTCHours?
-		d.setHours(hours, minutes, seconds)
+		}
 		return d
 	},
 

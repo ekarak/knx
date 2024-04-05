@@ -1,6 +1,6 @@
 {
   "name": "knx",
-  "description": "KNXnet/IP protocol implementation for Node(>=6.x)",
+  "description": "KNXnet/IP protocol implementation",
   "version": "2.5.4",
   "engines": {
     "node": ">=16"

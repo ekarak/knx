@@ -5,35 +5,13 @@
 
 import { logger } from 'log-driver'
 import type { DatapointConfig } from '.'
+import { frexp, ldexp } from '../utils'
 
 const log = logger
 
 //
 // DPT9.*: 2-byte floating point value
 //
-
-// kudos to http://croquetweak.blogspot.gr/2014/08/deconstructing-floats-frexp-and-ldexp.html
-const ldexp = (mantissa, exponent) =>
-	// eslint-disable-next-line no-nested-ternary
-	exponent > 1023 // avoid multiplying by infinity
-		? mantissa * 2 ** 1023 * 2 ** (exponent - 1023)
-		: exponent < -1074 // avoid multiplying by zero
-			? mantissa * 2 ** -1074 * 2 ** (exponent + 1074)
-			: mantissa * 2 ** exponent
-
-const frexp = (value) => {
-	if (value === 0) return [0, 0]
-	const data = new DataView(new ArrayBuffer(8))
-	data.setFloat64(0, value)
-	let bits = (data.getUint32(0) >>> 20) & 0x7ff
-	if (bits === 0) {
-		data.setFloat64(0, value * 2 ** 64)
-		bits = ((data.getUint32(0) >>> 20) & 0x7ff) - 64
-	}
-	const exponent = bits - 1022
-	const mantissa = ldexp(value, -exponent)
-	return [mantissa, exponent]
-}
 
 const config: DatapointConfig = {
 	id: 'DPT9',

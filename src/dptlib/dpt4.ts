@@ -15,7 +15,7 @@ const log = KnxLog.get()
 const config: DatapointConfig = {
 	id: 'DPT4',
 	formatAPDU: (value: string): Buffer | void => {
-		if (value == null) return log.warn('DPT4: cannot write null value')
+		if (!value) return log.warn('DPT4: cannot write null value')
 
 		if (typeof value !== 'string')
 			return log.warn('DPT4: Must supply a character or string')

@@ -7,7 +7,6 @@ import { logger } from 'log-driver'
 import type { DatapointConfig } from '.'
 
 const log = logger
-// TODO: implement fromBuffer, formatAPDU
 
 //
 // DPT19: 8-byte Date and Time
@@ -16,7 +15,7 @@ const log = logger
 const config: DatapointConfig = {
 	id: 'DPT19',
 	formatAPDU: (value) => {
-		if (!(value instanceof Date))
+		if (typeof value !== 'object' || value.constructor.name !== 'Date')
 			return log.error('DPT19: Must supply a Date object')
 
 		// Sunday is 0 in Javascript, but 7 in KNX.

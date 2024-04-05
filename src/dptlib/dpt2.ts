@@ -21,7 +21,7 @@ const config: DatapointConfig = {
 	// DPT2 frame description.
 	// Always 8-bit aligned.
 	formatAPDU: (value: Dpt2Value) => {
-		if (value == null) return log.error('DPT2: cannot write null value')
+		if (!value) return log.error('DPT2: cannot write null value')
 
 		if (
 			typeof value === 'object' &&

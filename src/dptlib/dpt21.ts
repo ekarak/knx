@@ -17,7 +17,6 @@ const log = logger
 // - AlarmUnAck b3
 // - reseverd b4-7
 
-// FIXME: help needed
 const config: DatapointConfig = {
 	id: 'DPT21',
 	formatAPDU(value) {
@@ -56,14 +55,12 @@ const config: DatapointConfig = {
 		}
 		// return ret;
 	},
-
 	basetype: {
 		bitlength: 8,
 		range: [undefined, undefined],
 		valuetype: 'composite',
 		desc: '1-byte',
 	},
-
 	subtypes: {
 		// 21.001 status - 5 bits
 		'001': {

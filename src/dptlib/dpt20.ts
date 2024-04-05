@@ -16,20 +16,26 @@ const log = logger
 const config: DatapointConfig = {
 	id: 'DPT20',
 	formatAPDU: (value) => {
-		log.debug(`./knx/src/dpt20.js : input value = ${value}`)
-		return Buffer.from([value])
+		const apdu_data = Buffer.alloc(1)
+		apdu_data[0] = value
+		log.debug(
+			`./knx/src/dpt20.js : input value = ${value}   apdu_data = ${apdu_data}`,
+		)
+		return apdu_data
 	},
 
 	fromBuffer: (buf) => {
-		if (buf.length !== 1) throw Error('Buffer should be 1 bytes long')
+		if (buf.length !== 1) {
+			log.warn('DPT20: Buffer should be 1 byte long, got', buf.length)
+			return null
+		}
 		const ret = buf.readUInt8(0)
-		log.debug(`               dpt20.js   fromBuffer : ${ret}`)
 		return ret
 	},
 
 	basetype: {
 		bitlength: 8,
-		range: [undefined, undefined], // TODO: verify
+		range: [undefined, undefined],
 		valuetype: 'basic',
 		desc: '1-byte',
 	},
