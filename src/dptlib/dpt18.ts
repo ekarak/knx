@@ -3,7 +3,7 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
 import { hasProp } from '../utils'
 
@@ -25,12 +25,10 @@ import { hasProp } from '../utils'
     end
 */
 
-const log = logger
-
 const config: DatapointConfig = {
 	id: 'DPT18',
 	formatAPDU(value) {
-		if (!value) log.warn('DPT18: cannot write null value')
+		if (!value) Log.get().warn('DPT18: cannot write null value')
 		else {
 			const apdu_data = Buffer.alloc(1)
 			if (
@@ -47,7 +45,7 @@ const config: DatapointConfig = {
 				}0${sSceneNumberbinary.padStart(6, '0')}`
 				apdu_data[0] = parseInt(sVal, 2) // 0b10111111;
 			} else {
-				log.error(
+				Log.get().error(
 					'DPT18: Must supply a value object of {save_recall, scenenumber}',
 				)
 			}
@@ -57,7 +55,7 @@ const config: DatapointConfig = {
 
 	fromBuffer(buf) {
 		if (buf.length !== 1) {
-			log.error('DP18: Buffer should be 1 byte long')
+			Log.get().error('DP18: Buffer should be 1 byte long')
 		} else {
 			const sBit = parseInt(buf.toString('hex').toUpperCase(), 16)
 				.toString(2)

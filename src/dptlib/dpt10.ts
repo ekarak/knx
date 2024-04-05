@@ -4,10 +4,8 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
-
-const log = logger
 
 //
 // DPT10.*: time (3 bytes)
@@ -40,13 +38,15 @@ const config: DatapointConfig = {
 						minute = parseInt(match[4])
 						second = parseInt(match[5])
 					} else {
-						log.warn('DPT10: invalid time format (%s)', value)
+						Log.get().warn('DPT10: invalid time format (%s)', value)
 					}
 				}
 				break
 			case 'object':
 				if (value.constructor.name !== 'Date') {
-					log.warn('Must supply a Date or String for DPT10 time')
+					Log.get().warn(
+						'Must supply a Date or String for DPT10 time',
+					)
 					break
 				}
 			case 'number':
@@ -66,7 +66,10 @@ const config: DatapointConfig = {
 	// The week/month/year are inherited from the current timestamp.
 	fromBuffer: (buf) => {
 		if (buf.length !== 3) {
-			log.error('DPT10: Buffer should be 3 bytes long, got', buf.length)
+			Log.get().error(
+				'DPT10: Buffer should be 3 bytes long, got',
+				buf.length,
+			)
 			return null
 		}
 
@@ -93,7 +96,7 @@ const config: DatapointConfig = {
 			d.setMinutes(minutes)
 			d.setSeconds(seconds)
 		} else {
-			log.warn(
+			Log.get().warn(
 				'DPT10: buffer %j (decoded as %d:%d:%d) is not a valid time',
 				buf,
 				hours,

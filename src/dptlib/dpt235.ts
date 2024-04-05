@@ -3,11 +3,10 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
 import { hasProp, hex2bin } from '../utils'
 
-const log = logger
 //
 // DPT235: DPT_Tariff_ActiveEnergy
 //
@@ -49,11 +48,11 @@ const config: DatapointConfig = {
 				apdu_data[5] = validity
 				return apdu_data
 			}
-			log.error(
+			Log.get().error(
 				'DPT235: Must supply a payload like, for example: {activeElectricalEnergy:1540, tariff:20, validityTariff:true, validityEnergy:true}',
 			)
 		} catch (error) {
-			log.error(`DPT235: exports.formatAPDU error ${error.message}`)
+			Log.get().error(`DPT235: exports.formatAPDU error ${error.message}`)
 		}
 	},
 
@@ -73,7 +72,7 @@ const config: DatapointConfig = {
 				validityEnergy,
 			}
 		} catch (error) {
-			log.error(`DPT235: exports.fromBuffer error ${error.message}`)
+			Log.get().error(`DPT235: exports.fromBuffer error ${error.message}`)
 		}
 	},
 

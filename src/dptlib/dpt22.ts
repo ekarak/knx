@@ -2,12 +2,9 @@
  * knx.js - a KNX protocol stack in pure Javascript
  * (C) 2016-2018 Elias Karakoulakis
  */
-
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
 import { hasProp } from '../utils'
-
-const log = logger
 
 //
 // DPT22: 2-byte RHCC status
@@ -46,7 +43,7 @@ const config: DatapointConfig = {
 		// Send to BUS
 		const apdu_data = Buffer.alloc(2)
 		if (!value) {
-			log.error('DPT232: cannot write null value')
+			Log.get().error('DPT232: cannot write null value')
 		} else {
 			if (typeof value === 'object') {
 				if (!hasProp(value, 'Fault')) value.Fault = false
@@ -76,7 +73,9 @@ const config: DatapointConfig = {
 					value.OverheatAlarm = false
 				if (!hasProp(value, 'reserved')) value.reserved = true
 			} else {
-				log.error('DPT22: Must supply a correct payload. See wiki.')
+				Log.get().error(
+					'DPT22: Must supply a correct payload. See wiki.',
+				)
 			}
 			let firstHex = ''
 			let secondHex = ''
@@ -116,7 +115,10 @@ const config: DatapointConfig = {
 	fromBuffer: (buf) => {
 		// RX from BUS
 		if (buf.length !== 2) {
-			log.warn('DPT22: Buffer should be 2 bytes long, got', buf.length)
+			Log.get().warn(
+				'DPT22: Buffer should be 2 bytes long, got',
+				buf.length,
+			)
 			return null
 		}
 		const byte1 = reverseString(buf[1].toString(2).padStart(8, '0')).split(

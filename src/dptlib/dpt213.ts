@@ -3,11 +3,9 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
 import { frexp, hasProp, ldexp } from '../utils'
-
-const log = logger
 
 //
 // DPT213: Data Type 4x 16-Signed Value
@@ -87,7 +85,7 @@ const config: DatapointConfig = {
 			// console.log(apdu_data);
 			return apdu_data
 		}
-		log.error(
+		Log.get().error(
 			'DPT213: Must supply a payload like, for example: {Comfort:21, Standby:20, Economy:14, BuildingProtection:8}',
 		)
 	},
@@ -95,7 +93,7 @@ const config: DatapointConfig = {
 	// RX from BUS
 	fromBuffer(buf) {
 		if (buf.length !== 8) {
-			log.warn(
+			Log.get().warn(
 				'DPT213.fromBuffer: buf should be 4x2 bytes long (got %d bytes)',
 				buf.length,
 			)

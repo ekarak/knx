@@ -3,17 +3,17 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
 
-const log = logger
 //
 // DPT11.*: date
 //
 const config: DatapointConfig = {
 	id: 'DPT11',
 	formatAPDU: (value) => {
-		if (value == null) return log.error('cannot write null value for DPT11')
+		if (value == null)
+			return Log.get().error('cannot write null value for DPT11')
 		switch (typeof value) {
 			case 'string':
 			case 'number':
@@ -27,7 +27,7 @@ const config: DatapointConfig = {
 			}
 		}
 		if (isNaN(value.getDate()))
-			return log.error(
+			return Log.get().error(
 				'Must supply a numeric timestamp, Date or String object for DPT11 Date',
 			)
 
@@ -40,7 +40,8 @@ const config: DatapointConfig = {
 	},
 
 	fromBuffer: (buf) => {
-		if (buf.length !== 3) return log.error('Buffer should be 3 bytes long')
+		if (buf.length !== 3)
+			return Log.get().error('Buffer should be 3 bytes long')
 		const day = buf[0] & 31 // 0b00011111);
 		const month = buf[1] & 15 // 0b00001111);
 		let year = buf[2] & 127 // 0b01111111);
@@ -53,7 +54,7 @@ const config: DatapointConfig = {
 			year < 1990 ||
 			year > 2089
 		) {
-			log.error(
+			Log.get().error(
 				'%j => %d/%d/%d is not valid date according to DPT11, setting to 1990/01/01',
 				buf,
 				day,

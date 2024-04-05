@@ -2,10 +2,8 @@
  * knx.js - a KNX protocol stack in pure Javascript
  * (C) 2016-2018 Elias Karakoulakis
  */
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
-
-const log = logger
 
 //
 // DPT14.*: 4-byte floating point value
@@ -18,14 +16,15 @@ const config: DatapointConfig = {
 	id: 'DPT14',
 	formatAPDU: (value) => {
 		if (value == null || typeof value !== 'number')
-			log.error('DPT14: Must supply a number value')
+			Log.get().error('DPT14: Must supply a number value')
 		const apdu_data = Buffer.alloc(4)
 		apdu_data.writeFloatBE(value, 0)
 		return apdu_data
 	},
 
 	fromBuffer: (buf) => {
-		if (buf.length !== 4) log.warn('DPT14: Buffer should be 4 bytes long')
+		if (buf.length !== 4)
+			Log.get().warn('DPT14: Buffer should be 4 bytes long')
 		return buf.readFloatBE(0)
 	},
 

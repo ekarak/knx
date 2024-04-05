@@ -8,11 +8,9 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
-import { hasProp, hex2bin } from '../utils'
-
-const log = logger
+import { hasProp } from '../utils'
 
 // Structure of DPT 251.600
 // Byte 0: R value
@@ -32,7 +30,7 @@ const config: DatapointConfig = {
 	id: 'DPT251',
 	formatAPDU(value) {
 		if (!value) {
-			log.error('DPT251: cannot write null value')
+			Log.get().error('DPT251: cannot write null value')
 		} else {
 			if (
 				typeof value === 'object' &&
@@ -55,7 +53,7 @@ const config: DatapointConfig = {
 			) {
 				// noop
 			} else {
-				log.error(
+				Log.get().error(
 					'DPT251: Must supply a value payload: {red:0-255, green:0-255, blue:0-255, white:0-255, mR:0-1, mG:0-1, mB:0-1, mW:0-1}',
 				)
 			}
@@ -76,7 +74,10 @@ const config: DatapointConfig = {
 	},
 	fromBuffer(buf) {
 		if (buf.length !== 6) {
-			log.error('DPT251: Buffer should be 6 bytes long, got', buf.length)
+			Log.get().error(
+				'DPT251: Buffer should be 6 bytes long, got',
+				buf.length,
+			)
 			return null
 		}
 		const valByte = buf[5].toString(2) // Get validity bits

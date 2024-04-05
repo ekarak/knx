@@ -32,9 +32,6 @@ HVAC                               1 Byte                  DPT 20	    DPT 20	0..
 Unlimited string 8859_1            .                       DPT 24	    DPT 24
 List 3-byte value                  3 Byte                  DPT 232	  DPT 232	RGB[0,0,0]...[255,255,255]
 */
-
-import * as fs from 'fs'
-import * as path from 'path'
 import * as util from 'util'
 import KnxLog from '../KnxLog'
 

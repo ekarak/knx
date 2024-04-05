@@ -6,9 +6,7 @@
 import { hasProp } from '../utils'
 import type { DatapointConfig } from '.'
 
-import KnxLog from '../KnxLog'
-
-const log = KnxLog.get()
+import Log from '../KnxLog'
 
 interface Dpt3Value {
 	decr_incr: number
@@ -18,7 +16,7 @@ interface Dpt3Value {
 const config: DatapointConfig = {
 	id: 'DPT3',
 	formatAPDU: (value: Dpt3Value) => {
-		if (!value) return log.warn('DPT3: cannot write null value')
+		if (!value) return Log.get().warn('DPT3: cannot write null value')
 
 		if (
 			typeof value === 'object' &&
@@ -29,13 +27,13 @@ const config: DatapointConfig = {
 				(value.decr_incr << 3) + (value.data & 0b00000111),
 			])
 
-		log.error('Must supply a value object of {decr_incr, data}')
+		Log.get().error('Must supply a value object of {decr_incr, data}')
 		// FIXME: should this return zero buffer when error? Or nothing?
 		return Buffer.from([0])
 	},
 	fromBuffer: (buf: Buffer) => {
 		if (buf.length !== 1)
-			return log.error('DPT3: Buffer should be 1 byte long')
+			return Log.get().error('DPT3: Buffer should be 1 byte long')
 
 		return {
 			decr_incr: (buf[0] & 0b00001000) >> 3,

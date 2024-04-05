@@ -3,11 +3,9 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
 import { frexp, ldexp } from '../utils'
-
-const log = logger
 
 //
 // DPT9.*: 2-byte floating point value
@@ -17,7 +15,9 @@ const config: DatapointConfig = {
 	id: 'DPT9',
 	formatAPDU: (value) => {
 		if (!isFinite(value))
-			return log.warn('DPT9: cannot write non-numeric or undefined value')
+			return Log.get().warn(
+				'DPT9: cannot write non-numeric or undefined value',
+			)
 
 		const arr = frexp(value)
 		const [mantissa, exponent] = arr
@@ -38,7 +38,7 @@ const config: DatapointConfig = {
 
 	fromBuffer: (buf) => {
 		if (buf.length !== 2)
-			return log.warn(
+			return Log.get().warn(
 				'DPT9.fromBuffer: buf should be 2 bytes long (got %d bytes)',
 				buf.length,
 			)

@@ -3,11 +3,9 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
 import { hasProp } from '../utils'
-
-const log = logger
 
 //
 // DPT237: 2-byte unsigned value
@@ -15,9 +13,10 @@ const log = logger
 const config: DatapointConfig = {
 	id: 'DPT237',
 	formatAPDU(value) {
-		if (value == null) return log.error('DPT237: cannot write null value')
+		if (value == null)
+			return Log.get().error('DPT237: cannot write null value')
 
-		log.trace(`dpt278.js : input value = ${value}`)
+		Log.get().trace(`dpt278.js : input value = ${value}`)
 
 		const apdu_data = Buffer.alloc(2)
 
@@ -44,7 +43,7 @@ const config: DatapointConfig = {
 			return apdu_data
 		}
 
-		log.error(
+		Log.get().error(
 			'DPT237: Must supply an value {address:[0,63] or [0,15], address type:{0,1}, ...}',
 		)
 
@@ -52,7 +51,8 @@ const config: DatapointConfig = {
 	},
 
 	fromBuffer(buf) {
-		if (buf.length !== 2) return log.error('Buffer should be 2 byte long')
+		if (buf.length !== 2)
+			return Log.get().error('Buffer should be 2 byte long')
 
 		return {
 			address: buf[1] & 0b00011111,

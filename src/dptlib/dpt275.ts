@@ -3,12 +3,10 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
 import { hasProp } from '../utils'
 import dpt9 from './dpt9'
-
-const log = logger
 
 //
 // 4x DPT9.* 2-byte floating point value
@@ -37,14 +35,14 @@ const config: DatapointConfig = {
 				buildingProtection,
 			])
 		}
-		log.error(
+		Log.get().error(
 			'DPT275.formatAPDU: Must supply all values, for example {comfort:22, standby:21.5, economy:21, buildingProtection:15}',
 		)
 	},
 	fromBuffer(buf) {
 		// Get the telegram from the KNX bus and create a javascript object.
 		if (buf.length !== 8) {
-			log.warn(
+			Log.get().warn(
 				'DPT275.fromBuffer: buf should be 8 bytes long (got %d bytes)',
 				buf.length,
 			)

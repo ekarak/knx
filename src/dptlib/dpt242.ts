@@ -3,11 +3,9 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
 import { hasProp, hex2bin } from '../utils'
-
-const log = logger
 
 interface DPT242Value {
 	x: number
@@ -24,7 +22,7 @@ const config: DatapointConfig = {
 	id: 'DPT242',
 	formatAPDU(value) {
 		if (!value) {
-			log.error('DPT242: cannot write null value')
+			Log.get().error('DPT242: cannot write null value')
 		} else {
 			if (
 				typeof value === 'object' &&
@@ -42,7 +40,7 @@ const config: DatapointConfig = {
 			) {
 				// noop
 			} else {
-				log.error(
+				Log.get().error(
 					'DPT242: Must supply an value {x:0-65535, y:0-65535, brightness:0-100, isColorValid:true/false, isBrightnessValid:true/false}',
 				)
 			}
@@ -73,7 +71,10 @@ const config: DatapointConfig = {
 
 	fromBuffer(buf) {
 		if (buf.length !== 6) {
-			log.error('DPT242: Buffer should be 6 bytes long, got', buf.length)
+			Log.get().error(
+				'DPT242: Buffer should be 6 bytes long, got',
+				buf.length,
+			)
 			return null
 		}
 		const bufTotale = buf.toString('hex')

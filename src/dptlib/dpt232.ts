@@ -3,10 +3,8 @@
  * (C) 2016-2019 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
-
-const log = logger
 
 //
 // DPT232: 3-byte RGB color array
@@ -15,7 +13,8 @@ const log = logger
 const config: DatapointConfig = {
 	id: 'DPT232',
 	formatAPDU: (value) => {
-		if (value == null) return log.error('DPT232: cannot write null value')
+		if (value == null)
+			return Log.get().error('DPT232: cannot write null value')
 
 		if (typeof value === 'object') {
 			const { red, green, blue } = value
@@ -29,7 +28,7 @@ const config: DatapointConfig = {
 			)
 				return Buffer.from([red, green, blue])
 		}
-		log.error(
+		Log.get().error(
 			'DPT232: Must supply an value {red:0..255, green:0.255, blue:0.255}',
 		)
 	},

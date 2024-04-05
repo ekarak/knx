@@ -3,10 +3,8 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
-
-const log = logger
 
 //
 // DPT19: 8-byte Date and Time
@@ -16,7 +14,7 @@ const config: DatapointConfig = {
 	id: 'DPT19',
 	formatAPDU: (value) => {
 		if (typeof value !== 'object' || value.constructor.name !== 'Date')
-			return log.error('DPT19: Must supply a Date object')
+			return Log.get().error('DPT19: Must supply a Date object')
 
 		// Sunday is 0 in Javascript, but 7 in KNX.
 		const day = value.getDay() === 0 ? 7 : value.getDay()
@@ -34,7 +32,7 @@ const config: DatapointConfig = {
 
 	fromBuffer: (buf) => {
 		if (buf.length !== 8)
-			return log.warn('DPT19: Buffer should be 8 bytes long')
+			return Log.get().warn('DPT19: Buffer should be 8 bytes long')
 		return new Date(
 			buf[0] + 1900,
 			buf[1] - 1,

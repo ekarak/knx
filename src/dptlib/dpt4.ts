@@ -4,10 +4,8 @@
  */
 
 import type { DatapointConfig } from '.'
+import Log from '../KnxLog'
 
-import KnxLog from '../KnxLog'
-
-const log = KnxLog.get()
 //
 // DPT4: 8-bit character
 //
@@ -15,20 +13,20 @@ const log = KnxLog.get()
 const config: DatapointConfig = {
 	id: 'DPT4',
 	formatAPDU: (value: string): Buffer | void => {
-		if (!value) return log.warn('DPT4: cannot write null value')
+		if (!value) return Log.get().warn('DPT4: cannot write null value')
 
 		if (typeof value !== 'string')
-			return log.warn('DPT4: Must supply a character or string')
+			return Log.get().warn('DPT4: Must supply a character or string')
 
 		const apdu_data: number = value.charCodeAt(0)
 		if (apdu_data > 255)
-			return log.warn('DPT4: must supply an ASCII character')
+			return Log.get().warn('DPT4: must supply an ASCII character')
 
 		return Buffer.from([apdu_data])
 	},
 	fromBuffer: (buf: Buffer): string | void => {
 		if (buf.length !== 1)
-			return log.warn('DPT4: Buffer should be 1 byte long')
+			return Log.get().warn('DPT4: Buffer should be 1 byte long')
 
 		return String.fromCharCode(buf[0])
 	},

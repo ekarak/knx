@@ -3,11 +3,9 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
 import { hexToDec } from '../utils'
-
-const log = logger
 
 //
 // DPT999: 10 Bytes (RFID keypad style)
@@ -16,7 +14,7 @@ const config: DatapointConfig = {
 	id: 'DPT999',
 	formatAPDU(value) {
 		if (typeof value !== 'string' || value.length < 10)
-			log.warn(
+			Log.get().warn(
 				"Must supply an HEX string value of 10 bytes. Please don't add '$' nor '0x' Example 12340000000000000000",
 			)
 		else {

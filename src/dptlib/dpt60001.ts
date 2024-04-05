@@ -3,15 +3,12 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
-import { hasProp, hex2bin } from '../utils'
-
-const log = logger
 
 function toRadix(value: number, radix: number) {
 	if (!Number.isSafeInteger(value)) {
-		log.error('value must be a safe integer')
+		Log.get().error('value must be a safe integer')
 	}
 
 	const digits = Math.ceil(64 / Math.log2(radix))
@@ -31,8 +28,14 @@ function griesserCommandCode(Byte1: number) {
 	return command
 }
 
-function griesserParameter(command, Byte2, Byte3, Byte4, Byte5) {
-	let commandOperation
+function griesserParameter(
+	command: number,
+	Byte2: number,
+	Byte3: number,
+	Byte4: number,
+	Byte5: number,
+) {
+	let commandOperation: string
 	switch (command) {
 		case 1: // drive command
 			switch (Byte2 & 31) {
@@ -111,13 +114,13 @@ function griesserParameter(command, Byte2, Byte3, Byte4, Byte5) {
 	}
 }
 
-function griesserSectors(SectorCode) {
-	let SectorMin
-	let SectorMax
-	let dA
-	let a
-	let SectorCodeMin
-	let SectorCodeMax
+function griesserSectors(SectorCode: number) {
+	let SectorMin: number
+	let SectorMax: number
+	let dA: number
+	let a: number
+	let SectorCodeMin: number
+	let SectorCodeMax: number
 	dA = 1
 	a = SectorCode
 	if (a > 0) {
@@ -152,23 +155,23 @@ function griesserSectors(SectorCode) {
 	return Sectors
 }
 
-function griesserSectorToSectorCode(sectors) {
+function griesserSectorToSectorCode(sectors: number[]) {
 	if (sectors.length === 1) {
 		return sectors[0] + sectors[0] - 1
 	}
 	return Math.min(...sectors) + Math.max(...sectors) - 1
 }
 
-function griesserCommandToCommandCode(command) {
+function griesserCommandToCommandCode(command: string) {
 	switch (command) {
 		case 'operation code':
 			return 5
 		default:
-			log.error(`not implemented yet: ${command}`)
+			Log.get().error(`not implemented yet: ${command}`)
 	}
 }
 
-function griesserCommandToCommandCodeP1(command) {
+function griesserCommandToCommandCodeP1(command: string) {
 	switch (command) {
 		case 'long up':
 			return 128
@@ -185,11 +188,11 @@ function griesserCommandToCommandCodeP1(command) {
 		case 'long-short down':
 			return 134
 		default:
-			log.error(`unknown command: ${command}`)
+			Log.get().error(`unknown command: ${command}`)
 	}
 }
 
-function griesserCommand(command) {
+function griesserCommand(command: number) {
 	switch (command) {
 		case 1:
 			return 'drive command'
@@ -232,7 +235,7 @@ function griesserCommand(command) {
 	}
 }
 
-function griesserPrio(prio, command) {
+function griesserPrio(prio: number, command: number) {
 	const prioCommand = ((command & 224) / 32) >> 0
 	if (((prio & 252) / 4) >> 0 === 0) {
 		switch (prioCommand) {
@@ -261,7 +264,7 @@ const config: DatapointConfig = {
 	id: 'DPT60001',
 	formatAPDU(value) {
 		if (!value) {
-			log.error('DPT60001: cannot write null value')
+			Log.get().error('DPT60001: cannot write null value')
 		} else {
 			if (
 				typeof value === 'object' &&
@@ -283,7 +286,7 @@ const config: DatapointConfig = {
 				bufferTotal[2] = parseInt(toRadix(p1, 2).slice(-8), 2)
 				return bufferTotal
 			}
-			log.error(
+			Log.get().error(
 				'DPT60001: Must supply an value {command:"operation code", data:["localoperation", "long up"], sectors:[159]}',
 			)
 		}
@@ -292,7 +295,7 @@ const config: DatapointConfig = {
 	// RX from BUS
 	fromBuffer(buf) {
 		if (buf.length !== 6) {
-			log.warn(
+			Log.get().warn(
 				'DPTGriesser.fromBuffer: buf should be 6 bytes long (got %d bytes)',
 				buf.length,
 			)

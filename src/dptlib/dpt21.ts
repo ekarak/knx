@@ -2,10 +2,8 @@
  * knx.js - a KNX protocol stack in pure Javascript
  * (C) 2016-2018 Elias Karakoulakis
  */
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
-
-const log = logger
 
 //
 // DPT21: 1-byte status
@@ -20,8 +18,9 @@ const log = logger
 const config: DatapointConfig = {
 	id: 'DPT21',
 	formatAPDU(value) {
-		if (value == null) return log.error('DPT21: cannot write null value')
-		log.debug(`./knx/src/dpt21.js : input value = ${value}`)
+		if (value == null)
+			return Log.get().error('DPT21: cannot write null value')
+		Log.get().debug(`./knx/src/dpt21.js : input value = ${value}`)
 
 		// var apdu_data = Buffer.alloc(1);
 		// apdu_data[0] = value;
@@ -34,15 +33,16 @@ const config: DatapointConfig = {
 					(value.alarmeunack << 4),
 			])
 
-		log.error('DPT21: Must supply a value which is an object')
+		Log.get().error('DPT21: Must supply a value which is an object')
 		// return apdu_data;
 		return Buffer.from([0])
 	},
 
 	fromBuffer(buf) {
-		if (buf.length !== 1) return log.error('Buffer should be 1 bytes long')
+		if (buf.length !== 1)
+			return Log.get().error('Buffer should be 1 bytes long')
 		// if (buf.length != 1) throw "Buffer should be 1 bytes long";
-		log.debug(`               dpt21.js   fromBuffer : ${buf}`)
+		Log.get().debug(`               dpt21.js   fromBuffer : ${buf}`)
 
 		// var ret = buf.readUInt8(0);
 

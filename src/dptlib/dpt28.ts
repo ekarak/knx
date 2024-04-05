@@ -3,10 +3,8 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
-
-const log = logger
 
 //
 // DPT28: ASCII string (variable length) UTF-8
@@ -17,7 +15,9 @@ const config: DatapointConfig = {
 	id: 'DPT28',
 	formatAPDU(value) {
 		if (typeof value !== 'string') {
-			log.error('Must supply a string value. Autoconversion to string')
+			Log.get().error(
+				'Must supply a string value. Autoconversion to string',
+			)
 			try {
 				value = value.toString()
 			} catch (error) {
@@ -38,7 +38,7 @@ const config: DatapointConfig = {
 	fromBuffer(buf) {
 		// nog length check because this is variable
 		// if (buf.length != 14) {
-		//  knxLog.get().error('DPT28: Buffer should be 14 byte long, got', buf.length)
+		//  knxLog.get().get().error('DPT28: Buffer should be 14 byte long, got', buf.length)
 		//  return null
 		// }
 		if (this.subtypeid === '001') return buf.toString('utf-8')

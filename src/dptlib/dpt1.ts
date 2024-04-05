@@ -3,10 +3,8 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
-
-const log = logger
 
 const custom_truthiness = (value: string | boolean): boolean => {
 	const f = parseFloat(value as string)
@@ -23,7 +21,7 @@ const config: DatapointConfig = {
 
 	fromBuffer: (buf) => {
 		if (buf.length !== 1) {
-			log.warn(
+			Log.get().warn(
 				'DPT1.fromBuffer: buf should be 1 byte (got %d bytes)',
 				buf.length,
 			)

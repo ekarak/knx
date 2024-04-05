@@ -5,10 +5,7 @@
 
 import { hasProp } from '../utils'
 import type { DatapointConfig } from '.'
-
-import KnxLog from '../KnxLog'
-
-const log = KnxLog.get()
+import Log from '../KnxLog'
 
 interface Dpt2Value {
 	priority: boolean | number
@@ -21,7 +18,7 @@ const config: DatapointConfig = {
 	// DPT2 frame description.
 	// Always 8-bit aligned.
 	formatAPDU: (value: Dpt2Value) => {
-		if (!value) return log.error('DPT2: cannot write null value')
+		if (!value) return Log.get().error('DPT2: cannot write null value')
 
 		if (
 			typeof value === 'object' &&
@@ -33,13 +30,16 @@ const config: DatapointConfig = {
 					(value.data as number & 0b00000001),
 			])
 
-		log.error('DPT2: Must supply an value {priority:<bool>, data:<bool>}')
+		Log.get().error(
+			'DPT2: Must supply an value {priority:<bool>, data:<bool>}',
+		)
 		// FIXME: should this return zero buffer when error? Or nothing?
 		return Buffer.from([0])
 	},
 
 	fromBuffer: (buf) => {
-		if (buf.length !== 1) return log.error('Buffer should be 1 byte long')
+		if (buf.length !== 1)
+			return Log.get().error('Buffer should be 1 byte long')
 
 		return {
 			priority: (buf[0] & 0b00000010) >> 1,

@@ -3,10 +3,8 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
-
-const log = logger
 
 //
 // DPT20: 1-byte HVAC
@@ -18,7 +16,7 @@ const config: DatapointConfig = {
 	formatAPDU: (value) => {
 		const apdu_data = Buffer.alloc(1)
 		apdu_data[0] = value
-		log.debug(
+		Log.get().debug(
 			`./knx/src/dpt20.js : input value = ${value}   apdu_data = ${apdu_data}`,
 		)
 		return apdu_data
@@ -26,7 +24,10 @@ const config: DatapointConfig = {
 
 	fromBuffer: (buf) => {
 		if (buf.length !== 1) {
-			log.warn('DPT20: Buffer should be 1 byte long, got', buf.length)
+			Log.get().warn(
+				'DPT20: Buffer should be 1 byte long, got',
+				buf.length,
+			)
 			return null
 		}
 		const ret = buf.readUInt8(0)

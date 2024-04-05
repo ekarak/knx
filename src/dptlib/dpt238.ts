@@ -3,10 +3,8 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { logger } from 'log-driver'
+import Log from '../KnxLog'
 import type { DatapointConfig } from '.'
-
-const log = logger
 
 //
 // DPT238: 1-byte unsigned value
@@ -16,7 +14,7 @@ const config: DatapointConfig = {
 	id: 'DPT238',
 	formatAPDU: (value) => {
 		const apdu_data = Buffer.from([value])
-		log.trace(
+		Log.get().trace(
 			`dpt238.js : input value = ${value}   apdu_data = ${apdu_data}`,
 		)
 		return apdu_data
