@@ -31,7 +31,7 @@ const create = (options: KnxLogOptions): Logger => {
 
 const KnxLog: KnxLogger = {
 	get: (options: KnxLogOptions): Logger => {
-		if (!logger) logger = create(options)
+		if (!logger || options) logger = create(options)
 		return logger
 	},
 }
