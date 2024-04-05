@@ -3,7 +3,7 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import { DatapointConfig } from '.'
+import type { DatapointConfig } from '.'
 
 //
 // DPT29: 8-byte signed value
