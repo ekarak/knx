@@ -77,3 +77,5 @@ const config: DatapointConfig = {
 		},
 	},
 }
+
+export default config

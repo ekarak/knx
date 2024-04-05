@@ -56,9 +56,21 @@ import DPT18 from './dpt18'
 import DPT19 from './dpt19'
 import DPT20 from './dpt20'
 import DPT21 from './dpt21'
+import DPT22 from './dpt22'
+import DPT28 from './dpt28'
+import DPT29 from './dpt29'
+import DPT213 from './dpt213'
 import DPT232 from './dpt232'
+import DPT235 from './dpt235'
 import DPT237 from './dpt237'
 import DPT238 from './dpt238'
+import DPT242 from './dpt242'
+import DPT249 from './dpt249'
+import DPT251 from './dpt251'
+import DPT275 from './dpt275'
+import DPT999 from './dpt999'
+import DPT6001 from './dpt60001'
+
 import type { Datagram } from '../KnxClient'
 import { hasProp } from '../utils'
 
@@ -111,9 +123,20 @@ const dpts: Record<string, DatapointConfig> = {
 	[DPT19.id]: DPT19,
 	[DPT20.id]: DPT20,
 	[DPT21.id]: DPT21,
+	[DPT22.id]: DPT22,
+	[DPT28.id]: DPT28,
+	[DPT29.id]: DPT29,
+	[DPT213.id]: DPT213,
 	[DPT232.id]: DPT232,
+	[DPT235.id]: DPT235,
 	[DPT237.id]: DPT237,
 	[DPT238.id]: DPT238,
+	[DPT242.id]: DPT242,
+	[DPT249.id]: DPT249,
+	[DPT251.id]: DPT251,
+	[DPT275.id]: DPT275,
+	[DPT999.id]: DPT999,
+	[DPT6001.id]: DPT6001,
 }
 
 export function resolve(dptid: string | number): DatapointConfig {
