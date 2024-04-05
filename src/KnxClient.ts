@@ -13,6 +13,10 @@ import { Logger, LogLevel } from 'log-driver'
 import { hasProp } from './utils'
 import KnxFSM from './FSM'
 
+// do not use import here or package.json would be loaded twice
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const pkgJson = require('../package.json')
+
 type KnxDeviceAddress = string
 
 type KnxGroupAddress = string
@@ -173,8 +177,17 @@ export class KnxClient extends KnxFSM {
 	constructor(options: KnxOptions) {
 		super()
 
-		this.options = options || {}
 		this.log = KnxLog.get(options)
+		this.log.info(
+			util.format(
+				'Loading %s: %s, version: %s',
+				pkgJson.name,
+				pkgJson.description,
+				pkgJson.version,
+			),
+		)
+
+		this.options = options || {}
 		this.localAddress = null
 		this.ThreeLevelGroupAddressing = true
 		this.reconnection_cycles = 0
