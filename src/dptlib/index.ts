@@ -62,8 +62,6 @@ import DPT238 from './dpt238'
 import type { Datagram } from '../KnxClient'
 import { hasProp } from '../utils'
 
-const log = KnxLog.get()
-
 interface DatapointSubtype {
 	scalar_range?: [number, number]
 	name: string
@@ -166,7 +164,7 @@ export function populateAPDU(
 	if (hasProp(dpt, 'subtype') && hasProp(dpt.subtype, 'scalar_range')) {
 		const [s_min, s_max] = dpt.subtype.scalar_range
 		if (value < s_min || value > s_max) {
-			log.trace(
+			KnxLog.get().trace(
 				'Value %j(%s) out of scalar range(%j) for %s',
 				value,
 				typeof value,
@@ -179,7 +177,7 @@ export function populateAPDU(
 			tgtvalue = Math.round((value - b) / a)
 		}
 	} else if (value < r_min || value > r_max) {
-		log.trace(
+		KnxLog.get().trace(
 			'Value %j(%s) out of bounds(%j) for %s.%s',
 			value,
 			typeof value,

@@ -1,15 +1,12 @@
 import * as util from 'util'
 import * as dgram from 'dgram'
-import KnxLog from './KnxLog'
 import type { KnxClient } from './KnxClient'
 
 function IpRoutingConnection(instance: KnxClient): KnxClient {
-	const log = KnxLog.get()
-
 	instance.BindSocket = function (cb) {
 		const udpSocket = dgram.createSocket({ type: 'udp4', reuseAddr: true })
 		udpSocket.on('listening', () => {
-			log.debug(
+			this.log.debug(
 				util.format(
 					'IpRoutingConnection %s:%d, adding membership for %s',
 					instance.localAddress,
@@ -23,7 +20,7 @@ function IpRoutingConnection(instance: KnxClient): KnxClient {
 					instance.localAddress,
 				)
 			} catch (err) {
-				log.warn(
+				this.log.warn(
 					'IPRouting connection: cannot add membership (%s)',
 					err,
 				)
@@ -43,7 +40,7 @@ function IpRoutingConnection(instance: KnxClient): KnxClient {
 		this.localAddress = this.getLocalAddress()
 		this.socket = this.BindSocket((socket: dgram.Socket) => {
 			socket.on('error', (errmsg: string) =>
-				log.debug(util.format('Socket error: %j', errmsg)),
+				this.log.debug(util.format('Socket error: %j', errmsg)),
 			)
 			socket.on(
 				'message',
@@ -52,7 +49,7 @@ function IpRoutingConnection(instance: KnxClient): KnxClient {
 					rinfo: dgram.RemoteInfo,
 					callback: () => void,
 				) => {
-					log.debug(
+					this.log.debug(
 						`Inbound multicast message from ${
 							rinfo.address
 						}: ${msg.toString('hex')}`,

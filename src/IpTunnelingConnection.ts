@@ -1,14 +1,11 @@
 import dgram from 'dgram'
-import KnxLog from './KnxLog'
 import type { KnxClient } from './KnxClient'
 
 function IpTunnelingConnection(instance: KnxClient) {
-	const log = KnxLog.get()
-
 	instance.BindSocket = function (cb) {
 		const udpSocket = dgram.createSocket('udp4')
 		udpSocket.bind(() => {
-			log.debug(
+			this.log.debug(
 				'IpTunnelingConnection.BindSocket %s:%d',
 				instance.localAddress,
 				udpSocket.address().port,
@@ -23,7 +20,7 @@ function IpTunnelingConnection(instance: KnxClient) {
 		// create the socket
 		this.socket = this.BindSocket((socket: dgram.Socket) => {
 			socket.on('error', (errmsg: string) =>
-				log.debug('Socket error: %j', errmsg),
+				this.log.debug('Socket error: %j', errmsg),
 			)
 			socket.on(
 				'message',
@@ -32,7 +29,7 @@ function IpTunnelingConnection(instance: KnxClient) {
 					rinfo: dgram.RemoteInfo,
 					callback: () => void,
 				) => {
-					log.debug('Inbound message: %s', msg.toString('hex'))
+					this.log.debug('Inbound message: %s', msg.toString('hex'))
 					this.onUdpSocketMessage(msg, rinfo, callback)
 				},
 			)

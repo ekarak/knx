@@ -118,8 +118,6 @@ export interface Datagram {
 export class KnxClient extends KnxFSM {
 	protected options: KnxOptions
 
-	protected log: Logger
-
 	protected ThreeLevelGroupAddressing: boolean
 
 	protected reconnection_cycles: number
@@ -155,6 +153,8 @@ export class KnxClient extends KnxFSM {
 	protected usingMulticastTunneling: boolean
 
 	protected minimumDelay: number
+
+	public log: Logger
 
 	public remoteEndpoint: {
 		addrstring: string
