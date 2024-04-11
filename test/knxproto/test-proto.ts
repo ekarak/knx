@@ -3,10 +3,10 @@
  * (C) 2016-2018 Elias Karakoulakis
  */
 
-import KnxNetProtocol from '../../src/KnxProtocol'
+import knxProto from '../../src/KnxProtocol'
 import test from 'tape'
 
-KnxNetProtocol.debug = true
+knxProto.debug = true
 
 //
 test('KNX protocol unmarshaller', function (t) {
@@ -19,10 +19,7 @@ test('KNX protocol unmarshaller', function (t) {
 	Object.keys(tests).forEach((key, idx) => {
 		const buf = tests[key]
 		// unmarshal from a buffer...
-		const reader = KnxNetProtocol.createReader(buf)
-		const writer = KnxNetProtocol.createWriter()
-		reader.KNXNetHeader('tmp')
-		const decoded = reader.next()['tmp']
+		const decoded = knxProto.parseDatagram(buf)
 		console.log('\n=== %s: %j ===> %j', key, buf, decoded)
 		t.ok(decoded !== undefined, `${key}: unmarshaled KNX datagram`)
 	})
@@ -66,10 +63,8 @@ test('KNX protocol marshal+unmarshal', function (t) {
 	Object.keys(tests).forEach((key, idx) => {
 		const buf = tests[key]
 		// unmarshal from a buffer...
-		const reader = KnxNetProtocol.createReader(buf)
-		const writer = KnxNetProtocol.createWriter()
-		reader.KNXNetHeader('tmp')
-		const decoded = reader.next()['tmp']
+		const writer = knxProto.createWriter()
+		const decoded = knxProto.parseDatagram(buf)
 		console.log('\n=== %s: %j ===> %j', key, buf, decoded)
 		t.ok(decoded !== undefined, `${key}: unmarshaled KNX datagram`)
 		// then marshal the datagram again into a buffer...
@@ -260,13 +255,11 @@ test('KNX protocol marshaller', function (t) {
 				: testcase.hexbuf
 		console.log('\n=== %s', key)
 		// marshal the test datagram
-		const writer = KnxNetProtocol.createWriter()
+		const writer = knxProto.createWriter()
 		writer.KNXNetHeader(testcase.dgram)
 		if (Buffer.compare(buf, writer.buffer) !== 0) {
 			// if this fails, unmarshal the buffer again to a datagram
-			const reader = KnxNetProtocol.createReader(writer.buffer)
-			reader.KNXNetHeader('tmp')
-			const decoded = reader.next()['tmp']
+			const decoded = knxProto.parseDatagram(writer.buffer)
 			console.log(
 				'\n\n========\n  FAIL: %s\n========\nbuffer is different:\n',
 				key,
@@ -276,6 +269,7 @@ test('KNX protocol marshaller', function (t) {
 			)
 			console.log('expected   : %s', buf.toString('hex'))
 			console.log('got instead: %s', writer.buffer.toString('hex'))
+			console.log('decoded    : %j', decoded)
 		}
 		t.ok(Buffer.compare(buf, writer.buffer) === 0)
 	})

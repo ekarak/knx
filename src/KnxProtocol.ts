@@ -12,25 +12,34 @@ import { APCICODES, keyText, KnxConstants } from './KnxConstants'
 import KnxLog from './KnxLog'
 import type { Datagram } from './KnxClient'
 
-export interface KnxProtocolI extends BinaryProtocol {
+export class KnxProtocol extends BinaryProtocol {
 	lengths: { [key: string]: (value: any) => number }
+
 	twoLevelAddressing: boolean
+
 	debug: boolean
+
 	apduStruct: Parser
+
+	parseDatagram(buffer: Buffer): Datagram {
+		const reader = this.createReader(buffer)
+		reader.KNXNetHeader('knxnet')
+		return reader.next().knxnet
+	}
 }
 
-const KnxProtocol: KnxProtocolI = new BinaryProtocol() as KnxProtocolI
+const proto = new KnxProtocol()
 // defaults
-KnxProtocol.twoLevelAddressing = false
-KnxProtocol.lengths = {} // TODO: Can this be a local variable, do we need to expose it?
+proto.twoLevelAddressing = false
+proto.lengths = {} // TODO: Can this be a local variable, do we need to expose it?
 
 // helper function: what is the byte length of an object?
 const knxlen = (objectName: string, context: any) => {
-	const lf = KnxProtocol.lengths[objectName]
+	const lf = proto.lengths[objectName]
 	return typeof lf === 'function' ? lf(context) : lf
 }
 
-KnxProtocol.define('IPv4Endpoint', {
+proto.define('IPv4Endpoint', {
 	read(propertyName: string) {
 		this.pushStack({ addr: null, port: null })
 			.raw('addr', 4)
@@ -57,7 +66,7 @@ KnxProtocol.define('IPv4Endpoint', {
 	},
 })
 
-KnxProtocol.lengths['IPv4Endpoint'] = (value: string) => (value ? 6 : 0)
+proto.lengths['IPv4Endpoint'] = (value: string) => (value ? 6 : 0)
 
 /* CRI: connection request/response */
 // creq[22] = 0x04;  /* structure len (4 bytes) */
@@ -65,7 +74,7 @@ KnxProtocol.lengths['IPv4Endpoint'] = (value: string) => (value ? 6 : 0)
 // creq[24] = 0x02;  /* KNX Layer (Tunnel Link Layer) */
 // creq[25] = 0x00;  /* Reserved */
 // ==> 4 bytes
-KnxProtocol.define('CRI', {
+proto.define('CRI', {
 	read(propertyName: string) {
 		this.pushStack({
 			header_length: 0,
@@ -89,8 +98,8 @@ KnxProtocol.define('CRI', {
 						)
 				}
 			})
-			.popStack(propertyName, (data) => {
-				if (KnxProtocol.debug)
+			.popStack(propertyName, (data: Datagram['cri']) => {
+				if (proto.debug)
 					KnxLog.get().debug(`read CRI: ${JSON.stringify(data)}`)
 				// pop the interim value off the stack and insert the real value into `propertyName`
 				return data
@@ -105,17 +114,16 @@ KnxProtocol.define('CRI', {
 			.UInt8(value.unused)
 	},
 })
-KnxProtocol.lengths['CRI'] = (value: Datagram['cri']) => (value ? 4 : 0)
+proto.lengths['CRI'] = (value: Datagram['cri']) => (value ? 4 : 0)
 
 // connection state response/request
-KnxProtocol.define('ConnState', {
+proto.define('ConnState', {
 	read(propertyName: string) {
 		this.pushStack({ channel_id: null, status: null })
 			.UInt8('channel_id')
 			.UInt8('status')
 			.popStack(propertyName, (data: any) => {
-				if (KnxProtocol.debug)
-					KnxLog.get().trace('read ConnState: %j', data)
+				if (proto.debug) KnxLog.get().trace('read ConnState: %j', data)
 				return data
 			})
 	},
@@ -125,11 +133,10 @@ KnxProtocol.define('ConnState', {
 		this.UInt8(value.channel_id).UInt8(value.status)
 	},
 })
-KnxProtocol.lengths['ConnState'] = (value: Datagram['connstate']) =>
-	value ? 2 : 0
+proto.lengths['ConnState'] = (value: Datagram['connstate']) => (value ? 2 : 0)
 
 // connection state response/request
-KnxProtocol.define('TunnState', {
+proto.define('TunnState', {
 	read(propertyName: string) {
 		this.pushStack({
 			header_length: null,
@@ -142,7 +149,7 @@ KnxProtocol.define('TunnState', {
 			.UInt8('seqnum')
 			.UInt8('rsvd')
 			.tap((hdr: any) => {
-				if (KnxProtocol.debug)
+				if (proto.debug)
 					KnxLog.get().trace('reading TunnState: %j', hdr)
 				switch (hdr.status) {
 					case 0x00:
@@ -157,16 +164,14 @@ KnxProtocol.define('TunnState', {
 			return KnxLog.get().error(
 				'TunnState: cannot write null value for TunnState',
 			)
-		if (KnxProtocol.debug)
-			KnxLog.get().trace('writing TunnState: %j', value)
+		if (proto.debug) KnxLog.get().trace('writing TunnState: %j', value)
 		this.UInt8(0x04)
 			.UInt8(value.channel_id)
 			.UInt8(value.seqnum)
 			.UInt8(value.rsvd)
 	},
 })
-KnxProtocol.lengths['TunnState'] = (value: Datagram['tunnstate']) =>
-	value ? 4 : 0
+proto.lengths['TunnState'] = (value: Datagram['tunnstate']) => (value ? 4 : 0)
 
 /* Connection HPAI */
 //   creq[6]     =  /* Host Protocol Address Information (HPAI) Lenght */
@@ -181,7 +186,7 @@ KnxProtocol.lengths['TunnState'] = (value: Datagram['tunnstate']) =>
 //   creq[16-19] =  /* IPv4 address  */
 //   creq[20-21] =  /* IPv4 local port number for TUNNELING requests */
 // ==> 8 bytes
-KnxProtocol.define('HPAI', {
+proto.define('HPAI', {
 	read(propertyName: string) {
 		this.pushStack({
 			header_length: 8,
@@ -193,7 +198,7 @@ KnxProtocol.define('HPAI', {
 			.IPv4Endpoint('tunnel_endpoint')
 			.tap(function (hdr: Datagram['hpai']) {
 				if (this.buffer.length < hdr.header_length) {
-					if (KnxProtocol.debug)
+					if (proto.debug)
 						KnxLog.get().trace(
 							'%d %d %d',
 							this.buffer.length,
@@ -202,7 +207,7 @@ KnxProtocol.define('HPAI', {
 						)
 					throw Error('Incomplete KNXNet HPAI header')
 				}
-				if (KnxProtocol.debug) {
+				if (proto.debug) {
 					KnxLog.get().trace(
 						'read HPAI: %j, proto = %s',
 						hdr,
@@ -226,7 +231,7 @@ KnxProtocol.define('HPAI', {
 			.IPv4Endpoint(value.tunnel_endpoint)
 	},
 })
-KnxProtocol.lengths['HPAI'] = (value: Datagram['hpai']) => {
+proto.lengths['HPAI'] = (value: Datagram['hpai']) => {
 	return value ? 8 : 0
 }
 
@@ -379,9 +384,9 @@ const ctrlStruct = new Parser()
 	.bit4('extendedFrame')
 
 // APDU: 2 bytes, tcpi = 6 bits, apci = 4 bits, remaining 6 bits = data (when length=1)
-KnxProtocol.apduStruct = new Parser().bit6('tpci').bit4('apci').bit6('data')
+proto.apduStruct = new Parser().bit6('tpci').bit4('apci').bit6('data')
 
-KnxProtocol.define('APDU', {
+proto.define('APDU', {
 	read(propertyName: string) {
 		this.pushStack({
 			apdu_length: null,
@@ -398,7 +403,7 @@ KnxProtocol.define('APDU', {
 			.tap((hdr: Datagram['cemi']['apdu']) => {
 				// Parse the APDU. tcpi/apci bits split across byte boundary.
 				// Typical example of protocol designed by committee.
-				const apdu = KnxProtocol.apduStruct.parse(hdr.apdu_raw)
+				const apdu = proto.apduStruct.parse(hdr.apdu_raw)
 				hdr.tpci = apdu.tpci
 				hdr.apci = APCICODES[apdu.apci]
 				// APDU data should ALWAYS be a buffer, even for 1-bit payloads
@@ -406,7 +411,7 @@ KnxProtocol.define('APDU', {
 					hdr.apdu_length > 1
 						? hdr.apdu_raw.slice(2)
 						: Buffer.from([apdu.data])
-				if (KnxProtocol.debug)
+				if (proto.debug)
 					KnxLog.get().trace(' unmarshalled APDU: %j', hdr)
 			})
 			.popStack(propertyName, (data) => data)
@@ -448,7 +453,7 @@ KnxProtocol.define('APDU', {
 
 /* APDU length is truly chaotic: header and data can be interleaved (but
 not always!), so that apdu_length=1 means _2_ bytes following the apdu_length */
-KnxProtocol.lengths['APDU'] = (value) => {
+proto.lengths['APDU'] = (value) => {
 	if (!value) return 0
 	// if we have the APDU bitlength, usually by the DPT, then simply use it
 	if (value.bitlength || (value.data && value.data.bitlength)) {
@@ -490,7 +495,7 @@ KnxProtocol.lengths['APDU'] = (value) => {
 	)
 }
 
-KnxProtocol.define('CEMI', {
+proto.define('CEMI', {
 	read(propertyName: string) {
 		this.pushStack({
 			msgcode: 0,
@@ -527,7 +532,7 @@ KnxProtocol.define('CEMI', {
 					case KnxConstants.MESSAGECODES['L_Data.ind']:
 					case KnxConstants.MESSAGECODES['L_Data.con']: {
 						this.APDU('apdu')
-						if (KnxProtocol.debug)
+						if (proto.debug)
 							KnxLog.get().trace(
 								'--- unmarshalled APDU ==> %j',
 								hdr.apdu,
@@ -539,7 +544,7 @@ KnxProtocol.define('CEMI', {
 	},
 	write(value: Datagram['cemi']) {
 		if (!value) throw Error('cannot write null CEMI value')
-		if (KnxProtocol.debug) KnxLog.get().trace('CEMI.write: \n\t%j', value)
+		if (proto.debug) KnxLog.get().trace('CEMI.write: \n\t%j', value)
 		if (value.ctrl === null) throw Error('no Control Field supplied')
 		const ctrlField1 =
 			value.ctrl.frameType * 0x80 +
@@ -557,8 +562,8 @@ KnxProtocol.define('CEMI', {
 			.UInt8(value.addinfo_length)
 			.UInt8(ctrlField1)
 			.UInt8(ctrlField2)
-			.raw(KnxAddress.parse(value.src_addr, KnxAddress.TYPE.PHYSICAL), 2)
-			.raw(KnxAddress.parse(value.dest_addr, value.ctrl.destAddrType), 2)
+			.raw(KnxAddress.parse(value.src_addr, KnxAddress.TYPE.PHYSICAL))
+			.raw(KnxAddress.parse(value.dest_addr, value.ctrl.destAddrType))
 		// only need to marshal an APDU if this is a
 		// L_Data.* (requet/indication/confirmation)
 		switch (value.msgcode) {
@@ -572,15 +577,15 @@ KnxProtocol.define('CEMI', {
 	},
 })
 
-KnxProtocol.lengths['CEMI'] = (value: Datagram['cemi']) => {
+proto.lengths['CEMI'] = (value: Datagram['cemi']) => {
 	if (!value) return 0
 	const apdu_length = knxlen('APDU', value.apdu)
-	if (KnxProtocol.debug)
+	if (proto.debug)
 		KnxLog.get().trace('knxlen of cemi: %j == %d', value, 8 + apdu_length)
 	return 8 + apdu_length
 }
 
-KnxProtocol.define('KNXNetHeader', {
+proto.define('KNXNetHeader', {
 	read(propertyName: string) {
 		this.pushStack({
 			header_length: 0,
@@ -593,7 +598,7 @@ KnxProtocol.define('KNXNetHeader', {
 			.UInt16BE('service_type')
 			.UInt16BE('total_length')
 			.tap(function (hdr: Datagram) {
-				if (KnxProtocol.debug)
+				if (proto.debug)
 					KnxLog.get().trace('read KNXNetHeader :%j', hdr)
 				if (this.buffer.length + hdr.header_length < this.total_length)
 					throw Error(
@@ -643,7 +648,7 @@ KnxProtocol.define('KNXNetHeader', {
 				}
 			})
 			.popStack(propertyName, (data) => {
-				if (KnxProtocol.debug)
+				if (proto.debug)
 					KnxLog.get().trace(JSON.stringify(data, null, 4))
 				return data
 			})
@@ -651,7 +656,7 @@ KnxProtocol.define('KNXNetHeader', {
 	write(value: Datagram) {
 		if (!value) throw Error('cannot write null KNXNetHeader value')
 		value.total_length = knxlen('KNXNetHeader', value)
-		if (KnxProtocol.debug) KnxLog.get().trace('writing KnxHeader:', value)
+		if (proto.debug) KnxLog.get().trace('writing KnxHeader:', value)
 		this.UInt8(6) // header length (6 bytes constant)
 			.UInt8(0x10) // protocol version 1.0
 			.UInt16BE(value.service_type)
@@ -694,7 +699,7 @@ KnxProtocol.define('KNXNetHeader', {
 		}
 	},
 })
-KnxProtocol.lengths['KNXNetHeader'] = (value: Datagram) => {
+proto.lengths['KNXNetHeader'] = (value: Datagram) => {
 	if (!value) throw Error('Must supply a valid KNXNetHeader value')
 	switch (value.service_type) {
 		// case SERVICE_TYPE.SEARCH_REQUEST:
@@ -727,4 +732,4 @@ KnxProtocol.lengths['KNXNetHeader'] = (value: Datagram) => {
 	}
 }
 
-export default KnxProtocol
+export default proto

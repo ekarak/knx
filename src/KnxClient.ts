@@ -5,7 +5,7 @@ import { keyText, KnxConstants } from './KnxConstants'
 import IpRoutingConnection from './IpRoutingConnection'
 import IpTunnelingConnection from './IpTunnelingConnection'
 import KnxLog, { KnxLogOptions } from './KnxLog'
-import KnxNetProtocol from './KnxProtocol'
+import knxProto from './KnxProtocol'
 import { Writer } from 'binary-protocol'
 import { Socket } from 'dgram'
 import { populateAPDU } from './dptlib'
@@ -335,9 +335,7 @@ export class KnxClient extends KnxFSM {
 	onUdpSocketMessage(msg: Buffer, rinfo: any, callback: () => void): void {
 		// get the incoming packet's service type ...
 		try {
-			const reader = KnxNetProtocol.createReader(msg)
-			reader.KNXNetHeader('tmp')
-			const dg = reader.next()['tmp'] as Datagram
+			const dg = knxProto.parseDatagram(msg)
 			const descr = datagramDesc(dg)
 			KnxLog.get().trace(
 				'(%s): Received %s message: %j',
@@ -498,7 +496,7 @@ export class KnxClient extends KnxFSM {
 	send(datagram: Datagram, callback?: (err?: Error) => void): void {
 		let cemitype: string // TODO: set, but unused
 		try {
-			this.writer = KnxNetProtocol.createWriter()
+			this.writer = knxProto.createWriter()
 			switch (datagram.service_type) {
 				case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
 				case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
