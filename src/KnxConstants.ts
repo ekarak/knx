@@ -104,6 +104,8 @@ export const KnxConstants = {
 	FRAMETYPE,
 	RESPONSECODE,
 	MESSAGECODES,
+	HEADER_SIZE_10: 0x6,
+	KNXNETIP_VERSION_10: 0x10,
 }
 
 /* TODO helper function to print enum keys */

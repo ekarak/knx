@@ -657,12 +657,11 @@ proto.define('KNXNetHeader', {
 		if (!value) throw Error('cannot write null KNXNetHeader value')
 		value.total_length = knxlen('KNXNetHeader', value)
 		if (proto.debug) KnxLog.get().trace('writing KnxHeader:', value)
-		this.UInt8(6) // header length (6 bytes constant)
-			.UInt8(0x10) // protocol version 1.0
+		this.UInt8(KnxConstants.HEADER_SIZE_10) // header length (6 bytes constant)
+			.UInt8(KnxConstants.KNXNETIP_VERSION_10) // protocol version 1.0
 			.UInt16BE(value.service_type)
 			.UInt16BE(value.total_length)
 		switch (value.service_type) {
-			// case SERVICE_TYPE.SEARCH_REQUEST:
 			case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST: {
 				if (value.hpai) this.HPAI(value.hpai)
 				if (value.tunn) this.HPAI(value.tunn)
@@ -705,7 +704,7 @@ proto.lengths['KNXNetHeader'] = (value: Datagram) => {
 		// case SERVICE_TYPE.SEARCH_REQUEST:
 		case KnxConstants.SERVICE_TYPE.CONNECT_REQUEST:
 			return (
-				6 +
+				KnxConstants.HEADER_SIZE_10 +
 				knxlen('HPAI', value.hpai) +
 				knxlen('HPAI', value.tunn) +
 				knxlen('CRI', value.cri)
@@ -715,7 +714,7 @@ proto.lengths['KNXNetHeader'] = (value: Datagram) => {
 		case KnxConstants.SERVICE_TYPE.CONNECTIONSTATE_RESPONSE:
 		case KnxConstants.SERVICE_TYPE.DISCONNECT_REQUEST:
 			return (
-				6 +
+				KnxConstants.HEADER_SIZE_10 +
 				knxlen('ConnState', value.connstate) +
 				knxlen('HPAI', value.hpai) +
 				knxlen('CRI', value.cri)
@@ -723,12 +722,12 @@ proto.lengths['KNXNetHeader'] = (value: Datagram) => {
 		case KnxConstants.SERVICE_TYPE.TUNNELING_ACK:
 		case KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST:
 			return (
-				6 +
+				KnxConstants.HEADER_SIZE_10 +
 				knxlen('TunnState', value.tunnstate) +
 				knxlen('CEMI', value.cemi)
 			)
 		case KnxConstants.SERVICE_TYPE.ROUTING_INDICATION:
-			return 6 + knxlen('CEMI', value.cemi)
+			return KnxConstants.HEADER_SIZE_10 + knxlen('CEMI', value.cemi)
 	}
 }
 
