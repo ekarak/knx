@@ -22,8 +22,8 @@ Make sure your machine has Node.JS (version 4.x or greater) and do:
 At last, here's a **reliable** KNX connection that simply works without any configs. To get a basic KNX monitor, you just need to run this in Node:
 
 ```js
-var knx = require('knx');
-var connection = knx.Connection({
+var { KnxClient } = require('knx');
+var connection = new KnxClient({
  handlers: {
   connected: function() {
     console.log('Connected!');
@@ -49,8 +49,8 @@ Ahhh, KNX telegrams, what a joy:
 
 ## Development documentation
 
-- [Basic API usage](../master/README-API.md)
-- [List of supported datapoints](../master/README-datapoints.md)
-- [List of supported events](../master/README-events.md)
-- [eibd/knxd compatibility](../master/README-knxd.md)
-- [On resilience](../master/README-resilience.md)
+* [Basic API usage](../master/README-API.md)
+* [List of supported datapoints](../master/README-datapoints.md)
+* [List of supported events](../master/README-events.md)
+* [eibd/knxd compatibility](../master/README-knxd.md)
+* [On resilience](../master/README-resilience.md)
