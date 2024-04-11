@@ -52,7 +52,7 @@ KnxProtocol.define('IPv4Endpoint', {
 			)
 
 		const [addr, port] = value.split(':')
-		this.raw(Buffer.from(ipaddr.parse(addr).toByteArray()), 4)
+		this.raw(Buffer.from(ipaddr.parse(addr).toByteArray()))
 		this.UInt16BE(port)
 	},
 })

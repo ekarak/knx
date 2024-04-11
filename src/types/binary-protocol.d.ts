@@ -2,8 +2,8 @@ import { Duplex } from 'stream'
 
 declare module 'binary-protocol' {
 	interface ProtocolConfig {
-		read(propertyName: string): void
-		write(value: any): void
+		read(this: Reader, propertyName: string): void
+		write(this: Writer, value: any): void
 	}
 
 	interface Reader {
@@ -20,7 +20,7 @@ declare module 'binary-protocol' {
 		end(fn: () => void): this
 		finally(fn: () => void): this
 		reset(): this
-		raw(property: string, fn: (value: any) => void): this
+		raw(property: string, length: number): this
 		next(chunk?: any): any
 		process(): any
 		createLooper(property: string, fn: (value: any) => void): this
