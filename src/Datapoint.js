@@ -113,9 +113,9 @@ class Datapoint extends EventEmitter {
    */
   read(callback) {
     if (!this.conn) throw 'must supply a valid KNX connection to bind to';
-    this.conn.read(this.options.ga, (src, buf) => {
-      const jsvalue = DPTLib.fromBuffer(buf, this.dpt);
-      if (typeof callback == 'function') callback(src, jsvalue);
+    this.conn.read(this.options, (err, src, buf) => {
+      const jsvalue = err ? null : DPTLib.fromBuffer(buf, this.dpt);
+      if (typeof callback == 'function') callback(err, src, jsvalue);
     });
   }
 

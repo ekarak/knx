@@ -248,21 +248,28 @@ FSM.prototype.writeRaw = function(grpaddr, value, bitlength, callback) {
 
 // send a READ request to the bus
 // you can pass a callback function which gets bound to the RESPONSE datagram event
-FSM.prototype.read = function(grpaddr, callback) {
+FSM.prototype.read = function(options, callback) {
+  const { ga: grpaddr, readReqTimeout } = options;
   if (typeof callback == 'function') {
     // when the response arrives:
     const responseEvent = 'GroupValue_Response_' + grpaddr;
     KnxLog.get().trace('Binding connection to ' + responseEvent);
-    const binding = (src, data) => {
+    const binding = (err, src, data) => {
         // unbind the event handler
         this.off(responseEvent, binding);
         // fire the callback
-        callback(src, data);
+        callback(err, src, data);
       }
       // prepare for the response
     this.on(responseEvent, binding);
-    // clean up after 3 seconds just in case no one answers the read request
-    setTimeout( () => this.off(responseEvent, binding), 3000);
+    // per default clean up after 3 seconds just in case no one answers the read request
+    // you can customize this by passing a readReqTimeout in the options object
+    setTimeout(() => {
+      const msg = 'Read request timed out';
+      const err = new Error(msg);
+      KnxLog.get().warn(msg);
+      binding(err, null, null);
+    }, readReqTimeout | 3000);
   }
   const serviceType = this.useTunneling ?
     KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
