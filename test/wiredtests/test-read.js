@@ -27,7 +27,13 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
             ga: options.dpt9_temperature_status_ga,
             dpt: 'DPT9.001'
           }, connection);
-          temperature_in.read(function(src, response) {
+          temperature_in.read(function(err, src, response) {
+            if(err) {
+              console.log("%s **** ERROR: %j",
+                new Date().toISOString().replace(/T/, ' ').replace(/Z$/, ''),
+                err);
+              process.exit(1);
+            }
             console.log("KNX response from %s: %j", src, response);
             t.pass(util.format('read temperature:  %s', response));
             t.end();
