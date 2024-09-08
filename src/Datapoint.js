@@ -43,12 +43,12 @@ class Datapoint extends EventEmitter {
         case 'GroupValue_Response':
           if (buf) {
             const jsvalue = DPTLib.fromBuffer(buf, this.dpt);
-            this.emit('event', evt, jsvalue);
-            this.update(jsvalue); // update internal state
+            this.emit('event', evt, jsvalue, src);
+            this.update(jsvalue, src); // update internal state
           }
           break;
         default:
-          this.emit('event', evt);
+          this.emit('event', evt, src);
         // TODO: add default handler; maybe emit warning?
       }
     });
@@ -65,11 +65,11 @@ class Datapoint extends EventEmitter {
       }
   }
 
-  update(jsvalue) {
+  update(jsvalue, src) {
     const old_value = this.current_value;
     if (old_value === jsvalue) return;
 
-    this.emit('change', this.current_value, jsvalue, this.options.ga);
+    this.emit('change', this.current_value, jsvalue, this.options.ga, src);
     this.current_value = jsvalue; // TODO: This should probably change before the event is emitted
     const ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''); // TODO: Why are we timestamping, the logger formatter already timestamps.
     KnxLog.get().trace(
