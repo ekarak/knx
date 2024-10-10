@@ -16,9 +16,9 @@ connection.on('GroupValue_Response', function (src, dest, value) { ... });
 
 // Specific group address event: device with 'src' physical address
 // .. wrote to group address
-connection.on('GroupValue_Write_1/2/3', function (src, value) { ... });
+connection.on('GroupValue_Write_1/2/3', function (err, src, value) { ... });
 // .. or responded about current value
-connection.on('GroupValue_Response_1/2/3', function (src, value) { ... });
+connection.on('GroupValue_Response_1/2/3', function (err, src, value) { ... });
 
 // there's also the generic catch-all event which passes the event type
 // as its 1st argument, along with all the other info

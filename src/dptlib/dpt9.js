@@ -139,6 +139,14 @@ exports.subtypes = {
     range: [0, 670760],
   },
 
+  // 9.009 cubic meter/hour (m³/h)
+  '009': {
+    name: 'DPT_Value_AirFlow',
+    desc: 'air flow',
+    unit: 'm³/h',
+    range: [-670760, 670760],
+  },
+
   // 9.010 time (s)
   '010': {
     name: 'DPT_Value_Time1',

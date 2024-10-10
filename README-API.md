@@ -33,7 +33,7 @@ var connection = new knx.Connection( {
       // you also WRITE to an explicit datapoint type, eg. DPT9.001 is temperature Celcius
       connection.write("2/1/0", 22.5, "DPT9.001");
       // you can also issue a READ request and pass a callback to capture the response
-      connection.read("1/0/1", (src, responsevalue) => { ... });
+      connection.read("1/0/1", (err, src, responsevalue) => { ... });
     },
     // get notified for all KNX events:
     event: function(evt, src, dest, value) { console.log(

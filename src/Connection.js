@@ -1,7 +1,7 @@
 /**
-* knx.js - a KNX protocol stack in pure Javascript
-* (C) 2016-2018 Elias Karakoulakis
-*/
+ * knx.js - a KNX protocol stack in pure Javascript
+ * (C) 2016-2018 Elias Karakoulakis
+ */
 
 const util = require('util');
 
@@ -12,7 +12,7 @@ const KnxConstants = require('./KnxConstants');
 const KnxNetProtocol = require('./KnxProtocol');
 
 // bind incoming UDP packet handler
-FSM.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
+FSM.prototype.onUdpSocketMessage = function (msg, rinfo, callback) {
   // get the incoming packet's service type ...
   try {
     const reader = KnxNetProtocol.createReader(msg);
@@ -36,21 +36,21 @@ FSM.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
       }
       this.handle(signal, dg);
     }
-  } catch(err) {
+  } catch (err) {
     KnxLog.get().debug('(%s): Incomplete/unparseable UDP packet: %s: %s',
-      this.compositeState(),err, msg.toString('hex')
+      this.compositeState(), err, msg.toString('hex')
     );
   }
 };
 
-FSM.prototype.AddConnState = function(datagram) {
+FSM.prototype.AddConnState = function (datagram) {
   datagram.connstate = {
     channel_id: this.channel_id,
     state: 0
   }
 }
 
-FSM.prototype.AddTunnState = function(datagram) {
+FSM.prototype.AddTunnState = function (datagram) {
   // add the remote IP router's endpoint
   datagram.tunnstate = {
     channel_id: this.channel_id,
@@ -67,7 +67,7 @@ const AddCRI = (datagram) => {
   }
 }
 
-FSM.prototype.AddCEMI = function(datagram, msgcode) {
+FSM.prototype.AddCEMI = function (datagram, msgcode) {
   const sendAck = ((msgcode || 0x11) == 0x11) && !this.options.suppress_ack_ldatareq; // only for L_Data.req
   datagram.cemi = {
     msgcode: msgcode || 0x11, // default: L_Data.req for tunneling
@@ -104,7 +104,7 @@ FSM.prototype.AddCEMI = function(datagram, msgcode) {
  *    if a function is passed, use this to DECORATE
  *    if NULL, then just make a new empty datagram. Look at AddXXX methods
  */
-FSM.prototype.Request = function(type, datagram_template, callback) {
+FSM.prototype.Request = function (type, datagram_template, callback) {
   // populate skeleton datagram
   const datagram = this.prepareDatagram(type);
   // decorate the datagram, if a function is passed
@@ -120,14 +120,14 @@ FSM.prototype.Request = function(type, datagram_template, callback) {
 }
 
 // prepare a datagram for the given service type
-FSM.prototype.prepareDatagram = function(svcType) {
+FSM.prototype.prepareDatagram = function (svcType) {
   const datagram = {
-      "header_length": 6,
-      "protocol_version": 16, // 0x10 == version 1.0
-      "service_type": svcType,
-      "total_length": null, // filled in automatically
-    }
-    //
+    "header_length": 6,
+    "protocol_version": 16, // 0x10 == version 1.0
+    "service_type": svcType,
+    "total_length": null, // filled in automatically
+  }
+  //
   AddHPAI(datagram);
   //
   switch (svcType) {
@@ -158,7 +158,7 @@ FSM.prototype.prepareDatagram = function(svcType) {
 /*
 send the datagram over the wire
 */
-FSM.prototype.send = function(datagram, callback) {
+FSM.prototype.send = function (datagram, callback) {
   var cemitype; // TODO: set, but unused
   try {
     this.writer = KnxNetProtocol.createWriter();
@@ -190,7 +190,7 @@ FSM.prototype.send = function(datagram, callback) {
   }
 }
 
-FSM.prototype.write = function(grpaddr, value, dptid, callback) {
+FSM.prototype.write = function (grpaddr, value, dptid, callback) {
   if (grpaddr == null || value == null) {
     KnxLog.get().warn('You must supply both grpaddr and value!');
     return;
@@ -200,7 +200,7 @@ FSM.prototype.write = function(grpaddr, value, dptid, callback) {
     const serviceType = this.useTunneling ?
       KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
       KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
-    this.Request(serviceType, function(datagram) {
+    this.Request(serviceType, function (datagram) {
       DPTLib.populateAPDU(value, datagram.cemi.apdu, dptid);
       datagram.cemi.dest_addr = grpaddr;
     }, callback);
@@ -209,7 +209,7 @@ FSM.prototype.write = function(grpaddr, value, dptid, callback) {
   }
 }
 
-FSM.prototype.respond = function(grpaddr, value, dptid) {
+FSM.prototype.respond = function (grpaddr, value, dptid) {
   if (grpaddr == null || value == null) {
     KnxLog.get().warn('You must supply both grpaddr and value!');
     return;
@@ -217,7 +217,7 @@ FSM.prototype.respond = function(grpaddr, value, dptid) {
   const serviceType = this.useTunneling ?
     KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
     KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
-  this.Request(serviceType, function(datagram) {
+  this.Request(serviceType, function (datagram) {
     DPTLib.populateAPDU(value, datagram.cemi.apdu, dptid);
     // this is a READ request
     datagram.cemi.apdu.apci = "GroupValue_Response";
@@ -226,7 +226,7 @@ FSM.prototype.respond = function(grpaddr, value, dptid) {
   });
 }
 
-FSM.prototype.writeRaw = function(grpaddr, value, bitlength, callback) {
+FSM.prototype.writeRaw = function (grpaddr, value, bitlength, callback) {
   if (grpaddr == null || value == null) {
     KnxLog.get().warn('You must supply both grpaddr and value!');
     return;
@@ -239,7 +239,7 @@ FSM.prototype.writeRaw = function(grpaddr, value, bitlength, callback) {
   const serviceType = this.useTunneling ?
     KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
     KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
-  this.Request(serviceType, function(datagram) {
+  this.Request(serviceType, function (datagram) {
     datagram.cemi.apdu.data = value;
     datagram.cemi.apdu.bitlength = bitlength ? bitlength : (value.byteLength * 8);
     datagram.cemi.dest_addr = grpaddr;
@@ -248,26 +248,35 @@ FSM.prototype.writeRaw = function(grpaddr, value, bitlength, callback) {
 
 // send a READ request to the bus
 // you can pass a callback function which gets bound to the RESPONSE datagram event
-FSM.prototype.read = function(grpaddr, callback) {
+FSM.prototype.read = function (options, callback) {
+  const { ga: grpaddr, readReqTimeout } = options;
   if (typeof callback == 'function') {
     // when the response arrives:
     const responseEvent = 'GroupValue_Response_' + grpaddr;
     KnxLog.get().trace('Binding connection to ' + responseEvent);
-    const binding = (src, data) => {
-        // unbind the event handler
-        this.off(responseEvent, binding);
-        // fire the callback
-        callback(src, data);
-      }
-      // prepare for the response
+    const binding = (err, src, data) => {
+      // unbind the event handler
+      this.off(responseEvent, binding);
+      // unbind the timeout handler
+      clearTimeout(timeout);
+      // fire the callback
+      callback(err, src, data);
+    }
+    // prepare for the response
     this.on(responseEvent, binding);
-    // clean up after 3 seconds just in case no one answers the read request
-    setTimeout( () => this.off(responseEvent, binding), 3000);
+    // per default clean up after 3 seconds just in case no one answers the read request
+    // you can customize this by passing a readReqTimeout in the options object
+    const timeout = setTimeout(() => {
+      const msg = 'Read request timed out';
+      const err = new Error(msg);
+      KnxLog.get().warn(msg);
+      binding(err, null, null);
+    }, readReqTimeout | 3000);
   }
   const serviceType = this.useTunneling ?
     KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST :
     KnxConstants.SERVICE_TYPE.ROUTING_INDICATION;
-  this.Request(serviceType, function(datagram) {
+  this.Request(serviceType, function (datagram) {
     // this is a READ request
     datagram.cemi.apdu.apci = "GroupValue_Read";
     datagram.cemi.dest_addr = grpaddr;
@@ -275,25 +284,25 @@ FSM.prototype.read = function(grpaddr, callback) {
   });
 }
 
-FSM.prototype.Disconnect = function(cb) {
+FSM.prototype.Disconnect = function (cb) {
   var that = this;
 
-  if(this.state === 'connecting') {
-      KnxLog.get().debug('Disconnecting directly');
-      that.transition("uninitialized");
-      if(cb) {
-        cb()
-      }
-      return
+  if (this.state === 'connecting') {
+    KnxLog.get().debug('Disconnecting directly');
+    that.transition("uninitialized");
+    if (cb) {
+      cb()
+    }
+    return
   }
 
   KnxLog.get().debug('waiting for Idle-State');
-  this.onIdle(function() {
+  this.onIdle(function () {
     KnxLog.get().trace('In Idle-State');
 
     that.on('disconnected', () => {
       KnxLog.get().debug('Disconnected from KNX');
-      if(cb) {
+      if (cb) {
         cb()
       }
     });
@@ -306,14 +315,13 @@ FSM.prototype.Disconnect = function(cb) {
   // this.off();
 }
 
-FSM.prototype.onIdle = function(cb) {
-  if(this.state === 'idle') {
+FSM.prototype.onIdle = function (cb) {
+  if (this.state === 'idle') {
     KnxLog.get().trace('Connection is already Idle');
     cb();
-  }
-  else {
-    this.on("transition", function(data) {
-      if(data.toState === 'idle') {
+  } else {
+    this.on("transition", function (data) {
+      if (data.toState === 'idle') {
         KnxLog.get().trace('Connection just transitioned to Idle');
         cb();
       }
@@ -325,7 +333,7 @@ FSM.prototype.onIdle = function(cb) {
 const datagramDesc = (dg) => {
   let blurb = KnxConstants.keyText('SERVICE_TYPE', dg.service_type);
   if (dg.service_type == KnxConstants.SERVICE_TYPE.TUNNELING_REQUEST ||
-      dg.service_type == KnxConstants.SERVICE_TYPE.ROUTING_INDICATION) {
+    dg.service_type == KnxConstants.SERVICE_TYPE.ROUTING_INDICATION) {
     blurb += '_' + KnxConstants.keyText('MESSAGECODES', dg.cemi.msgcode);
   }
   return blurb;
@@ -345,7 +353,7 @@ const AddTunn = (datagram) => {
   datagram.tunn = {
     protocol_type: 1, // UDP
     tunnel_endpoint: '0.0.0.0:0'
-      //tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
+    //tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
   };
 }
 

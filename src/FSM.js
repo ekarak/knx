@@ -586,6 +586,7 @@ module.exports = machina.Fsm.extend({
     // 'GroupValue_Write_1/2/3', src, data
     this.emit(
       util.format('%s_%s', evtName, datagram.cemi.dest_addr),
+      null,
       datagram.cemi.src_addr,
       datagram.cemi.apdu.data
     );

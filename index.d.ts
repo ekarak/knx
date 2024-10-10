@@ -88,7 +88,7 @@ declare module "knx" {
     debug: boolean;
     Connect(): void;
     Disconnect(cb?: () => void): void;
-    read(ga: KnxGroupAddress, cb?: (src: KnxDeviceAddress, value: Buffer) => void): void;
+    read(ga: KnxGroupAddress, cb?: (err: Error, src: KnxDeviceAddress, value: Buffer) => void): void;
     write(ga: KnxGroupAddress, value: Buffer, dpt: DPT, cb?: () => void): void;
   }
 
@@ -97,7 +97,7 @@ declare module "knx" {
     constructor(conf: ConnectionSpec);
     Connect(): void;
     Disconnect(cb?: () => void): void;
-    read(ga: KnxGroupAddress, cb?: (src: KnxDeviceAddress, value: Buffer) => void): void;
+    read(ga: KnxGroupAddress, cb?: (err: Error, src: KnxDeviceAddress, value: Buffer) => void): void;
     write(ga: KnxGroupAddress, value: Buffer, dpt: DPT, cb?: () => void): void;
     writeRaw(
       ga: KnxGroupAddress,
@@ -114,6 +114,6 @@ declare module "knx" {
     constructor(options: DatapointOptions, conn?: IConnection);
     bind(conn: Connection): void;
     write(value: KnxValue): void;
-    read(callback?: (src: KnxDeviceAddress, value: KnxValue) => void): void;
+    read(callback?: (err: Error, src: KnxDeviceAddress, value: KnxValue) => void): void;
   }
 }

@@ -26,7 +26,13 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
           timer_control.on('change', function(oldvalue, newvalue) {
             t.pass(util.format("**** Timer control changed from: %j to: %j", oldvalue, newvalue));
           });
-          timer_status.read(function(src, response) {
+          timer_status.read(function(err, src, response) {
+            if(err) {
+              console.log("%s **** ERROR: %j",
+                new Date().toISOString().replace(/T/, ' ').replace(/Z$/, ''),
+                err);
+              process.exit(1);
+            }
             t.pass(util.format("**** Timer status response: %j", response));
             t.end();
             process.exit(0);
