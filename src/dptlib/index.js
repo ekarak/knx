@@ -33,26 +33,34 @@ Unlimited string 8859_1            .                       DPT 24	    DPT 24
 List 3-byte value                  3 Byte                  DPT 232	  DPT 232	RGB[0,0,0]...[255,255,255]
 */
 
-const fs = require('fs');
-const path = require('path');
 const util = require('util');
 const log = require('log-driver').logger;
 
 const dpts = {};
-for (const entry of fs.readdirSync(__dirname)) {
-  const matches = entry.match(/(dpt.*)\.js/);
-  if (!matches) continue;
-  const dptid = matches[1].toUpperCase(); // DPT1..DPTxxx
-  const mod = require(__dirname + path.sep + entry);
-  if (
-    !mod.hasOwnProperty('basetype') ||
-    !mod.basetype.hasOwnProperty('bitlength')
-  )
-    throw 'incomplete ' + dptid + ', missing basetype and/or bitlength!';
-  mod.id = dptid;
-  dpts[dptid] = mod;
-  //log.trace('DPT library: loaded %s (%s)', dptid, dpts[dptid].basetype.desc);
-}
+dpts.DPT1 = require('./dpt1.js');
+dpts.DPT2 = require('./dpt2.js');
+dpts.DPT3 = require('./dpt3.js');
+dpts.DPT4 = require('./dpt4.js');
+dpts.DPT5 = require('./dpt5.js');
+dpts.DPT6 = require('./dpt6.js');
+dpts.DPT7 = require('./dpt7.js');
+dpts.DPT8 = require('./dpt8.js');
+dpts.DPT9 = require('./dpt9.js');
+dpts.DPT10 = require('./dpt10.js');
+dpts.DPT11 = require('./dpt11.js');
+dpts.DPT12 = require('./dpt12.js');
+dpts.DPT13 = require('./dpt13.js');
+dpts.DPT14 = require('./dpt14.js');
+dpts.DPT15 = require('./dpt15.js');
+dpts.DPT16 = require('./dpt16.js');
+dpts.DPT17 = require('./dpt17.js');
+dpts.DPT18 = require('./dpt18.js');
+dpts.DPT19 = require('./dpt19.js');
+dpts.DPT20 = require('./dpt20.js');
+dpts.DPT21 = require('./dpt21.js');
+dpts.DPT232 = require('./dpt232.js');
+dpts.DPT237 = require('./dpt237.js');
+dpts.DPT238 = require('./dpt238.js');
 
 // a generic DPT resolution function
 // DPTs might come in as 9/"9"/"9.001"/"DPT9.001"
@@ -154,7 +162,7 @@ dpts.populateAPDU = (value, apdu, dptid) => {
  * - or by this generic version, which:
  * --  1) checks if the value adheres to the range set from the DPT's bitlength
  */
-dpts.fromBuffer = (buf, dpt) => {
+dpts.fromBuffer = (buf, dpt, subtype) => {
   // sanity check
   if (!dpt) throw util.format('DPT %s not found', dpt);
   // get the raw APDU data for the given JS value
@@ -179,10 +187,13 @@ dpts.fromBuffer = (buf, dpt) => {
     dpt.hasOwnProperty('subtype') &&
     dpt.subtype.hasOwnProperty('scalar_range')
   ) {
+    subtype = dpt.subtype;
+  }
+  if (subtype && subtype.hasOwnProperty('scalar_range')) {
     const [r_min, r_max] = dpt.basetype.hasOwnProperty('range')
       ? dpt.basetype.range
       : [0, Math.pow(2, dpt.basetype.bitlength) - 1];
-    const [s_min, s_max] = dpt.subtype.scalar_range;
+    const [s_min, s_max] = subtype.scalar_range;
     // convert value from its scalar representation
     // e.g. in DPT5.001, 50(%) => 0x7F , 100(%) => 0xFF
     const a = (s_max - s_min) / (r_max - r_min);

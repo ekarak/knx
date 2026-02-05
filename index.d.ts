@@ -116,4 +116,59 @@ declare module "knx" {
     write(value: KnxValue): void;
     read(callback?: (src: KnxDeviceAddress, value: KnxValue) => void): void;
   }
+
+  export interface DatapointSubtype {
+    scalar_range?: [number, number]
+    name: string
+    use?: string
+    desc: string
+    force_encoding?: string
+    unit?: string
+    enc?: Record<number, string>
+    range?: [number, number] | [undefined, undefined]
+  }
+
+  export interface DatapointType {
+    basetype: {
+      bitlength: number
+      signedness?: string
+      range?: [number, number]
+      valuetype: string
+      desc?: string
+    }
+    subtypes: Record<string, DatapointSubtype>
+    formatAPDU?: (value: any) => Buffer | void
+    fromBuffer?: (buf: Buffer) => KnxValue
+  }
+
+  export class dptlib {
+    static DPT1: DatapointType
+    static DPT2: DatapointType
+    static DPT3: DatapointType
+    static DPT4: DatapointType
+    static DPT5: DatapointType
+    static DPT6: DatapointType
+    static DPT7: DatapointType
+    static DPT8: DatapointType
+    static DPT9: DatapointType
+    static DPT10: DatapointType
+    static DPT11: DatapointType
+    static DPT12: DatapointType
+    static DPT13: DatapointType
+    static DPT14: DatapointType
+    static DPT15: DatapointType
+    static DPT16: DatapointType
+    static DPT17: DatapointType
+    static DPT18: DatapointType
+    static DPT19: DatapointType
+    static DPT20: DatapointType
+    static DPT21: DatapointType
+    static DPT232: DatapointType
+    static DPT237: DatapointType
+    static DPT238: DatapointType
+
+    static fromBuffer: (buf: Buffer, dpt: DatapointType, subtype?: DatapointSubtype) => KnxValue
+
+    static populateAPDU: (value: KnxValue, apdu: Object, dptid: string) => void
+  }
 }
