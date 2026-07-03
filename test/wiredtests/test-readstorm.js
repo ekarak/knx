@@ -7,6 +7,7 @@ const knx = require('../..');
 const test = require('tape');
 const util = require('util');
 const options = require('./wiredtest-options.js');
+const wiredTestConnectionOptions = require('./wiredtest-connection-options.js');
 
 Error.stackTraceLimit = Infinity;
 
@@ -41,11 +42,8 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
         setupDatapoint(ctrl_ga, stat_ga);
       }
     }
-    var connection = knx.Connection({
-       loglevel: 'warn',
-      //forceTunneling: true,
-//      minimumDelay: 100,
-      handlers: {
+    var connection = knx.Connection(
+      wiredTestConnectionOptions({}, {
         connected: function() {
           setupDatapoints();
         },
@@ -66,8 +64,8 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
             connstatus);
           process.exit(1);
         }
-      }
-    });
+      })
+    );
   });
 
   setTimeout(function() {

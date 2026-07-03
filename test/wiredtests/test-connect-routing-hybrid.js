@@ -10,6 +10,7 @@ const assert = require('assert');
 const test = require('tape');
 
 const options = require('./wiredtest-options.js');
+const wiredTestConnectionOptions = require('./wiredtest-connection-options.js');
 
 /*
            ==========                ==================
@@ -21,10 +22,8 @@ const options = require('./wiredtest-options.js');
 if (process.env.hasOwnProperty('WIREDTEST')) {
   //
   test('KNX connect routing hybrid', function(t) {
-    var connection = knx.Connection({
-      loglevel: 'debug',
-      forceTunneling: true,
-      handlers: {
+    var connection = knx.Connection(
+      wiredTestConnectionOptions({ forceTunneling: true }, {
         connected: function() {
           t.pass('connected in hybrid mode');
           t.end();
@@ -35,8 +34,8 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
           t.end();
           process.exit(1);
         }
-      }
-    });
+      })
+    );
   });
 
   setTimeout(function() {

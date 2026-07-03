@@ -11,6 +11,7 @@ const assert = require('assert');
 const test = require('tape');
 
 const options = require('./wiredtest-options.js');
+const wiredTestConnectionOptions = require('./wiredtest-connection-options.js');
 
 /*
            ==========                ==================
@@ -22,13 +23,8 @@ const options = require('./wiredtest-options.js');
 if (process.env.hasOwnProperty('WIREDTEST')) {
   //
   test('KNX connect tunneling', function(t) {
-    var connection = knx.Connection({
-      // set up your KNX IP router's IP address (not multicast!)
-      // for getting into tunnelling mode
-      ipAddr: options.ipAddr,
-      physAddr: options.physAddr,
-      debug: true,
-      handlers: {
+    var connection = knx.Connection(
+      wiredTestConnectionOptions({}, {
         connected: function() {
           console.log('----------');
           console.log('Connected!');
@@ -46,8 +42,8 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
           t.end();
           process.exit(1);
         }
-      }
-    });
+      })
+    );
   });
 
   setTimeout(function() {

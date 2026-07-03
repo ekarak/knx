@@ -7,6 +7,7 @@ const knx = require('../..');
 const test = require('tape');
 const util = require('util');
 const options = require('./wiredtest-options.js');
+const wiredTestConnectionOptions = require('./wiredtest-connection-options.js');
 
 /*
            ==========                ==================
@@ -17,9 +18,8 @@ const options = require('./wiredtest-options.js');
 */
 if (process.env.hasOwnProperty('WIREDTEST')) {
   test('KNX wired test - control a DPT9 timer', function(t) {
-    var connection = new knx.Connection( {
-      //debug: true,
-      handlers: {
+    var connection = new knx.Connection(
+      wiredTestConnectionOptions({}, {
         connected: () => {
           var timer_control = new knx.Datapoint({ga: options.dpt9_timer_control_ga, dpt: 'DPT9.001', autoread: true}, connection);
           var timer_status  = new knx.Datapoint({ga: options.dpt9_timer_status_ga, dpt: 'DPT9.001', autoread: true}, connection);
@@ -33,8 +33,8 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
           });
           timer_control.write(12);
         }
-      }
-    });
+      })
+    );
   });
 
   setTimeout(function () {

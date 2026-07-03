@@ -10,6 +10,7 @@ const assert = require('assert');
 const test = require('tape');
 
 const options = require('./wiredtest-options.js');
+const wiredTestConnectionOptions = require('./wiredtest-connection-options.js');
 /*
            ==========                ==================
  this is a WIRED test and requires a real KNX IP router on the LAN
@@ -21,10 +22,8 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
 
   test('KNX wired test - control a basic DPT1 binary switch', function(t) {
     var counter = 0;
-    var connection = new knx.Connection({
-      debug: true,
-      physAddr: options.physAddr,
-      handlers: {
+    var connection = new knx.Connection(
+      wiredTestConnectionOptions({}, {
         connected: function() {
           console.log('----------');
           console.log('Connected!');
@@ -71,8 +70,8 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
           t.fail('error: '+connstatus);
           process.exit(1);
         }
-      }
-    });
+      })
+    );
   })
 
   setTimeout(function() {

@@ -7,6 +7,7 @@ const knx = require('../..');
 const test = require('tape');
 const util = require('util');
 const options = require('./wiredtest-options.js');
+const wiredTestConnectionOptions = require('./wiredtest-connection-options.js');
 
 /*
            ==========                ==================
@@ -17,10 +18,8 @@ const options = require('./wiredtest-options.js');
 */
 if (process.env.hasOwnProperty('WIREDTEST')) {
   test('KNX wired test - read a temperature', function(t) {
-    var connection = new knx.Connection({
-      debug: true,
-      physAddr: options.physAddr,
-      handlers: {
+    var connection = new knx.Connection(
+      wiredTestConnectionOptions({}, {
         connected: function() {
           //  just define a temperature GA that should respond to a a GroupValue_Read request
           var temperature_in = new knx.Datapoint({
@@ -40,8 +39,8 @@ if (process.env.hasOwnProperty('WIREDTEST')) {
             connstatus);
           process.exit(1);
         }
-      }
-    });
+      })
+    );
   });
 
   setTimeout(function() {
